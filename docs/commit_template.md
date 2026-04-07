@@ -93,3 +93,9 @@ docs(diagrams): update C4 Level 2 container diagram
 ```
 chore(deps): bump react from 18.2 to 18.3
 ```
+
+---
+
+## Source
+
+**Conventional Commits specification** — https://www.conventionalcommits.org/en/v1.0.0/
