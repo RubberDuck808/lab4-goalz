@@ -1,12 +1,80 @@
 # Diagrams
 
-Architecture diagrams for the Goalz platform written in **Mermaid** — renders natively in GitLab with no configuration needed.
+Architecture diagrams for the Goalz / Loggin platform written in **Mermaid** — renders natively in GitLab with no configuration needed.
+
+---
+
+## C4 Level 1 — System Context
+
+Who uses the system and what external services does it depend on.
+
+```mermaid
+C4Context
+    title Level 1 — System Context: Loggin Platform
+
+    Person(admin, "Admin / Staff", "Personnel of the arboretum responsible for monitoring operations and reviewing system outputs.")
+    Person(student, "Student", "End user interacting with the system to explore routes, capture images, and participate in activities.")
+
+    System(loggin, "Loggin Platform", "Core application that manages student engagement, collects sensor and image data, processes analysis, and provides reporting tools for staff.")
+
+    System_Ext(sensor, "Sensor / IoT", "Devices deployed in the arboretum that provide environmental and location-based data.")
+    System_Ext(ai, "AI Analysis Service", "Processes uploaded images and returns analytical insights such as plant identification and health status.")
+    System_Ext(mapapi, "Map API", "Provides map, geolocation, and route visualization services.")
+    SystemDb_Ext(databases, "Databases", "Stores sensor data, user data, images, and analytical results.")
+
+    Rel(admin, loggin, "Monitors activity, reviews data, generates reports")
+    Rel(student, loggin, "Explores routes, interacts with checkpoints, uploads images, earns points")
+    Rel(sensor, loggin, "Sends environmental and location data")
+    BiRel(loggin, ai, "Sends captured images for analysis and receives analytical insights")
+    BiRel(loggin, mapapi, "Requests and receives map data, route information, map tiles, and geolocation data")
+    Rel(loggin, databases, "Stores operational data and retrieves it for analytics, dashboards, and reporting")
+```
+
+---
+
+## C4 Level 2 — Container
+
+The internal building blocks of the Loggin Platform and how they communicate.
+
+```mermaid
+C4Container
+    title Level 2 — Container: Loggin Platform
+
+    Person(admin, "Admin / Staff", "Personnel of the arboretum responsible for monitoring operations and reviewing system outputs.")
+    Person(student, "Student", "End user interacting with the system to explore routes, capture images, and participate in activities.")
+
+    System_Ext(sensor, "Sensor / IoT", "Devices deployed in the arboretum that provide environmental and location-based data.")
+    System_Ext(ai, "AI Analysis Service", "Processes uploaded images and returns structured insights.")
+    System_Ext(mapapi, "Map API", "Provides map tiles, route paths, and geolocation data.")
+
+    System_Boundary(loggin, "Loggin Platform") {
+        Container(adminDash, "Admin Dashboard", "React JS", "Single-page web application for arboretum staff to monitor activity, review collected data, and generate reports.")
+        Container(studentApp, "Student Application", "React JS", "Web/mobile-facing client for students to explore routes, interact with checkpoints, upload images, and earn points.")
+        Container(bgService, "Background Processing Service", "C# / .NET Worker Service", "Executes asynchronous tasks: sensor data ingestion, AI analysis orchestration, and report generation.")
+        Container(api, "Backend API", "C# / ASP.NET Core REST API", "Handles authentication, business logic, route management, checkpoint interactions, image submission, and reporting.")
+        ContainerDb(objectStorage, "Object Storage", "MinIO", "Stores uploaded images, generated reports, and other binary files.")
+        ContainerDb(db, "Relational Database", "PostgreSQL / Supabase", "Stores users, routes, checkpoints, sessions, points, sensor metadata, and application data.")
+    }
+
+    Rel(admin, adminDash, "Sends administration, monitoring, and reporting requests", "HTTPS, JSON")
+    Rel(student, studentApp, "Sends route progress, checkpoint events, image uploads, and point-related actions", "HTTPS, JSON/multipart")
+    Rel(adminDash, api, "API requests", "HTTPS, JSON")
+    Rel(studentApp, api, "API requests", "HTTPS, JSON/multipart")
+    Rel(sensor, bgService, "Submits environmental and location data", "HTTP or MQTT, JSON")
+    Rel(bgService, api, "Triggers asynchronous processing jobs", "Queue/HTTP")
+    BiRel(bgService, objectStorage, "Stores and retrieves images and generated reports", "HTTP, Object Storage API")
+    BiRel(bgService, ai, "Uploads images for analysis and receives structured insights", "HTTPS, multipart/form-data")
+    BiRel(api, mapapi, "Requests and receives map tiles, route paths, and geolocation data", "HTTPS, JSON")
+    BiRel(api, objectStorage, "Reads and writes images and reports", "HTTP, Object Storage API")
+    Rel(api, db, "Reads and writes application data", "HTTPS, JSON via Supabase API")
+    Rel(bgService, db, "Persists processed sensor data and AI analysis results", "HTTPS, JSON via Supabase API")
+```
 
 ---
 
 ## System Overview
 
-High-level view of all components and how they connect.
+High-level component view across all layers.
 
 ```mermaid
 flowchart TD

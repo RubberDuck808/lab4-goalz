@@ -1,0 +1,19 @@
+C4Context
+    title Level 1 — System Context: Loggin Platform
+
+    Person(admin, "Admin / Staff", "Personnel of the arboretum responsible for monitoring operations and reviewing system outputs.")
+    Person(student, "Student", "End user interacting with the system to explore routes, capture images, and participate in activities.")
+
+    System(loggin, "Loggin Platform", "Core application that manages student engagement, collects sensor and image data, processes analysis, and provides reporting tools for staff.")
+
+    System_Ext(sensor, "Sensor / IoT", "Devices deployed in the arboretum that provide environmental and location-based data.")
+    System_Ext(ai, "AI Analysis Service", "Processes uploaded images and returns analytical insights such as plant identification and health status.")
+    System_Ext(mapapi, "Map API", "Provides map, geolocation, and route visualization services.")
+    SystemDb_Ext(databases, "Databases", "Stores sensor data, user data, images, and analytical results.")
+
+    Rel(admin, loggin, "Monitors activity, reviews data, generates reports")
+    Rel(student, loggin, "Explores routes, interacts with checkpoints, uploads images, earns points")
+    Rel(sensor, loggin, "Sends environmental and location data")
+    BiRel(loggin, ai, "Sends captured images for analysis and receives analytical insights")
+    BiRel(loggin, mapapi, "Requests and receives map data, route information, map tiles, and geolocation data")
+    Rel(loggin, databases, "Stores operational data and retrieves it for analytics, dashboards, and reporting")
