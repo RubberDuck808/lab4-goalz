@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant esp as ESP32 (C++ Firmware)
+    participant api as ASP.NET Core REST API
+    participant db as PostgreSQL (Supabase)
+    participant fe as React Dashboard
+
+    esp->>api: POST /api/sensor-logs { temp, humidity, co2, route_id }
+    api->>db: INSERT INTO sensor_logs
+    db-->>api: 201 Created
+    api-->>esp: 200 OK
+
+    fe->>api: GET /api/sensor-logs?route_id=X
+    api->>db: SELECT * FROM sensor_logs
+    db-->>api: Rows
+    api-->>fe: JSON payload
