@@ -1,23 +1,28 @@
 # Commit Message Template
 
+Follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+
 ```
-<type>(<scope>): <short summary>
+<type>[optional scope]: <description>
 
-Context:
-- Why is this change needed?
-- What problem does it solve?
+[optional body]
 
-Changes:
-- What was added/changed/removed?
-- Key points (keep it concise)
-
-Notes:
-- Anything important for reviewers
-- Trade-offs, limitations, side effects
-
-Refs:
-- Issues, tickets, PRs (optional)
+[optional footer(s)]
 ```
+
+---
+
+## Structure
+
+| Part | Required | Description |
+|------|----------|-------------|
+| `type` | ✅ | Category of the change (see types below) |
+| `scope` | ❌ | Area of the codebase affected, e.g. `(auth)`, `(iot)`, `(db)` |
+| `description` | ✅ | Short imperative summary — no capital, no full stop |
+| `body` | ❌ | Longer explanation of *why*, not *what* |
+| `footer` | ❌ | Breaking changes, issue references |
+
+---
 
 ## Types
 
@@ -32,44 +37,59 @@ Refs:
 | `chore` | Build process, dependency updates, tooling |
 | `ci` | CI/CD configuration changes |
 
+---
+
 ## Scopes
 
-Use the area of the project affected, e.g. `backend`, `frontend`, `iot`, `db`, `auth`, `ci`, `docs`.
+Use the area of the project affected:
+`backend` · `frontend` · `iot` · `db` · `auth` · `ci` · `docs` · `storage`
+
+---
+
+## Breaking Changes
+
+Add `!` after the type/scope **or** use a `BREAKING CHANGE` footer:
+
+```
+feat!: drop support for Node 18
+
+BREAKING CHANGE: minimum required Node version is now 20
+```
+
+---
 
 ## Examples
 
+**Simple feature:**
 ```
-feat(frontend): add route map component to dashboard
-
-Context:
-- Dashboard lacked a visual representation of student routes
-- Students needed to see collected GPS data on a map
-
-Changes:
-- Added MapView component using Leaflet.js
-- Integrated Supabase route query into map data hook
-
-Notes:
-- Map tiles require an internet connection
-- Mobile responsiveness not yet tested
-
-Refs:
-- Closes #42
+feat(frontend): add route map component to student dashboard
 ```
 
+**Bug fix with body:**
 ```
 fix(iot): correct temperature sensor offset calculation
 
-Context:
-- Sensor readings were consistently 2°C above actual values
-- Caused inaccurate data in the sustainability dashboard
+Sensor readings were consistently 2°C above actual values,
+causing inaccurate data in the sustainability dashboard.
+Applied a calibration offset constant in the firmware read loop.
+```
 
-Changes:
-- Applied calibration offset constant in firmware read loop
+**Breaking change with footer:**
+```
+feat(auth): replace session tokens with JWT
 
-Notes:
-- Offset value (2.0) should be moved to config in a follow-up
+Closes #38
 
-Refs:
-- Issue #17
+BREAKING CHANGE: existing session tokens are invalidated on deploy,
+all users will be required to log in again
+```
+
+**Docs only:**
+```
+docs(diagrams): update C4 Level 2 container diagram
+```
+
+**Chore:**
+```
+chore(deps): bump react from 18.2 to 18.3
 ```
