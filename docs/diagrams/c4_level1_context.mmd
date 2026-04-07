@@ -1,24 +1,22 @@
----
-config:
-  layout: fixed
----
-flowchart TB
-    admin["Admin / Staff<br>Monitors operations and reviews system outputs"] -- Monitors and reviews --> logging["Logging Platform<br>Core system that manages engagement, collects sensor and image data, processes analysis, and provides reporting tools"]
-    student["Student<br>Explores routes, captures images, and participates in activities"] -- Uses platform --> logging
-    sensor["Sensor / IoT<br>Provides environmental and location data"] -- Sends environmental data --> logging
-    logging -- Sends images for analysis --> ai["AI Analysis Service<br>Analyzes images and returns insights"]
-    ai -- Returns analysis insights --> logging
-    logging -- Requests maps and routes --> mapapi["Map API<br>Provides maps, routes, and geolocation services"]
-    mapapi -- Returns map and geolocation data --> logging
-    logging -- Stores and retrieves data --> db["Databases<br>Stores user data, sensor data, images, and analysis results"]
+flowchart TD
 
-     admin:::person
-     logging:::system
-     student:::person
-     sensor:::external
-     ai:::external
-     mapapi:::external
-     db:::external
-    classDef person fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px,font-size:14px
-    classDef system fill:#e8f5e9,stroke:#43a047,stroke-width:2px,font-size:14px
-    classDef external fill:#fff3e0,stroke:#fb8c00,stroke-width:2px,font-size:14px
+%% ===================== USERS =====================
+admin["👤 Admin / Staff<br/>Monitors activity, reviews data, generates reports (HTTPS)"]
+student["👤 Student<br/>Explores routes, uploads images, earns points (HTTPS)"]
+
+%% ===================== PLATFORM =====================
+platform["Loggin Platform<br/>(Software System)<br/>Core application managing student engagement,<br/>sensor data, image analysis, and reporting"]
+
+%% ===================== EXTERNAL =====================
+sensor["Sensor / IoT<br/>Environmental + location data<br/>(HTTP / MQTT)"]
+ai["AI Analysis Service<br/>Image analysis & plant identification<br/>(HTTPS)"]
+mapapi["Map API<br/>Maps, routes, geolocation<br/>(HTTPS)"]
+db["Databases<br/>(PostgreSQL / Supabase + MinIO)<br/>Sensor data, user data, images, analytical results"]
+
+%% ===================== RELATIONSHIPS =====================
+admin -->|"Monitors activity, reviews data, generates reports"| platform
+student -->|"Explores routes, interacts with checkpoints, uploads images, earns points"| platform
+sensor -->|"Sends environmental and location data"| platform
+platform <-->|"Sends images for analysis — receives analytical insights"| ai
+platform <-->|"Requests map data, routes, geolocation — receives map tiles"| mapapi
+platform -->|"Stores and retrieves operational data"| db

@@ -1,31 +1,63 @@
-C4Container
-    title Level 2 — Container: Loggin Platform
+flowchart TD
 
-    Person(admin, "Admin / Staff", "Personnel of the arboretum responsible for monitoring operations and reviewing system outputs.")
-    Person(student, "Student", "End user interacting with the system to explore routes, capture images, and participate in activities.")
+%% ===================== USERS =====================
+admin["👤 Admin / Staff<br/>Uses monitoring & reporting (HTTPS)"]
+student["👤 Student<br/>Uses routes & image capture (HTTPS)"]
 
-    System_Ext(sensor, "Sensor / IoT", "Devices deployed in the arboretum that provide environmental and location-based data.")
-    System_Ext(ai, "AI Analysis Service", "Processes uploaded images and returns structured insights.")
-    System_Ext(mapapi, "Map API", "Provides map tiles, route paths, and geolocation data.")
+%% ===================== PLATFORM =====================
+subgraph platform["Loggin Platform"]
 
-    System_Boundary(loggin, "Loggin Platform") {
-        Container(adminDash, "Admin Dashboard", "React JS", "Single-page web application for arboretum staff to monitor activity, review collected data, and generate reports.")
-        Container(studentApp, "Student Application", "React JS", "Web/mobile-facing client for students to explore routes, interact with checkpoints, upload images, and earn points.")
-        Container(bgService, "Background Processing Service", "C# / .NET Worker Service", "Executes asynchronous tasks: sensor data ingestion, AI analysis orchestration, and report generation.")
-        Container(api, "Backend API", "C# / ASP.NET Core REST API", "Handles authentication, business logic, route management, checkpoint interactions, image submission, and reporting.")
-        ContainerDb(objectStorage, "Object Storage", "MinIO", "Stores uploaded images, generated reports, and other binary files.")
-        ContainerDb(db, "Relational Database", "PostgreSQL / Supabase", "Stores users, routes, checkpoints, sessions, points, sensor metadata, and application data.")
-    }
+    %% --- Frontend ---
+    subgraph frontend["Frontend"]
+        admin_ui["Admin Dashboard<br/>(React SPA)<br/>Monitoring & reporting"]
+        student_ui["Student Application<br/>(React SPA)<br/>Routes, checkpoints, uploads"]
+    end
 
-    Rel(admin, adminDash, "Sends administration, monitoring, and reporting requests", "HTTPS, JSON")
-    Rel(student, studentApp, "Sends route progress, checkpoint events, image uploads, and point-related actions", "HTTPS, JSON/multipart")
-    Rel(adminDash, api, "API requests", "HTTPS, JSON")
-    Rel(studentApp, api, "API requests", "HTTPS, JSON/multipart")
-    Rel(sensor, bgService, "Submits environmental and location data", "HTTP or MQTT, JSON")
-    Rel(bgService, api, "Triggers asynchronous processing jobs", "Queue/HTTP")
-    BiRel(bgService, objectStorage, "Stores and retrieves images and generated reports", "HTTP, Object Storage API")
-    BiRel(bgService, ai, "Uploads images for analysis and receives structured insights", "HTTPS, multipart/form-data")
-    BiRel(api, mapapi, "Requests and receives map tiles, route paths, and geolocation data", "HTTPS, JSON")
-    BiRel(api, objectStorage, "Reads and writes images and reports", "HTTP, Object Storage API")
-    Rel(api, db, "Reads and writes application data", "HTTPS, JSON via Supabase API")
-    Rel(bgService, db, "Persists processed sensor data and AI analysis results", "HTTPS, JSON via Supabase API")
+    %% --- Backend ---
+    subgraph backend["Backend"]
+        api["Backend API<br/>(ASP.NET Core REST API)<br/>Auth, routes, checkpoints, uploads"]
+        bg["Background Processing Service<br/>(.NET Worker)<br/>Async jobs, AI orchestration, reports"]
+    end
+
+    %% --- Storage ---
+    subgraph storage["Storage"]
+        object["Object Storage<br/>(MinIO)<br/>Images, reports, binary files"]
+    end
+
+end
+
+%% ===================== EXTERNAL =====================
+sensor["Sensor / IoT<br/>Environmental + location data<br/>(HTTP / MQTT)"]
+ai["AI Analysis Service<br/>Image analysis<br/>(HTTPS multipart/form-data + JSON)"]
+mapapi["Map API<br/>Maps, routes, geolocation<br/>(HTTPS JSON)"]
+db["Relational Database<br/>(PostgreSQL / Supabase)<br/>Users, routes, checkpoints, sensor data"]
+
+%% ===================== USER FLOW =====================
+admin --> admin_ui
+student --> student_ui
+
+%% ===================== FRONTEND → API =====================
+admin_ui -->|"HTTPS JSON<br/>Admin & reporting requests"| api
+student_ui -->|"HTTPS JSON / multipart<br/>Progress, checkpoints, uploads"| api
+
+%% ===================== SENSOR =====================
+sensor -->|"HTTP / MQTT JSON<br/>Sensor data"| bg
+
+%% ===================== AI =====================
+bg -->|"Upload images<br/>(HTTPS multipart)"| ai
+ai -->|"Return insights JSON"| bg
+
+%% ===================== INTERNAL =====================
+bg -->|"Trigger jobs (queue / HTTP)"| api
+
+%% ===================== STORAGE =====================
+api -->|"Store / retrieve images<br/>(Object Storage API)"| object
+bg -->|"Read / write images + reports"| object
+
+%% ===================== DATABASE =====================
+api -->|"Read / write app data<br/>(HTTPS SQL via Supabase API)"| db
+bg -->|"Persist processed sensor + AI data"| db
+
+%% ===================== MAP =====================
+api -->|"Request maps, routes"| mapapi
+mapapi -->|"Return map data"| api
