@@ -36,7 +36,9 @@ pnpm-debug.log*
 
 .env
 .env.*
+!.env.example
 frontend/**/.env*
+!frontend/**/.env.example
 
 # =========================
 
