@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Relational data such as student scores, route coordinates, and sensor logs must be stored reliably and support complex queries.
+Relational data such as user scores, route coordinates, and sensor logs must be stored reliably and support complex queries.
 
 ## Decision
 Use PostgreSQL (via Supabase) as the primary relational database.

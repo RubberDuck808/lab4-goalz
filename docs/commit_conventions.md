@@ -62,7 +62,7 @@ BREAKING CHANGE: minimum required Node version is now 20
 
 **Simple feature:**
 ```
-feat(frontend): add route map component to student dashboard
+feat(frontend): add route map component to dashboard
 ```
 
 **Bug fix with body:**

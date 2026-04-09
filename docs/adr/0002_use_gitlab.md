@@ -4,17 +4,17 @@
 Accepted
 
 ## Context
-The team needs to collaborate on code, track bugs, and host documentation in a way that high school students can access and fix issues independently.
+The team needs to collaborate on code, track bugs, and host documentation in a central place that all contributors can access independently.
 
 ## Decision
-Use GitLab for version control, issue tracking, and CI/CD via GitLab Actions.
+Use GitLab for version control, issue tracking, and CI/CD via GitLab CI/CD.
 
 ## Consequences
 
 ### Positive
 - Centralizes all project assets (code, issues, docs) in one place
-- Allows "Senior Students" to maintain and review code easily
 - Built-in CI/CD pipelines automate testing and deployment
+- Merge request workflow supports code review across the team
 
 ### Negative
 - Team members unfamiliar with GitLab workflows require onboarding
