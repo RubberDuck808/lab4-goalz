@@ -21,8 +21,8 @@ namespace Goalz.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest model)
         {
             // Now this will actually talk to Postgres!
-            bool success = await _authService.checkAuth(model.Email, model.Password);
-            return success ? Ok("Logged in!") : Unauthorized();
+            LoginRequest success = await _authService.checkAuth(model.Email, model.Password);
+            return success != null ? Ok(success) : Unauthorized();
         }
     }
 }

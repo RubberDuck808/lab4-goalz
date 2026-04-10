@@ -1,4 +1,5 @@
 ﻿using Goalz.Api.Storage;
+using Goalz.Core.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace Goalz.Core
@@ -12,17 +13,22 @@ namespace Goalz.Core
             _context = context;
         }
 
-        public async Task<bool> checkAuth(string email, string password)
+        public async Task<LoginRequest> checkAuth(string email, string password)
         {
             // Look for the user in the real database
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user != null)
             {
+                LoginRequest result = new LoginRequest();
+                result.Email = user.Email;
+                result.Name = user.Name;
                 // Verify provided password against the hash stored in DB
-                return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+                bool isverify = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+                if (isverify) { return result; 
+                }
             }
-            return false;
+            return null;
         }
     }
 }
