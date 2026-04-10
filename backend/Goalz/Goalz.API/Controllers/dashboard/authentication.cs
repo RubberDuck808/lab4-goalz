@@ -1,19 +1,28 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Goalz.Core;
+using Goalz.Core.DTOs; // <--- Add this line to fix CS0246
+using System.Threading.Tasks;
 
-namespace Goalz.APi.Controllers 
+namespace Goalz.Api.Controllers
 {
     [ApiController]
-    [Route("api/dashboard/Auth")] // This makes the URL: api/goals
+    [Route("api/dashboard/[controller]")]
     public class AuthController : ControllerBase
     {
-        AuthService authService = new AuthService();
-        [HttpGet]
-        public IActionResult CheckAuth(string email, string password)
+        private readonly AuthService _authService;
+
+        // The system will automatically provide the AuthService here
+        public AuthController(AuthService authService)
         {
-            bool result = authService.checkAuth(email, password);
-            return Ok(result);
+            _authService = authService;
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest model)
+        {
+            // Now this will actually talk to Postgres!
+            bool success = await _authService.checkAuth(model.Email, model.Password);
+            return success ? Ok("Logged in!") : Unauthorized();
         }
     }
 }
