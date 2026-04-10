@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35919.96 d17.13
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11626.88 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Goalz.API", "Goalz.API\Goalz.API.csproj", "{4D230910-E306-4A1C-957A-D6AB11584FFC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Goalz.Core", "Goalz.Core\Goalz.Core.csproj", "{E910967D-4CFC-4A21-9347-CE764BEE054C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{4D230910-E306-4A1C-957A-D6AB11584FFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D230910-E306-4A1C-957A-D6AB11584FFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D230910-E306-4A1C-957A-D6AB11584FFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E910967D-4CFC-4A21-9347-CE764BEE054C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E910967D-4CFC-4A21-9347-CE764BEE054C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E910967D-4CFC-4A21-9347-CE764BEE054C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E910967D-4CFC-4A21-9347-CE764BEE054C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
