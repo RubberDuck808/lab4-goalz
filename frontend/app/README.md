@@ -1,16 +1,57 @@
-# React + Vite
+# Loggin — Player App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The player-facing mobile web app for the Loggin game. Players use this to log in, create or join parties, play through game sections, answer quizzes, and track their score and profile.
 
-Currently, two official plugins are available:
+Built with **React 19** + **Vite** + **Tailwind CSS**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## What this is
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Loggin is an interactive outdoor game set in the Arboretum. Players are split into groups and given roles — **Scouts** collect hint fragments from sensors hidden in the environment, and **Trailblazers** photograph nature elements to reveal a hidden box on the map. When both tasks are done, the group gathers at the box to answer a quiz and earn points.
 
-## Expanding the ESLint configuration
+See [`docs/game_flow.md`](../../docs/game_flow.md) for the full game flow.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Current State
+
+Early scaffolding — the app renders a placeholder page. Routes and pages are yet to be built.
+
+---
+
+## Running Locally
+
+```bash
+cd frontend/app
+npm install
+npm run dev
+```
+
+App runs at `http://localhost:5173` by default.
+
+Or via Docker (full stack):
+```bash
+# From repo root
+docker compose up app
+```
+App runs at `http://localhost:3000`.
+
+---
+
+## Structure
+
+```
+src/
+  pages/       # Page components (one per route)
+  components/  # Shared UI components
+  hooks/       # Custom React hooks
+  services/    # API communication
+  assets/      # Images, icons
+```
+
+---
+
+## API
+
+All requests go to the backend API at `http://localhost:8080/api`. In production this is proxied via the Nginx config (`nginx.conf`).
