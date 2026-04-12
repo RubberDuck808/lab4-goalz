@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Navbar from '../components/navbar/Navbar';
 import DashboardOverview from '../components/dashboard/overview/DashboardOverview';
 import Reports from '../components/dashboard/reports/reports';
+import ImportData from '../components/dashboard/import/import';
 
 export default function Overview() {
   const [selectedItem, setSelectedItem] = useState("Overview");
@@ -13,7 +14,7 @@ export default function Overview() {
       case "Reports":
         return <Reports />;
       case "Import dataset":
-        return <div>Import dataset content</div>;
+        return <ImportData />;
       case "Settings":
         return <div>Settings content</div>;
       default:
