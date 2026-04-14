@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Goalz.Core.Entities;
 
-namespace Goalz.Api.Storage
+namespace Goalz.Data.Storage
 {
     public class AppDbContext : DbContext
     {

@@ -6,13 +6,10 @@
         public class User
         {
             public long Id { get; set; } // BIGINT in SQL = long in C#
-        public string Name { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-
-        [Column("password")] // Matches your script's column name exactly
-        public string PasswordHash { get; set; } = string.Empty;
-
-            [Column("user_points")]
-            public long UserPoints { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Role { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Username {  get; set; } = string.Empty;
+            public string PasswordHash { get; set; } = string.Empty;
         }
     }

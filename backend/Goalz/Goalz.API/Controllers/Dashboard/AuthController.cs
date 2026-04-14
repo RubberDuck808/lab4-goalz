@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Goalz.Core;
-using Goalz.Core.DTOs; // <--- Add this line to fix CS0246
-using System.Threading.Tasks;
+using Goalz.Core.Interfaces;
+using Goalz.Core.DTOs;
 
 namespace Goalz.Api.Controllers
 {
@@ -9,10 +8,10 @@ namespace Goalz.Api.Controllers
     [Route("api/dashboard/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
         // The system will automatically provide the AuthService here
-        public AuthController(AuthService authService)
+        public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
@@ -20,9 +19,14 @@ namespace Goalz.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest model)
         {
-            // Now this will actually talk to Postgres!
-            LoginRequest success = await _authService.checkAuth(model.Email, model.Password);
-            return success != null ? Ok(success) : Unauthorized();
+            LoginRequest success = await _authService.CheckAuth(model.Email, model.Password);
+
+            if (success == null)
+            {
+                return NotFound("User is not found!");
+            }
+
+            return Ok(success);
         }
     }
 }
