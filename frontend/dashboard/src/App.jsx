@@ -1,12 +1,17 @@
+
+import { Route, Routes } from 'react-router-dom'
 import './App.css'
+import Login from './pages/Login'
+import Overview from './pages/Overview'
 
 function App() {
 
   return (
     <>
-      <h1 class="text-3xl font-bold underline">
-    Hello world!
-  </h1>
+      <Routes>
+        <Route path='/' element={<Login />} />
+        <Route path='/overview' element={<Overview />} />
+      </Routes>
     </>
   )
 }
