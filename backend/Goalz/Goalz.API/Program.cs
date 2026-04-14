@@ -1,8 +1,9 @@
-using Goalz.Application.Services;
-using Goalz.Domain.Interfaces;
-using Goalz.Infrastructure.Data;
-using Goalz.Infrastructure.Repositories;
+using Goalz.Data.Storage;
+using Goalz.Core;
 using Microsoft.EntityFrameworkCore;
+using Goalz.Core.Interfaces;
+using Goalz.Core.Services;
+using Goalz.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<AuthService>();
+// Update your AuthService registration to allow it to receive the DbContext
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 builder.Services.AddDbContext<GoalzDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
