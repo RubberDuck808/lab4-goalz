@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Goalz.Infrastructure.Migrations
 {
-    [DbContext(typeof(GoalzDbContext))]
+    [DbContext(typeof(AppDbContext))]
     [Migration("20260410213652_RenamePasswordToPasswordHash")]
     partial class RenamePasswordToPasswordHash
     {

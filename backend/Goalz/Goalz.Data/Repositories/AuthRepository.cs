@@ -1,5 +1,4 @@
-﻿using System;
-using Goalz.Core.Entities;
+﻿using Goalz.Domain.Entities;
 using Goalz.Core.Interfaces;
 using Goalz.Data.Storage;
 

@@ -1,4 +1,4 @@
-﻿namespace Goalz.Application.DTOs
+﻿namespace Goalz.Core.DTOs
 {
     public class LoginRequest
     {

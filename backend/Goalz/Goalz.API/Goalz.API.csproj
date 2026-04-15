@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Goalz.Application\Goalz.Core.csproj" />
     <ProjectReference Include="..\Goalz.Core\Goalz.Core.csproj" />
     <ProjectReference Include="..\Goalz.Data\Goalz.Data.csproj" />
   </ItemGroup>

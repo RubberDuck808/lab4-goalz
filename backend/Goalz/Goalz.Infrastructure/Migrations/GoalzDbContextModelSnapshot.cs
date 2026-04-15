@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Goalz.Infrastructure.Migrations
 {
-    [DbContext(typeof(GoalzDbContext))]
+    [DbContext(typeof(AppDbContext))]
     partial class GoalzDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
