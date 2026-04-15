@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Goalz.Infrastructure.Migrations
 {
-    [DbContext(typeof(GoalzDbContext))]
+    [DbContext(typeof(AppDbContext))]
     [Migration("20260410210420_AddUserRole")]
     partial class AddUserRole
     {
