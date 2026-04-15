@@ -12,7 +12,7 @@ namespace Goalz.Core.Services
             _authRepository = authRepository;
         }
 
-        public async Task<LoginRequest> CheckAuth(string email, string password)
+        public async Task<LoginRequest?> CheckAuth(string email, string password)
         {
             // Look for the user in the real database
             var user = await _authRepository.GetUserByEmail(email);
