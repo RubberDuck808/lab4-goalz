@@ -49,7 +49,6 @@ function App() {
         HI IM LOGGY.
       </h1>
     </>
-  )
 }
 
 export default App;
