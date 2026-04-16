@@ -1,11 +1,12 @@
 import './App.css'
-
+import Normalbutton from './components/normalbutton'
 function App() {
 
   return (
     <>
-       <h1 class="text-3xl font-bold underline">
-        HI IM LOGGY!!!!!
+      <Normalbutton />
+      <h1>
+        HI IM LOGGY.
       </h1>
     </>
   )
