@@ -7,10 +7,12 @@ namespace Goalz.Core.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IJwtService _jwtService;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, IJwtService jwtService)
         {
             _userRepository = userRepository;
+            _jwtService = jwtService;
         }
 
         public async Task<GameLoginResponse?> LoginAsync(GameLoginRequest request)
@@ -23,9 +25,11 @@ namespace Goalz.Core.Services
 
             return new GameLoginResponse
             {
+                Token = _jwtService.Generate(user.Username),
                 Username = user.Username,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                CreatedAt = user.CreatedAt
             };
         }
 
@@ -51,6 +55,7 @@ namespace Goalz.Core.Services
 
             return (new GameSignUpResponse
             {
+                Token = _jwtService.Generate(user.Username),
                 Username = user.Username,
                 Name = user.Name,
                 Email = user.Email
