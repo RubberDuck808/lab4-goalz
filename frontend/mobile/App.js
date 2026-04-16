@@ -13,6 +13,7 @@ import CreatePartyPage from './pages/CreatePartyPage';
 import PartyLobbyPage from './pages/PartyLobbyPage';
 import PartyOwnerPage from './pages/PartyOwnerPage';
 import YourRolePage from './pages/YourRolePage';
+import SettingsPage from './pages/SettingsPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,7 +21,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none' }}>
           <Stack.Screen name="Login"       component={Login} />
           <Stack.Screen name="SignUp"      component={SignUp} />
           <Stack.Screen name="Home"        component={HomePage} />
@@ -31,6 +32,7 @@ export default function App() {
           <Stack.Screen name="PartyLobby"  component={PartyLobbyPage} />
           <Stack.Screen name="PartyOwner"  component={PartyOwnerPage} />
           <Stack.Screen name="YourRole"    component={YourRolePage} />
+          <Stack.Screen name="Settings"   component={SettingsPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

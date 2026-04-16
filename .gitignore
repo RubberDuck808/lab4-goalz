@@ -137,3 +137,11 @@ frontend/**/cypress/screenshots/
 
 .postman/
 postman/
+
+# =========================
+
+# Claude Code docs
+
+# =========================
+
+CLAUDE.md
