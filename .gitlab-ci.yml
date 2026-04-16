@@ -1,0 +1,59 @@
+stages:
+  - install
+  - build
+
+variables:
+  NODE_VERSION: "20"
+  DOTNET_VERSION: "9.0"
+
+# ------------------------
+# FRONTEND INSTALL
+# ------------------------
+frontend:install:
+  stage: install
+  image: node:$NODE_VERSION
+  script:
+    - echo "Installing frontend/app"
+    - cd frontend/app
+    - npm ci
+
+    - echo "Installing frontend/dashboard"
+    - cd ../dashboard
+    - npm ci
+  cache:
+    paths:
+      - frontend/app/node_modules/
+      - frontend/dashboard/node_modules/
+
+# ------------------------
+# FRONTEND BUILD
+# ------------------------
+frontend:build:
+  stage: build
+  image: node:$NODE_VERSION
+  script:
+    - echo "Building frontend/app"
+    - cd frontend/app
+    - npm ci
+    - npm run build
+
+    - echo "Building frontend/dashboard"
+    - cd ../dashboard
+    - npm ci
+    - npm run build
+  dependencies:
+    - frontend:install
+
+# ------------------------
+# BACKEND BUILD
+# ------------------------
+backend:build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  script:
+    - echo "Restoring backend"
+    - cd backend/Goalz
+    - dotnet restore
+
+    - echo "Building backend"
+    - dotnet build --no-restore --configuration Release
