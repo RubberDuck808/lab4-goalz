@@ -81,6 +81,14 @@ Thumbs.db
 
 # =========================
 
+# Claude Code
+
+# =========================
+
+.claude/
+
+# =========================
+
 # Vite specific
 
 # =========================
@@ -112,3 +120,28 @@ frontend/**/storybook-static/
 
 frontend/**/cypress/videos/
 frontend/**/cypress/screenshots/
+
+# =========================
+
+# Claude Code
+
+# =========================
+
+.claude/
+
+# =========================
+
+# Postman workspace sync
+
+# =========================
+
+.postman/
+postman/
+
+# =========================
+
+# Claude Code docs
+
+# =========================
+
+CLAUDE.md
