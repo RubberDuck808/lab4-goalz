@@ -1,16 +1,28 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import DashboardNavBar from '../DashboardNavBar'
+import { importDatasetService } from '../../../services/importDatasetService';
 
 export default function ImportData() {
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadedColumns , setUploadedColumns] = useState([]);
+  const [uploadedRecords , setUploadedRecords] = useState([]);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    console.log("Uploaded Columns:", uploadedColumns);
+    console.log("Uploaded Records:", uploadedRecords);
+    }, [uploadedColumns, uploadedRecords]);
 
   const handleDivClick = () => {
     fileInputRef.current.click();
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const files = Array.from(event.target.files);
+    const result = await importDatasetService.uploadCSV(files); 
+    setUploadedColumns(result[0].columnNames);
+    setUploadedRecords(result[0].values);
+
     setSelectedFiles(files);
   };
   return (
@@ -44,7 +56,7 @@ export default function ImportData() {
               style={{ display: 'none' }}
             />
             {
-                selectedFiles.length > 0 && (
+                uploadedColumns.length > 0 && uploadedRecords.length > 0 && (
                     <>
                         <div className='bg-white rounded w-full p-5 border border-gray-300 rounded-lg shadow mt-4'>
                             <h2 className='text-xl font-bold text-gray-800 mb-4'>Imported Data Preview</h2>
@@ -52,92 +64,29 @@ export default function ImportData() {
                                 <table className="w-full text-sm text-left text-gray-700">
                                     <thead className="text-xs text-gray-700 uppercase bg-gray-100">
                                         <tr>
-                                            <th scope="col" className="px-6 py-3 font-semibold">
-                                                Nature element
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 font-semibold">
-                                                Specie
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 font-semibold">
-                                                Health score
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 font-semibold">
-                                                Longitude
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 font-semibold">
-                                                Latitude
-                                            </th>
+                                            {
+                                                uploadedColumns.map((col, index) => (
+                                                    <th key={index} scope="col" className="px-6 py-3 font-semibold">
+                                                        {col}
+                                                    </th>
+                                                ))
+                                            }
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr className="odd:bg-gray-50 even:bg-white border-b border-gray-200 hover:bg-gray-100 transition-colors">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                                Oak Tree
-                                            </th>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                Quercus robur
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                85%
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                -79.6099
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                43.7260
-                                            </td>
-                                        </tr>
-                                        <tr className="odd:bg-gray-50 even:bg-white border-b border-gray-200 hover:bg-gray-100 transition-colors">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                                Maple Tree
-                                            </th>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                Acer saccharum
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                92%
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                -79.6105
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                43.7270
-                                            </td>
-                                        </tr>
-                                        <tr className="odd:bg-gray-50 even:bg-white border-b border-gray-200 hover:bg-gray-100 transition-colors">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                                Pine Tree
-                                            </th>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                Pinus sylvestris
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                78%
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                -79.6080
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                43.7280
-                                            </td>
-                                        </tr>
-                                        <tr className="odd:bg-gray-50 even:bg-white hover:bg-gray-100 transition-colors">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                                Birch Tree
-                                            </th>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                Betula pendula
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                88%
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                -79.6075
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                43.7290
-                                            </td>
-                                        </tr>
+                                        {
+                                            uploadedRecords.map((record, index) => (
+                                                <tr key={index} className="odd:bg-gray-50 even:bg-white border-b border-gray-200 hover:bg-gray-100 transition-colors">
+                                                    {
+                                                        record.map((value, idx) => (
+                                                            <td key={idx} className="px-6 py-4 text-gray-600">
+                                                                {value}
+                                                            </td>
+                                                        ))
+                                                    }
+                                                </tr>
+                                            ))
+                                        }
                                     </tbody>
                                 </table>
                             </div>
