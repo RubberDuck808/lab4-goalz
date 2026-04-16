@@ -12,7 +12,7 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
 
     try {
         // Verzend het formulier naar het endpoint
-        const res = await fetch("/api/dashboard" + endpoint, {
+        const res = await fetch("https://localhost:7286/api/dashboard" + endpoint, {
             method: type,
             headers: headers,
             body: value,
