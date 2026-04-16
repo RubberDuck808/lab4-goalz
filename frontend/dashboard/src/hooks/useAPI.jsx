@@ -12,11 +12,16 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
 
     try {
         // Verzend het formulier naar het endpoint
-        const res = await fetch("https://localhost:7286/api/dashboard" + endpoint, {
+        const requestOptions = {
             method: type,
             headers: headers,
-            body: value,
-        });
+        };
+
+        if (value !== undefined && value !== null && type !== "GET" && type !== "HEAD") {
+            requestOptions.body = value;
+        }
+
+        const res = await fetch("https://localhost:7286/api/dashboard" + endpoint, requestOptions);
 
        return res;
     } catch (error) {

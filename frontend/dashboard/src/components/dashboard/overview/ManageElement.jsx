@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import NatureElement from './ElementDetails/NatureElement';
 import Sensor from './ElementDetails/Sensor';
 
-export default function ElementDetail() {
+export default function ManageElement() {
     const [selectedItem, setSelectedItem] = useState("Element");
     const [formData, setFormData] = useState({
         elementName: '',
