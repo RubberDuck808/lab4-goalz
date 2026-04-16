@@ -20,6 +20,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         o => o.UseNetTopologySuite()));
 
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 // JWT — must clear default claim mapping so Sub stays as Sub
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var jwtSecret = builder.Configuration["Jwt:Secret"]
@@ -46,6 +58,9 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 // Dashboard overview
 builder.Services.AddScoped<IOverviewRepository, OverviewRepository>();
 builder.Services.AddScoped<IOverviewService, OverviewService>();
+
+// Dataset import
+builder.Services.AddScoped<IDatasetService, DatasetService>();
 
 // Game auth
 builder.Services.AddSingleton<IJwtService, JwtService>();
@@ -98,6 +113,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
