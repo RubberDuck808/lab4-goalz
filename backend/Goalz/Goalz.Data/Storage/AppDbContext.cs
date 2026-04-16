@@ -9,9 +9,13 @@ namespace Goalz.Data.Storage
 
         public DbSet<User> Users { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
+        public DbSet<Sensor> Sensors { get; set; }
+        public DbSet<Element> Elements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasPostgresExtension("postgis");
+
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
                 .HasConversion<string>();
@@ -34,6 +38,8 @@ namespace Goalz.Data.Storage
                 entity.HasIndex(f => new { f.RequesterId, f.AddresseeId })
                     .IsUnique();
             });
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

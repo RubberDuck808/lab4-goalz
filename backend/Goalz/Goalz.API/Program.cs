@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Goalz.Api.Services;
 using Goalz.Core.Interfaces;
 using Goalz.Core.Services;
@@ -9,13 +11,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Threading.RateLimiting;
+using NetTopologySuite.IO.Converters;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+        o => o.UseNetTopologySuite()));
 
 // JWT — must clear default claim mapping so Sub stays as Sub
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -39,6 +42,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Dashboard auth
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+
+// Dashboard overview
+builder.Services.AddScoped<IOverviewRepository, OverviewRepository>();
+builder.Services.AddScoped<IOverviewService, OverviewService>();
 
 // Game auth
 builder.Services.AddSingleton<IJwtService, JwtService>();
@@ -65,7 +72,11 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.Converters.Add(new GeoJsonConverterFactory());
+        options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
