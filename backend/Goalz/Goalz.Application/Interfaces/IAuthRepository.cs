@@ -4,6 +4,6 @@ namespace Goalz.Core.Interfaces
 {
     public interface IAuthRepository
     {
-        Task<User> GetUserByEmail(string email);
+        Task<User?> GetUserByEmail(string email);
     }
 }

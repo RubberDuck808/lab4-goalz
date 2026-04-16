@@ -1,6 +1,7 @@
 ﻿using Goalz.Domain.Entities;
 using Goalz.Core.Interfaces;
 using Goalz.Data.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Goalz.Data.Repositories
 {
@@ -13,9 +14,9 @@ namespace Goalz.Data.Repositories
             _context = context;
         }
 
-        public async Task<User> GetUserByEmail(string email)
+        public async Task<User?> GetUserByEmail(string email)
         {
-            return _context.Users.FirstOrDefault(u => u.Email == email);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
     }
 }

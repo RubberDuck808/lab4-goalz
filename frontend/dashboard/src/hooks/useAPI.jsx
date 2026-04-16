@@ -11,12 +11,6 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
     }
 
     try {
-        // Verzend het formulier naar het endpoint
-        const requestOptions = {
-            method: type,
-            headers: headers,
-        };
-
         if (value !== undefined && value !== null && type !== "GET" && type !== "HEAD") {
             requestOptions.body = value;
         }
