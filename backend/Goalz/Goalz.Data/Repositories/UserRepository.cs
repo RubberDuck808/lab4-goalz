@@ -14,9 +14,27 @@ namespace Goalz.Data.Repositories
             _context = context;
         }
 
+        public async Task<User?> GetByIdAsync(long id)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        }
+
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<User?> GetByUsernameAsync(string username)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+        }
+
+        public async Task<IEnumerable<User>> SearchByUsernameAsync(string query, string excludeUsername, int limit = 10)
+        {
+            return await _context.Users
+                .Where(u => u.Username != excludeUsername && u.Username.ToLower().Contains(query.ToLower()))
+                .Take(limit)
+                .ToListAsync();
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
