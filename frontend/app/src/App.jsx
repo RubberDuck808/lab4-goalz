@@ -6,7 +6,6 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 
 import './App.css'
-import Normalbutton from './components/normalbutton'
 function App() {
   const [page, setPage] = useState('login');
 
@@ -43,12 +42,6 @@ function App() {
       onNavigateToSignUp={() => setPage('signup')}
     />
   );
-    <>
-      <Normalbutton />
-      <h1>
-        HI IM LOGGY.
-      </h1>
-    </>
 }
 
 export default App;
