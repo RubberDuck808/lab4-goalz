@@ -13,6 +13,7 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
     try {
         // Verzend het formulier naar het endpoint
         const base = import.meta.env.VITE_API_BASE_URL;
+        console.log(base);
 
         const requestOptions = {
             method: type,

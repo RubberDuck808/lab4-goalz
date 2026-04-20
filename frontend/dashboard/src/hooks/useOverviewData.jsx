@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getOverviewData } from "../services/overviewService";
 import { mockOverviewData } from "../mock/overviewMock";
 
 // Set to false when the backend is ready to serve real data.
@@ -16,11 +15,6 @@ export function useOverviewData() {
             setLoading(false);
             return;
         }
-
-        getOverviewData()
-            .then(setData)
-            .catch(setError)
-            .finally(() => setLoading(false));
     }, []);
 
     return { data, loading, error };

@@ -1,9 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Map from "./Map";
 import Chart from "./Chart";
 import DashboardNavBar from "../DashboardNavBar";
 import { useOverviewData } from "../../../hooks/useOverviewData";
+import { overviewService } from "../../../services/overviewService";
+import ManageElement from "./ManageElement";
+import ElementDetails from "./ElementDetails";
 
 // Maps the numeric elementType ID stored in the database to a human-readable label.
 // These IDs come from the CSV dataset import — update this map if your data uses
@@ -120,7 +123,7 @@ export default function DashboardOverview({ setSelectedItem }) {
             <DashboardNavBar title="Alboretum Overview" />
             <div className="p-[20px] flex flex-col gap-5 h-full">
                 <div className="w-full h-[375px] flex items-center justify-center gap-3">
-                    <Map showExtent={isModalOpen} setShowExtent={setIsModalOpen} />
+                    <Map showExtent={isModalOpen || selectedElement} setShowExtent={setIsModalOpen} elements={natureElements} closeModal={handleOnExtentClick} setSelectedElement={setSelectedElement} />
                     {
                         isModalOpen && (
                             <ManageElement />
@@ -147,7 +150,6 @@ export default function DashboardOverview({ setSelectedItem }) {
 
                 {!loading && !error && (
                     <div className="flex justify-between gap-3 grow-1">
-                        {/* Chart 1: What % of elements are green plants vs hard surfaces */}
                         <Chart
                             color="border-secondary-green"
                             type="pie"
@@ -156,7 +158,6 @@ export default function DashboardOverview({ setSelectedItem }) {
                             data={greenChartData}
                         />
 
-                        {/* Chart 2: How many of each landscape element type exist */}
                         <Chart
                             color="border-blue-500"
                             type="bar"
@@ -166,7 +167,6 @@ export default function DashboardOverview({ setSelectedItem }) {
                             bars={[{ dataKey: "value", color: "#3b82f6", name: "Count" }]}
                         />
 
-                        {/* Chart 3: Live sensor readings — temperature and humidity per sensor */}
                         <Chart
                             color="border-yellow-500"
                             type="bar"
@@ -176,7 +176,6 @@ export default function DashboardOverview({ setSelectedItem }) {
                             bars={sensorBars}
                         />
 
-                        {/* Chart 4: What % of elements are tree canopy */}
                         <Chart
                             color="border-red-500"
                             type="pie"
