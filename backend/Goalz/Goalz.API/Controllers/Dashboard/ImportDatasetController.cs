@@ -26,7 +26,7 @@ namespace Goalz.API.Controllers.Dashboard
 
             try
             {
-                var results = new List<DatasetPreview>();
+                var results = new List<List<string>>();
 
                 foreach (var file in files)
                 {
@@ -44,6 +44,13 @@ namespace Goalz.API.Controllers.Dashboard
 
                 throw;
             }
+        }
+
+        [HttpPost("store")]
+        public async Task<IActionResult> StoreDataset()
+        {
+
+            return Ok();
         }
     }
 }

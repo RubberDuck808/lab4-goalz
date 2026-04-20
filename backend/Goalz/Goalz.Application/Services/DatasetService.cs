@@ -8,7 +8,7 @@ namespace Goalz.Core.Services
 {
     public class DatasetService : IDatasetService
     {
-        public async Task<DatasetPreview> ReadCSV(IFormFile file)
+        public async Task<List<string>> ReadCSV(IFormFile file)
         {
             if (file == null)
             {
@@ -18,6 +18,8 @@ namespace Goalz.Core.Services
             DataTable dataTable = new DataTable();
             DatasetPreview datasetPreview = new DatasetPreview();
 
+            List<string> col = new List<string>();
+
             using (var reader = new StreamReader(file.OpenReadStream()))
             {
                 bool isFirstRow = true;
@@ -26,28 +28,28 @@ namespace Goalz.Core.Services
                     var line = await reader.ReadLineAsync();
                     if (line == null) continue;
 
-                    var values = line.Split(';').ToList();
+                    col.Add(line);
 
-                    if (isFirstRow)
-                    {
-                        // Add columns to DataTable
-                        foreach (var columnName in values)
-                        {
-                            dataTable.Columns.Add(columnName);
-                            datasetPreview.ColumnNames.Add(columnName);
-                        }
-                        isFirstRow = false;
-                    }
-                    else
-                    {
-                        // Add rows to DataTable
-                        dataTable.Rows.Add(values);
-                        datasetPreview.values.Add(values);
-                    }
+                    //if (isFirstRow)
+                    //{
+                    //    // Add columns to DataTable
+                    //    foreach (var columnName in values)
+                    //    {
+                    //        dataTable.Columns.Add(columnName);
+                    //        datasetPreview.ColumnNames.Add(columnName);
+                    //    }
+                    //    isFirstRow = false;
+                    //}
+                    //else
+                    //{
+                    //    // Add rows to DataTable
+                    //    dataTable.Rows.Add(values);
+                    //    datasetPreview.values.Add(values);
+                    //}
                 }
             }
 
-            return datasetPreview;
+            return col;
         }
     }
 }

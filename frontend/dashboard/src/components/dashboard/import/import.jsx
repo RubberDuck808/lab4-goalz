@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import DashboardNavBar from '../DashboardNavBar'
 import { importDatasetService } from '../../../services/importDatasetService';
+import PreviewTable from './PreviewTable';
 
 export default function ImportData() {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -20,15 +21,32 @@ export default function ImportData() {
   const handleFileChange = async (event) => {
     const files = Array.from(event.target.files);
     const result = await importDatasetService.uploadCSV(files); 
-    setUploadedColumns(result[0].columnNames);
-    setUploadedRecords(result[0].values);
+    console.log("Result from uploadCSV:", result);
+
+    setUploadedRecords(result[0]);
 
     setSelectedFiles(files);
   };
+
+  const handleStoreData = async () => {
+    try {
+      const response = await importDatasetService.storeCSV(uploadedRecords);
+        console.log("Store response:", response);
+    } catch (error) {
+        console.error("Error storing records:", error);
+    }
+    };
+
   return (
     <div className='flex flex-col'>
         <DashboardNavBar title="Import Dataset" />
         <div className='flex flex-col w-full grow-1 p-4 gap-5'>
+            <div className='flex'>
+                <button className='bg-secondary-green hover:bg-green-600 rounded-lg px-4 py-2 text-white cursor-pointer flex items-center gap-2 transition-colors'>
+                    <i className="fa-solid fa-download"></i>
+                    Download template file
+                </button>
+            </div>
             <div 
                 className='bg-white rounded w-full p-5 border border-gray-300 rounded-lg shadow flex gap-3 cursor-pointer'
                 onClick={handleDivClick}
@@ -56,43 +74,16 @@ export default function ImportData() {
               style={{ display: 'none' }}
             />
             {
-                uploadedColumns.length > 0 && uploadedRecords.length > 0 && (
+                uploadedRecords.length > 0 && (
                     <>
                         <div className='bg-white rounded w-full p-5 border border-gray-300 rounded-lg shadow mt-4'>
                             <h2 className='text-xl font-bold text-gray-800 mb-4'>Imported Data Preview</h2>
                             <div className="relative overflow-x-auto shadow-md rounded-lg mt-2">
-                                <table className="w-full text-sm text-left text-gray-700">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                                        <tr>
-                                            {
-                                                uploadedColumns.map((col, index) => (
-                                                    <th key={index} scope="col" className="px-6 py-3 font-semibold">
-                                                        {col}
-                                                    </th>
-                                                ))
-                                            }
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {
-                                            uploadedRecords.map((record, index) => (
-                                                <tr key={index} className="odd:bg-gray-50 even:bg-white border-b border-gray-200 hover:bg-gray-100 transition-colors">
-                                                    {
-                                                        record.map((value, idx) => (
-                                                            <td key={idx} className="px-6 py-4 text-gray-600">
-                                                                {value}
-                                                            </td>
-                                                        ))
-                                                    }
-                                                </tr>
-                                            ))
-                                        }
-                                    </tbody>
-                                </table>
+                                <PreviewTable uploadedRecords={uploadedRecords} />
                             </div>
                         </div>
                         <div className='flex flex-row-reverse'>
-                            <button className='bg-secondary-green rounded-lg w-[150px] py-2 text-white cursor-pointer'>
+                            <button className='bg-secondary-green rounded-lg w-[150px] py-2 text-white cursor-pointer' onClick={handleStoreData}>
                                 Import dataset
                             </button>
                         </div>
