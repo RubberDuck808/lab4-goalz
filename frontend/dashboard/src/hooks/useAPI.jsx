@@ -12,6 +12,9 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
 
     try {
         // Verzend het formulier naar het endpoint
+        const base = import.meta.env.VITE_API_BASE_URL;
+        console.log(base);
+
         const requestOptions = {
             method: type,
             headers: headers,
@@ -21,7 +24,7 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
             requestOptions.body = value;
         }
 
-        const res = await fetch("https://localhost:7286/api/dashboard" + endpoint, requestOptions);
+        const res = await fetch(`${base}/api/dashboard${endpoint}`, requestOptions);
 
        return res;
     } catch (error) {
