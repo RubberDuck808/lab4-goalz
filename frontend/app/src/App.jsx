@@ -5,6 +5,7 @@ import SignUp from './pages/SignUp';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 
+import './App.css'
 function App() {
   const [page, setPage] = useState('login');
 

@@ -3,8 +3,15 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import MapLegend from './MapLegend'
 
-export default function Map({ showExtent, setShowExtent }) {
+export default function Map({ showExtent, setShowExtent, isEditModalOpen, elements, setSelectedElement }) {
   const mapRef = useRef(null);
+  const [mapInstance, setMapInstance] = useState(null);
+  const [markers, setMarkers] = useState([]);
+
+  const handleMarkerClick = (element) => {
+    console.log("Clicked element:", element);
+    setSelectedElement(element);
+  };
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -31,6 +38,8 @@ export default function Map({ showExtent, setShowExtent }) {
     // Move zoom control to bottom left
     map.zoomControl.setPosition('bottomleft')
 
+    setMapInstance(map);
+
     return () => {
       // clearInterval(intervalId)
       // map.off('locationfound', updateLocation)
@@ -39,12 +48,42 @@ export default function Map({ showExtent, setShowExtent }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (!mapInstance || !elements) return;
+
+    // Clear previous markers
+    markers.forEach(marker => mapInstance.removeLayer(marker));
+
+    const newMarkers = elements.map(element => {
+      const { geom, elementType, isGreen } = element;
+      const [lng, lat] = geom.coordinates;
+
+      let fillColor = 'red';
+      if (elementType === 1 || isGreen) fillColor = 'green';
+      else if (elementType === 2) fillColor = 'blue';
+
+      const marker = L.circleMarker([lng, lat], {
+        color: 'white',
+        weight: 2,
+        fillColor,
+        fillOpacity: 0.8,
+        radius: 8
+      }).addTo(mapInstance);
+
+      marker.on('click', () => handleMarkerClick(element));
+
+      return marker;
+    });
+
+    setMarkers(newMarkers);
+  }, [mapInstance, elements]);
+
   return (
   <div className="h-full w-full overflow-hidden flex flex-col">
     <div className="h-full w-full rounded-t-lg overflow-hidden relative">
       <button 
         className='absolute top-4 left-4 w-9 h-9 bg-[#33A661] text-white border-none rounded-lg shadow-md hover:bg-[#2a8c52] focus:outline-none focus:ring-2 focus:ring-[#33A661] z-10 transition-all duration-200 font-bold flex items-center justify-center text-md cursor-pointer'
-        onClick={() => setShowExtent(true)}
+        onClick={() => isEditModalOpen(true)}
         >
         <i className="fa-solid fa-plus"></i>
       </button>
@@ -52,7 +91,7 @@ export default function Map({ showExtent, setShowExtent }) {
         showExtent && (
           <button 
             className='absolute top-4 right-4 w-10 h-10 bg-[#33A661] text-white border-none rounded-lg shadow-md hover:bg-[#2a8c52] focus:outline-none focus:ring-2 focus:ring-[#33A661] z-10 transition-all duration-200 font-bold flex items-center justify-center text-md cursor-pointer'
-            onClick={() => setShowExtent(false)}
+            onClick={() => setShowExtent()}
           >
             <i className="fa-solid fa-maximize"></i>
           </button>
@@ -67,7 +106,7 @@ export default function Map({ showExtent, setShowExtent }) {
     <div className='bg-light-green p-4 w-full rounded-b-lg flex items-center gap-5'>
       <MapLegend text="Tree" color="bg-primary-green" />
       <MapLegend text="Water" color="bg-blue-500" />
-      <MapLegend text="Sensor" color="bg-orange-500" />
+      <MapLegend text="Sensor" color="bg-red-500" />
     </div>
   </div>)
   

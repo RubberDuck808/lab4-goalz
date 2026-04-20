@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Map from "./Map";
 import Chart from "./Chart";
-import ElementDetail from "./ElementDetail";
 import DashboardNavBar from "../DashboardNavBar";
 import { useOverviewData } from "../../../hooks/useOverviewData";
 
@@ -26,6 +25,37 @@ const TREE_TYPE_ID = 1;
 export default function DashboardOverview({ setSelectedItem }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const navigate = useNavigate();
+    const [natureElements, setNatureElements] = useState([]);
+    const [sensorsData, setSensorsData] = useState([]);
+    const [selectedElement, setSelectedElement] = useState(null);
+
+    useEffect(() => {
+      if(selectedElement){
+        setSelectedElement(null);
+      }
+    }, [isModalOpen]);
+
+    useEffect(() => {
+      if(isModalOpen){
+        setIsModalOpen(false);
+      }
+    }, [selectedElement])
+
+    useEffect(() => {
+      const fetchData = async () => {
+        const data = await overviewService.getAllElements();
+        if (data) {
+          setNatureElements(data.element);
+          setSensorsData(data.sensors);
+        } 
+      };
+      fetchData();
+    }, []);
+
+    const handleOnExtentClick = () => {
+        setIsModalOpen(false);
+        setSelectedElement(null);
+    }
 
     // Fetch sensors + elements from GET /api/dashboard/overview
     const { data, loading, error } = useOverviewData();
@@ -91,7 +121,16 @@ export default function DashboardOverview({ setSelectedItem }) {
             <div className="p-[20px] flex flex-col gap-5 h-full">
                 <div className="w-full h-[375px] flex items-center justify-center gap-3">
                     <Map showExtent={isModalOpen} setShowExtent={setIsModalOpen} />
-                    {isModalOpen && <ElementDetail />}
+                    {
+                        isModalOpen && (
+                            <ManageElement />
+                        )
+                        }
+                        {
+                        selectedElement && (
+                            <ElementDetails element={selectedElement} />
+                        )
+                        }
                 </div>
 
                 {loading && (
