@@ -12,7 +12,8 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
 
     try {
         // Verzend het formulier naar het endpoint
-        const res = await fetch("https://localhost:7286/api/dashboard" + endpoint, {
+        const base = import.meta.env.VITE_API_BASE_URL;
+        const res = await fetch(`${base}/api/dashboard${endpoint}`, {
             method: type,
             headers: headers,
             body: value,
