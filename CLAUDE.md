@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Goalz is an interactive sustainability game. Players explore an arboretum, collect IoT sensor data, answer quiz questions, and earn points. The platform has a mobile app (primary), a web app, and a staff admin dashboard. Backend is ASP.NET Core 9 + PostgreSQL + PostGIS.
+Goalz is an interactive sustainability game. Players explore an arboretum, collect IoT sensor data, answer quiz questions, and earn points. The platform has a mobile app (primary), a web app, and a staff admin dashboard. Backend is ASP.NET Core 9 + PostgreSQL + PostGIS. Work is tracked on GitLab issues — always check the board with `glab issue list` before starting a task.
 
 ## Agent Docs
 
@@ -15,6 +15,8 @@ Before starting work, read the files below that are relevant to your task:
 | [agent_docs/api_and_auth.md](agent_docs/api_and_auth.md) | Working on API endpoints, authentication, or JWT |
 | [agent_docs/domain_model.md](agent_docs/domain_model.md) | Working with entities, DbSets, or EF configuration |
 | [agent_docs/docker_and_env.md](agent_docs/docker_and_env.md) | Running the full stack locally or configuring environment variables |
+| [agent_docs/api_endpoints.md](agent_docs/api_endpoints.md) | Looking up any existing endpoint — routes, request/response shapes, auth requirements |
+| [agent_docs/gitlab_workflow.md](agent_docs/gitlab_workflow.md) | Starting any new task — check the board first; reference issues in commits |
 
 ## Stopping the API
 
