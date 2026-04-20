@@ -1,5 +1,6 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
+using Goalz.Domain.Entities;
 
 namespace Goalz.Core.Services
 {
@@ -12,27 +13,45 @@ namespace Goalz.Core.Services
             _authRepository = authRepository;
         }
 
-        public async Task<LoginRequest?> CheckAuth(string email, string password)
+        public async Task<DashboardLoginResponse?> CheckAuth(string email, string password)
         {
-            // Look for the user in the real database
             var user = await _authRepository.GetUserByEmail(email);
 
             if (user != null)
             {
-                LoginRequest result = new LoginRequest();
-                result.Email = user.Email;
-                result.Name = user.Name;
-
-                // Verify provided password against the hash stored in DB
                 bool isverify = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
 
-                if (isverify) 
-                { 
-                    return result; 
+                if (isverify)
+                {
+                    return new DashboardLoginResponse { Email = user.Email, Name = user.Name, Role = user.Role.ToString() };
                 }
             }
 
             return null;
+        }
+
+        public async Task<(DashboardLoginResponse? Result, string? Error)> CreateStaffUserAsync(CreateStaffUserRequest request)
+        {
+            var admin = await _authRepository.GetUserByEmail(request.AdminEmail);
+            if (admin == null || admin.Role != Role.Admin)
+                return (null, "unauthorized");
+
+            var existing = await _authRepository.GetUserByEmail(request.Email);
+            if (existing != null)
+                return (null, "email_taken");
+
+            var user = new User
+            {
+                Username = request.Email,
+                Name = request.Name,
+                Email = request.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Role = Role.Staff
+            };
+
+            await _authRepository.CreateUserAsync(user);
+
+            return (new DashboardLoginResponse { Email = user.Email, Name = user.Name, Role = user.Role.ToString() }, null);
         }
     }
 }

@@ -2,28 +2,25 @@ import { APICall } from "../hooks/useAPI";
 
 export const authService = {
     authenticate: async (email, password) => {
-        try {
-            const response = await APICall({
-                endpoint: `/login`,
-                authToken: localStorage.getItem("jwtToken") ?? "",
-                value: JSON.stringify({ email, password }),
-                type: "POST"
-            });
+        const response = await APICall("POST", "/auth/login", JSON.stringify({ email, password }), null);
 
-            if (!response?.ok) {
-
-                if (response?.status === 401)
-                    throw new Error("You are not authorized to run this process.");
-                if (response?.status === 403)
-                    throw new Error("You do not have permission to access this resource.");
-
-                throw new Error('Failed to fetch history data');
-            }
-          
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error(error);
+        if (!response?.ok) {
+            if (response?.status === 404)
+                throw new Error("Invalid email or password.");
+            throw new Error("An error occurred during login. Please try again.");
         }
+
+        const data = await response.json();
+        localStorage.setItem("user", JSON.stringify({ email: data.email, name: data.name, role: data.role }));
+        return data;
+    },
+
+    getUser: () => {
+        const raw = localStorage.getItem("user");
+        return raw ? JSON.parse(raw) : null;
+    },
+
+    logout: () => {
+        localStorage.removeItem("user");
     }
 }
