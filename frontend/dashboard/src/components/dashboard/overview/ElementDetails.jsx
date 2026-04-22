@@ -120,12 +120,12 @@ export default function ElementDetails({ element, onElementSaved }) {
                             <p className='font text-sm text-gray-500'>Element specie</p>
                             {openEditModal ? (
                                 <input
-                                    value={editedElement?.elementType ?? ''}
+                                    value={editedElement?.elementType.name ?? ''}
                                     onChange={e => handleFieldChange('elementType', e.target.value)}
                                     className='w-full rounded border border-gray-300 p-1 text-sm'
                                 />
                             ) : (
-                                <p>{element.elementType || 'N/A'}</p>
+                                <p>{element.elementType?.name || 'N/A'}</p>
                             )}
                         </div>
 

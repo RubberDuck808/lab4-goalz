@@ -12,6 +12,7 @@ namespace Goalz.Data.Storage
         public DbSet<Sensor> Sensors { get; set; }
         public DbSet<Element> Elements { get; set; }
         public DbSet<Zone> Zones { get; set; }
+        public DbSet<ElementType> ElementTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +39,15 @@ namespace Goalz.Data.Storage
 
                 entity.HasIndex(f => new { f.RequesterId, f.AddresseeId })
                     .IsUnique();
+            });
+
+            modelBuilder.Entity<ElementType>().ToTable("ElementType");
+
+            modelBuilder.Entity<Element>(entity =>
+            {
+                entity.HasOne(e => e.ElementType)
+                    .WithMany(et => et.Elements)
+                    .HasForeignKey(e => e.ElementTypeId);
             });
 
             base.OnModelCreating(modelBuilder);
