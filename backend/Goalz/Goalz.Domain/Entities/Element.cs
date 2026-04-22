@@ -6,8 +6,9 @@ public class Element
 {
     public long Id { get; set; }
     public long ElementName { get; set; }
-    public long ElementType { get; set; }
-    public Point Geom { get; set; } 
-    public string ImageUrl { get; set; } = null!;
+    public int ElementTypeId { get; set; }
+    public ElementType ElementType { get; set; } = null!;
+    public Point Geom { get; set; } = null!;
+    public string? ImageUrl { get; set; }
     public bool IsGreen { get; set; }
 }

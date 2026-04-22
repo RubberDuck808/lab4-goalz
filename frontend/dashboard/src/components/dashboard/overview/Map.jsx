@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import * as L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+const L = window.L  // CDN copy shared with Leaflet-Draw
 import MapLegend from './MapLegend'
 
-export default function Map({ showExtent, setShowExtent, isEditModalOpen, elements, setSelectedElement }) {
+export default function Map({ showExtent, setShowExtent, closeModal, elements, setSelectedElement }) {
   const mapRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
   const [markers, setMarkers] = useState([]);
@@ -83,7 +82,7 @@ export default function Map({ showExtent, setShowExtent, isEditModalOpen, elemen
     <div className="h-full w-full rounded-t-lg overflow-hidden relative">
       <button 
         className='absolute top-4 left-4 w-9 h-9 bg-[#33A661] text-white border-none rounded-lg shadow-md hover:bg-[#2a8c52] focus:outline-none focus:ring-2 focus:ring-[#33A661] z-10 transition-all duration-200 font-bold flex items-center justify-center text-md cursor-pointer'
-        onClick={() => isEditModalOpen(true)}
+        onClick={() => setShowExtent(true)}
         >
         <i className="fa-solid fa-plus"></i>
       </button>
@@ -91,7 +90,7 @@ export default function Map({ showExtent, setShowExtent, isEditModalOpen, elemen
         showExtent && (
           <button 
             className='absolute top-4 right-4 w-10 h-10 bg-[#33A661] text-white border-none rounded-lg shadow-md hover:bg-[#2a8c52] focus:outline-none focus:ring-2 focus:ring-[#33A661] z-10 transition-all duration-200 font-bold flex items-center justify-center text-md cursor-pointer'
-            onClick={() => setShowExtent()}
+            onClick={() =>  closeModal()}
           >
             <i className="fa-solid fa-maximize"></i>
           </button>

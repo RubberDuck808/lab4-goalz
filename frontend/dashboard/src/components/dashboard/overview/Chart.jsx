@@ -1,33 +1,29 @@
-import React from 'react'
-import LineChart from './charts/LineChart';
-import BarChart from './charts/BarChart';
-import PieChart from './charts/PieChart';
-import AreaChart from './charts/AreaChart';
+import React from "react";
+import LineChart from "./charts/LineChart";
+import BarChart from "./charts/BarChart";
+import PieChart from "./charts/PieChart";
 
-export default function Chart({color, type, title, value}) {
-
+export default function Chart({ color, type, title, value, data, bars, lines }) {
     const renderChart = () => {
-        switch(type) {
+        switch (type) {
             case "line":
-                return <LineChart />;
+                return <LineChart data={data} lines={lines} />;
             case "bar":
-                return <BarChart />;
+                return <BarChart data={data} bars={bars} />;
             case "pie":
-                return <PieChart />;
-            case "area":
-                return <AreaChart />;
+                return <PieChart data={data} />;
             default:
-                return <LineChart />;
+                return <BarChart data={data} bars={bars} />;
         }
-    }
+    };
 
-  return (
-    <div className={`bg-white p-3 grow-1 border-t-5 ${color} h-full shadow rounded-lg flex flex-col`}>
-        <h6 className='text-gray-500 text-xs'>{title}</h6>
-        <h1 className='text-black font-bold text-lg'>{value}</h1>
-        <div className="grow-1">
-            {renderChart()}
+    return (
+        <div className={`bg-white p-3 grow-1 border-t-5 ${color} h-full shadow rounded-lg flex flex-col`}>
+            <h6 className="text-gray-500 text-xs">{title}</h6>
+            <h1 className="text-black font-bold text-lg">{value}</h1>
+            <div className="grow-1 min-h-0 flex-1">
+                {renderChart()}
+            </div>
         </div>
-    </div>
-  )
+    );
 }

@@ -25,7 +25,7 @@ namespace Goalz.Core.Services
 
             return new GameLoginResponse
             {
-                Token = _jwtService.Generate(user.Username),
+                Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
                 Name = user.Name,
                 Email = user.Email,
@@ -55,7 +55,7 @@ namespace Goalz.Core.Services
 
             return (new GameSignUpResponse
             {
-                Token = _jwtService.Generate(user.Username),
+                Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
                 Name = user.Name,
                 Email = user.Email

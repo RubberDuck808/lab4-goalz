@@ -16,7 +16,7 @@ export default function Login() {
 
       try {
         await authService.authenticate(email, password);
-        //navigate('/overview');
+        navigate('/overview');
       } catch (err) {
         setError(err.message || 'An error occurred during login. Please try again.');
       }

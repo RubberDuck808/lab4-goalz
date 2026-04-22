@@ -21,6 +21,6 @@ public class OverviewRepository : IOverviewRepository
 
     public async Task<List<Element>> GetAllElementsAsync()
     {
-        return await _context.Elements.ToListAsync();
+        return await _context.Elements.Include(e => e.ElementType).ToListAsync();
     }
 }

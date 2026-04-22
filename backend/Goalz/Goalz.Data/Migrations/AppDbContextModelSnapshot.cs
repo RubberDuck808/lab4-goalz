@@ -4,6 +4,7 @@ using Goalz.Data.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -20,6 +21,7 @@ namespace Goalz.Data.Migrations
                 .HasAnnotation("ProductVersion", "9.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Goalz.Domain.Entities.Answer", b =>
@@ -45,6 +47,36 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("QuestionId");
 
                     b.ToTable("Answer");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.Element", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ElementName")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ElementType")
+                        .HasColumnType("bigint");
+
+                    b.Property<Point>("Geom")
+                        .IsRequired()
+                        .HasColumnType("geometry");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsGreen")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Elements");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Friendship", b =>
@@ -212,6 +244,29 @@ namespace Goalz.Data.Migrations
                     b.ToTable("Quiz");
                 });
 
+            modelBuilder.Entity("Goalz.Domain.Entities.Sensor", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<Point>("Geo")
+                        .IsRequired()
+                        .HasColumnType("geometry");
+
+                    b.Property<long>("Humidity")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Temp")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Sensors");
+                });
+
             modelBuilder.Entity("Goalz.Domain.Entities.User", b =>
                 {
                     b.Property<long>("Id")
@@ -246,6 +301,39 @@ namespace Goalz.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<Geometry>("Boundary")
+                        .IsRequired()
+                        .HasColumnType("geometry");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ZoneType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Boundary")
+                        .HasDatabaseName("IX_Zones_Boundary")
+                        .HasAnnotation("Npgsql:IndexMethod", "gist");
+
+                    b.ToTable("Zones");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Answer", b =>
