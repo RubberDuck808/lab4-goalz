@@ -3,6 +3,7 @@ import Navbar from '../components/navbar/Navbar';
 import DashboardOverview from '../components/dashboard/overview/DashboardOverview';
 import Reports from '../components/dashboard/reports/reports';
 import ImportData from '../components/dashboard/import/import';
+import ArboretumMap from '../components/dashboard/map/ArboretumMap';
 
 export default function Overview() {
   const [selectedItem, setSelectedItem] = useState("Overview");
@@ -11,6 +12,8 @@ export default function Overview() {
     switch (selectedItem) {
       case "Overview":
         return <DashboardOverview setSelectedItem={setSelectedItem} />;
+      case "Arboretum Map":
+        return <ArboretumMap />;
       case "Reports":
         return <Reports />;
       case "Import dataset":

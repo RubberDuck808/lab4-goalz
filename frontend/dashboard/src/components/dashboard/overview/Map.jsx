@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import * as L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+const L = window.L  // CDN copy shared with Leaflet-Draw
 import MapLegend from './MapLegend'
 
 export default function Map({ showExtent, setShowExtent, isEditModalOpen, elements, setSelectedElement }) {

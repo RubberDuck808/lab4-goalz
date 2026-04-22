@@ -21,11 +21,15 @@ namespace Goalz.Api.Services
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         }
 
-        public string Generate(string username)
+        public string Generate(string username, string role)
         {
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
-                claims: [new Claim(JwtRegisteredClaimNames.Sub, username)],
+                claims:
+                [
+                    new Claim(JwtRegisteredClaimNames.Sub, username),
+                    new Claim("role", role),
+                ],
                 expires: DateTime.UtcNow.AddDays(30),
                 signingCredentials: creds
             );
