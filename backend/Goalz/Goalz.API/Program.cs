@@ -25,7 +25,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:8081")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -47,6 +47,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
             NameClaimType = JwtRegisteredClaimNames.Sub,
+            RoleClaimType = "role",
         };
     });
 
@@ -71,6 +72,10 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Friendships
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+
+// Zones
+builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
+builder.Services.AddScoped<IZoneService, ZoneService>();
 
 // Rate limiting — 10 requests per minute per IP on auth endpoints
 builder.Services.AddRateLimiter(options =>
