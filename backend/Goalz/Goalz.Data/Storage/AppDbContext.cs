@@ -12,6 +12,7 @@ namespace Goalz.Data.Storage
         public DbSet<Sensor> Sensors { get; set; }
         public DbSet<Element> Elements { get; set; }
         public DbSet<Zone> Zones { get; set; }
+        public DbSet<Section> Sections { get; set; }
         public DbSet<ElementType> ElementTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -39,6 +40,17 @@ namespace Goalz.Data.Storage
 
                 entity.HasIndex(f => new { f.RequesterId, f.AddresseeId })
                     .IsUnique();
+            });
+
+            modelBuilder.Entity<Section>(entity =>
+            {
+                entity.HasOne(s => s.Zone)
+                    .WithOne()
+                    .HasForeignKey<Section>(s => s.ZoneId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(s => s.ZoneId).IsUnique();
+                entity.HasIndex(s => s.OrderIndex).IsUnique();
             });
 
             modelBuilder.Entity<ElementType>().ToTable("ElementType");
