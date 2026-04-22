@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Goalz.Api.Services;
+using Goalz.Application.Interfaces;
 using Goalz.Core.Interfaces;
 using Goalz.Core.Services;
 using Goalz.Data.Repositories;
@@ -35,6 +36,7 @@ builder.Services.AddCors(options =>
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+//Authentication Token
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -69,6 +71,10 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Friendships
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+
+// Party
+builder.Services.AddScoped<IPartyService, PartyService>();
+builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
 // Rate limiting — 10 requests per minute per IP on auth endpoints
 builder.Services.AddRateLimiter(options =>
@@ -117,9 +123,7 @@ else
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
-app.UseAuthentication();
+app.UseAuthentication(); //implements AddAuthentication()
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

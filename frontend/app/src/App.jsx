@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
+import CreatePartyPage from './pages/CreatePartyPage';
 
 import './App.css'
 function App() {
@@ -35,6 +36,15 @@ function App() {
       />
     );
   }
+
+  /*if (page === 'createParty'){
+    return(
+      <CreatePartyPage
+        onNavigateToOwnerLobby={() => setPage('ownerLobby')}
+        onNavigateToPartyMode={()=>setPage('partymode')}
+      />
+    );
+  }*/
 
   return (
     <Login

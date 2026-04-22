@@ -11,6 +11,10 @@ namespace Goalz.Data.Storage
         public DbSet<Friendship> Friendships { get; set; }
         public DbSet<Sensor> Sensors { get; set; }
         public DbSet<Element> Elements { get; set; }
+        public DbSet<Party> Parties { get; set; }
+        public DbSet<PartyMember> PartyMembers { get; set; }
+        public DbSet<PartyGroup> PartyGroups { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

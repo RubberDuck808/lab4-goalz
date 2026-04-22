@@ -8,4 +8,5 @@ public class PartyMember
 
     public PartyGroup PartyGroup { get; set; } = null!;
     public User User { get; set; } = null!;
+    public long PartyId { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿using Goalz.Core.DTOs;
+﻿using Goalz.Core.DTOs; 
 using Goalz.Core.Entities;
 
 namespace Goalz.Core.Interfaces
