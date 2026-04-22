@@ -32,6 +32,52 @@ Sensors include PostGIS `geo` point. Elements include PostGIS `geom` point, `ima
 
 ---
 
+### GET `/api/dashboard/zones`
+**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+
+```
+200 OK:  [{ id: long, name: string, zoneType: string, color: string, boundary: GeoJSON geometry }]
+```
+
+---
+
+### POST `/api/dashboard/zones`
+**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+
+```
+Body:    { name: string, zoneType: string, color: string, boundary: GeoJSON geometry }
+204:     No Content
+400:     "Zone name is required." | "A valid GeoJSON geometry is required."
+```
+
+---
+
+### PUT `/api/dashboard/zones/{id}`
+**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+
+```
+Route:   id: long
+Body:    { name: string, zoneType: string, color: string, boundary?: GeoJSON geometry }
+204:     No Content
+400:     "Zone name is required."
+404:     Not Found
+```
+
+`boundary` is optional — omit to keep the existing geometry.
+
+---
+
+### DELETE `/api/dashboard/zones/{id}`
+**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     Not Found
+```
+
+---
+
 ### POST `/api/dashboard/importdataset`
 **Auth:** — | **File:** `Controllers/Dashboard/ImportDatasetController.cs`
 
@@ -162,6 +208,10 @@ Body:    { username: string }   ← friend's username
 | POST | `/api/dashboard/auth/login` | — | Dashboard login |
 | GET | `/api/dashboard/overview` | — | Sensor + element map data |
 | POST | `/api/dashboard/importdataset` | — | Upload dataset files |
+| GET | `/api/dashboard/zones` | — | List all zones |
+| POST | `/api/dashboard/zones` | — | Create zone |
+| PUT | `/api/dashboard/zones/{id}` | — | Update zone name/type/color/boundary |
+| DELETE | `/api/dashboard/zones/{id}` | — | Delete zone |
 | POST | `/api/game/auth/login` | — RL | Player login → JWT |
 | POST | `/api/game/auth/signup` | — RL | Player registration → JWT |
 | GET | `/api/game/friends/search` | JWT | Search users by username |

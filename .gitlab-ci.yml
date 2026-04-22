@@ -13,16 +13,11 @@ frontend:install:
   stage: install
   image: node:$NODE_VERSION
   script:
-    - echo "Installing frontend/app"
-    - cd frontend/app
-    - npm ci
-
     - echo "Installing frontend/dashboard"
-    - cd ../dashboard
+    - cd frontend/dashboard
     - npm ci
   cache:
     paths:
-      - frontend/app/node_modules/
       - frontend/dashboard/node_modules/
 
 # ------------------------
@@ -32,13 +27,8 @@ frontend:build:
   stage: build
   image: node:$NODE_VERSION
   script:
-    - echo "Building frontend/app"
-    - cd frontend/app
-    - npm ci
-    - npm run build
-
     - echo "Building frontend/dashboard"
-    - cd ../dashboard
+    - cd frontend/dashboard
     - npm ci
     - npm run build
   dependencies:
