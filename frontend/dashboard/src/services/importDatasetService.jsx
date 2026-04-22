@@ -42,7 +42,7 @@ export const importDatasetService = {
         try {
             const response = await APICall(
                 "POST",
-                `/UploadDataset`, // Match your API method name
+                `/ImportDataset/store`, // Match your API method name
                 JSON.stringify(records),
                 localStorage.getItem("jwtToken") ?? ""
             );

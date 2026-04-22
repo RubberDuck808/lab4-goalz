@@ -2,44 +2,53 @@ import { useState, useRef, useEffect } from 'react'
 import DashboardNavBar from '../DashboardNavBar'
 import { importDatasetService } from '../../../services/importDatasetService';
 import PreviewTable from './PreviewTable';
+import Loading from '../../Loading/Loading';
+import { setOptions } from 'leaflet';
 
 export default function ImportData() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadedColumns , setUploadedColumns] = useState([]);
   const [uploadedRecords , setUploadedRecords] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    console.log("Uploaded Columns:", uploadedColumns);
-    console.log("Uploaded Records:", uploadedRecords);
-    }, [uploadedColumns, uploadedRecords]);
 
   const handleDivClick = () => {
     fileInputRef.current.click();
   };
 
   const handleFileChange = async (event) => {
+    setIsLoading(true);
     const files = Array.from(event.target.files);
-    const result = await importDatasetService.uploadCSV(files); 
-    console.log("Result from uploadCSV:", result);
-
-    setUploadedRecords(result[0]);
-
-    setSelectedFiles(files);
+    try {
+        const result = await importDatasetService.uploadCSV(files); 
+        
+        setUploadedRecords(result[0]);
+        setSelectedFiles(files);
+    } 
+    catch (error) {
+        
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleStoreData = async () => {
+    setIsLoading(true);
     try {
       const response = await importDatasetService.storeCSV(uploadedRecords);
-        console.log("Store response:", response);
     } catch (error) {
         console.error("Error storing records:", error);
+    } finally {
+        setIsLoading(false);
     }
-    };
+  };
 
   return (
-    <div className='flex flex-col'>
+    <div className='flex flex-col relative'>
         <DashboardNavBar title="Import Dataset" />
+        {
+            isLoading && <Loading />
+        }
         <div className='flex flex-col w-full grow-1 p-4 gap-5'>
             <div className='flex'>
                 <button className='bg-secondary-green hover:bg-green-600 rounded-lg px-4 py-2 text-white cursor-pointer flex items-center gap-2 transition-colors'>

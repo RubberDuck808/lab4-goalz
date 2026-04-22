@@ -5,6 +5,7 @@ namespace Goalz.Core.Interfaces
 {
     public interface IDatasetService
     {
-        public Task<List<string>> ReadCSV(IFormFile file);
+        Task<List<string>> ReadCSV(IFormFile file);
+        Task StoreCSVFile(List<string> file);
     }
 }

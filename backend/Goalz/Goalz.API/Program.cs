@@ -58,6 +58,8 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IOverviewRepository, OverviewRepository>();
 builder.Services.AddScoped<IOverviewService, OverviewService>();
 
+builder.Services.AddScoped<INatureElementRepository, NatureElementRepository>();
+
 // Dataset import
 builder.Services.AddScoped<IDatasetService, DatasetService>();
 
