@@ -19,14 +19,25 @@ namespace Goalz.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest model)
         {
-            LoginRequest success = await _authService.CheckAuth(model.Email, model.Password);
+            var result = await _authService.CheckAuth(model.Email, model.Password);
 
-            if (success == null)
+            if (result == null)
+                return NotFound("User not found or invalid password.");
+
+            return Ok(result);
+        }
+
+        [HttpPost("create-user")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateStaffUserRequest request)
+        {
+            var (result, error) = await _authService.CreateStaffUserAsync(request);
+
+            return error switch
             {
-                return NotFound("User is not found!");
-            }
-
-            return Ok(success);
+                "unauthorized" => Unauthorized("Only admins can create new users."),
+                "email_taken" => Conflict("An account with this email already exists."),
+                _ => CreatedAtAction(nameof(CreateUser), result)
+            };
         }
     }
 }

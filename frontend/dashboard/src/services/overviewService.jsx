@@ -5,11 +5,11 @@ export const overviewService = {
         try {
             const response = await APICall(
                 "GET",
-                `/overview`,
+                "/overview",
                 null,
                 localStorage.getItem("jwtToken") ?? ""
             );
-
+  
             if (!response?.ok) {
                 if (response?.status === 401)
                     throw new Error("You are not authorized to run this process.");
@@ -18,7 +18,7 @@ export const overviewService = {
 
                 throw new Error('Failed to fetch history data');
             }
-          
+                      console.log(response);
             const data = await response.json();
             console.log(data);
             return data;
