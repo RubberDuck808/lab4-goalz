@@ -7,4 +7,5 @@ public class Section
     public Zone Zone { get; set; } = null!;
     public int OrderIndex { get; set; }
     public string CompletionCriteria { get; set; } = "visit_all_checkpoints";
+    public ICollection<Checkpoint> Checkpoints { get; set; } = [];
 }
