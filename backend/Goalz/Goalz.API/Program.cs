@@ -62,6 +62,14 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IOverviewRepository, OverviewRepository>();
 builder.Services.AddScoped<IOverviewService, OverviewService>();
 
+// Elements CRUD
+builder.Services.AddScoped<IElementRepository, ElementRepository>();
+builder.Services.AddScoped<IElementService, ElementService>();
+
+// Sensors CRUD
+builder.Services.AddScoped<ISensorRepository, SensorRepository>();
+builder.Services.AddScoped<ISensorService, SensorService>();
+
 // Dataset import
 builder.Services.AddScoped<IDatasetService, DatasetService>();
 
