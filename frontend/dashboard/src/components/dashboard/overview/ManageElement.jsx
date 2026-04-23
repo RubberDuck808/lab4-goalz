@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import NatureElement from './ElementDetails/NatureElement';
@@ -20,11 +20,24 @@ const defaultSensorForm = {
     latitude: '',
 };
 
-export default function ManageElement() {
+export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved }) {
     const [selectedItem, setSelectedItem] = useState("Element");
     const [elementForm, setElementForm] = useState(defaultElementForm);
     const [sensorForm, setSensorForm] = useState(defaultSensorForm);
     const [loading, setLoading] = useState(false);
+
+    // Apply coordinates picked from the map into the active form
+    useEffect(() => {
+        if (!coordsPick) return;
+        const lat = coordsPick.lat.toFixed(6);
+        const lng = coordsPick.lng.toFixed(6);
+        if (selectedItem === 'Element') {
+            setElementForm((f) => ({ ...f, latitude: lat, longitude: lng }));
+        } else {
+            setSensorForm((f) => ({ ...f, latitude: lat, longitude: lng }));
+        }
+        if (onCoordsConsumed) onCoordsConsumed();
+    }, [coordsPick]);
 
     const handleSaveElement = async () => {
         setLoading(true);
@@ -38,6 +51,7 @@ export default function ManageElement() {
                 isGreen: elementForm.isGreen,
             });
             setElementForm(defaultElementForm);
+            if (onSaved) onSaved();
             toast.success('Element created successfully!');
         } catch (e) {
             toast.error(e.message || 'Failed to create element.');
@@ -55,6 +69,7 @@ export default function ManageElement() {
                 latitude: parseFloat(sensorForm.latitude),
             });
             setSensorForm(defaultSensorForm);
+            if (onSaved) onSaved();
             toast.success('Sensor created successfully!');
         } catch (e) {
             toast.error(e.message || 'Failed to create sensor.');
