@@ -18,7 +18,7 @@ namespace Goalz.Test
         }
 
         [TestMethod]
-        [DataRow("C:\\Users\\Giel\\Desktop\\Goalz_dummy_set.csv", true)]
+        [DataRow("\\TestFiles\\Goalz_dummy_set.csv", true)]
         public async Task ReadCSVFileTest_CorrectColumns(string filePath, bool expectedSuccess)
         {
             if (File.Exists(filePath))
