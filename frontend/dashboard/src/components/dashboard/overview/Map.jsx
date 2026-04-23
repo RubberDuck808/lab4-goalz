@@ -1,4 +1,9 @@
 import { useEffect, useRef } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import MapLegend from './MapLegend'
 
 export default function Map({
@@ -11,14 +16,13 @@ export default function Map({
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const clusterGroupRef = useRef(null)
-  const L = window.L
 
   const handleMarkerClick = (element) => {
     setSelectedElement(element)
   }
 
   useEffect(() => {
-    if (!mapRef.current || !L) return
+    if (!mapRef.current) return
 
     const container = mapRef.current
 
@@ -84,7 +88,7 @@ export default function Map({
   }, [])
 
   useEffect(() => {
-    if (!clusterGroupRef.current || !elements || !L) return
+    if (!clusterGroupRef.current || !elements) return
 
     const clusterGroup = clusterGroupRef.current
     clusterGroup.clearLayers()
@@ -122,7 +126,7 @@ export default function Map({
     })
 
     newMarkers.forEach((marker) => clusterGroup.addLayer(marker))
-  }, [elements, L])
+  }, [elements])
 
   return (
     <div className="h-full w-full overflow-hidden flex flex-col">
