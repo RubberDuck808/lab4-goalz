@@ -87,6 +87,7 @@ export default function Map({
     }
   }, [])
 
+  // Reset highlight when parent clears selection
   useEffect(() => {
     if (!clusterGroupRef.current || !elements) return
 
@@ -143,7 +144,7 @@ export default function Map({
             className="absolute top-4 right-4 w-10 h-10 bg-[#33A661] text-white border-none rounded-lg shadow-md hover:bg-[#2a8c52] focus:outline-none focus:ring-2 focus:ring-[#33A661] z-10 transition-all duration-200 font-bold flex items-center justify-center text-md cursor-pointer"
             onClick={() => closeModal()}
           >
-            <i className="fa-solid fa-maximize"></i>
+            <i className="fa-solid fa-maximize" />
           </button>
         )}
 

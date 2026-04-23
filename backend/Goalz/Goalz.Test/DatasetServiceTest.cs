@@ -1,4 +1,6 @@
-﻿using Goalz.Core.Services;
+﻿using Goalz.Core.Interfaces;
+using Goalz.Core.Services;
+using Goalz.Data.Repositories;
 using Goalz.Data.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
@@ -10,11 +12,19 @@ namespace Goalz.Test
     public sealed class DatasetServiceTest
     {
         private DatasetService datasetService;
+        private AppDbContext _context;
 
         [TestInitialize]
         public void setup()
         {
-            datasetService = new DatasetService();
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+               .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+               .Options;
+
+            _context = new AppDbContext(options);
+
+            INatureElementRepository natureElementRepository = new NatureElementRepository(_context);
+            datasetService = new DatasetService(natureElementRepository);
         }
 
         [TestMethod]
@@ -29,9 +39,14 @@ namespace Goalz.Test
 
                 var result = await datasetService.ReadCSV(file);
 
+                if(result.Count == 0)
+                {
+                    Assert.Fail("The CSV file is empty.");
+                }
+
                 var expectedColumns = new List<string> { "Name", "Type", "Longitude", "Latitude", "IsGreen", "ImageUrl" };
 
-                var missingColumns = result.ColumnNames.Where(c => !expectedColumns.Contains(c)).ToList();
+                var missingColumns = result[0].Split(";").Where(c => !expectedColumns.Contains(c)).ToList();
 
                 if (expectedSuccess)
                 {
@@ -48,7 +63,7 @@ namespace Goalz.Test
         }
 
         [TestMethod]
-        [DataRow("C:\\Users\\Giel\\Desktop\\Goalz_dummy_set.csv", 9)]
+        [DataRow("C:\\Users\\Giel\\Desktop\\Goalz_dummy_set.csv", 10)]
         public async Task ReadCSVFileTest_CorrectRowCount(string filePath, int expectedRowCount)
         {
             if (File.Exists(filePath))
@@ -58,7 +73,7 @@ namespace Goalz.Test
 
                 var result = await datasetService.ReadCSV(file);
 
-                Assert.AreEqual(result.values.Count, expectedRowCount);
+                Assert.AreEqual(result.Count, expectedRowCount);
             }
         }
     }
