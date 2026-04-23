@@ -13,6 +13,7 @@ namespace Goalz.Data.Storage
         public DbSet<Element> Elements { get; set; }
         public DbSet<Zone> Zones { get; set; }
         public DbSet<Section> Sections { get; set; }
+        public DbSet<Checkpoint> Checkpoints { get; set; }
         public DbSet<ElementType> ElementTypes { get; set; }
         public DbSet<Party> Parties { get; set; }
         public DbSet<PartyMember> PartyMembers { get; set; }
@@ -55,6 +56,16 @@ namespace Goalz.Data.Storage
 
                 entity.HasIndex(s => s.ZoneId).IsUnique();
                 entity.HasIndex(s => s.OrderIndex).IsUnique();
+            });
+
+            modelBuilder.Entity<Checkpoint>(entity =>
+            {
+                entity.HasOne(c => c.Section)
+                    .WithMany(s => s.Checkpoints)
+                    .HasForeignKey(c => c.SectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(c => c.SectionId);
             });
 
             modelBuilder.Entity<ElementType>().ToTable("ElementType");
