@@ -1,6 +1,7 @@
 stages:
   - install
   - build
+  - test
 
 variables:
   NODE_VERSION: "20"
@@ -47,3 +48,17 @@ backend:build:
 
     - echo "Building backend"
     - dotnet build --no-restore --configuration Release
+
+# ------------------------
+# BACKEND TEST
+# ------------------------
+backend:test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  script:
+    - echo "Restoring backend"
+    - cd backend/Goalz
+    - dotnet restore
+
+    - echo "Running Goalz.Test"
+    - dotnet test Goalz.Test/Goalz.Test.csproj --no-restore --configuration Release
