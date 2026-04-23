@@ -7,6 +7,7 @@ import { useOverviewData } from "../../../hooks/useOverviewData";
 import { overviewService } from "../../../services/overviewService";
 import ManageElement from "./ManageElement";
 import ElementDetails from "./ElementDetails";
+import Loading from "../../Loading/Loading";
 
 // Maps the numeric elementType ID stored in the database to a human-readable label.
 // These IDs come from the CSV dataset import — update this map if your data uses
@@ -31,6 +32,7 @@ export default function DashboardOverview({ setSelectedItem }) {
     const [natureElements, setNatureElements] = useState([]);
     const [sensorsData, setSensorsData] = useState([]);
     const [selectedElement, setSelectedElement] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
       if(selectedElement){
@@ -51,6 +53,7 @@ export default function DashboardOverview({ setSelectedItem }) {
           setNatureElements(data.element);
           setSensorsData(data.sensors);
         } 
+        setIsLoading(false);
       };
       fetchData();
     }, []);
@@ -119,7 +122,10 @@ export default function DashboardOverview({ setSelectedItem }) {
         : 0;
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+            {
+                isLoading && <Loading />
+            }
             <DashboardNavBar title="Alboretum Overview" />
             <div className="p-[20px] flex flex-col gap-5 h-full">
                 <div className="w-full h-[375px] flex items-center justify-center gap-3">

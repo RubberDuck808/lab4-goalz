@@ -62,6 +62,7 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IOverviewRepository, OverviewRepository>();
 builder.Services.AddScoped<IOverviewService, OverviewService>();
 
+builder.Services.AddScoped<INatureElementRepository, NatureElementRepository>();
 // Elements CRUD
 builder.Services.AddScoped<IElementRepository, ElementRepository>();
 builder.Services.AddScoped<IElementService, ElementService>();

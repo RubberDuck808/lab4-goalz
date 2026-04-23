@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-const L = window.L  // CDN copy shared with Leaflet-Draw
 import MapLegend from './MapLegend'
 
 export default function Map({ showExtent, setShowExtent, closeModal, elements, setSelectedElement }) {
   const mapRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
   const [markers, setMarkers] = useState([]);
-
+  const L = window.L  // CDN copy shared with Leaflet-Draw
   const handleMarkerClick = (element) => {
     console.log("Clicked element:", element);
     setSelectedElement(element);
