@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
+import Loading from '../components/Loading/Loading';
 
 export default function Login() {
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -15,16 +17,22 @@ export default function Login() {
       setError('');
 
       try {
+        setLoading(true);
         await authService.authenticate(email, password);
         navigate('/overview');
       } catch (err) {
         setError(err.message || 'An error occurred during login. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   return (
     <div className='flex flex-row bg-white h-full w-full'>
+      {
+        isLoading && <Loading />
+      }
         <div className='hidden md:block w-1/2 bg-primary-green p-[100px]'>
           <div className='w-[72px] h-[72px] rounded-full bg-secondary-green flex items-center justify-center mb-5'>
             <i class="fa-solid fa-leaf text-white text-3xl"></i>

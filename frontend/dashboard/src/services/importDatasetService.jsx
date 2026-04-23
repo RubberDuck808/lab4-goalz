@@ -2,7 +2,6 @@ import { APICall } from "../hooks/useAPI";
 
 export const importDatasetService = {
     uploadCSV: async (files) => {
-        console.log("Uploading files:", files);
         try {
             const formData = new FormData();
             // Assuming files is an array or single file
@@ -56,10 +55,6 @@ export const importDatasetService = {
 
                 throw new Error('Failed to upload records');
             }
-          
-            const data = await response.json();
-            console.log("Upload successful:", data);
-            return data;
         } catch (error) {
             console.error(error);
             throw error;

@@ -4,6 +4,8 @@ import { importDatasetService } from '../../../services/importDatasetService';
 import PreviewTable from './PreviewTable';
 import Loading from '../../Loading/Loading';
 import { setOptions } from 'leaflet';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function ImportData() {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -35,9 +37,15 @@ export default function ImportData() {
   const handleStoreData = async () => {
     setIsLoading(true);
     try {
-      const response = await importDatasetService.storeCSV(uploadedRecords);
+        const response = await importDatasetService.storeCSV(uploadedRecords);
+        toast.success('Dataset succesfully imported!');
+        setSelectedFiles([]);
+        setUploadedRecords([]);
+        setUploadedColumns([]);
+
     } catch (error) {
         console.error("Error storing records:", error);
+        toast.error(error.message || 'Failed to create sensor.');
     } finally {
         setIsLoading(false);
     }
@@ -49,6 +57,7 @@ export default function ImportData() {
         {
             isLoading && <Loading />
         }
+        <ToastContainer position="top-right" autoClose={3000} />
         <div className='flex flex-col w-full grow-1 p-4 gap-5'>
             <div className='flex'>
                 <button className='bg-secondary-green hover:bg-green-600 rounded-lg px-4 py-2 text-white cursor-pointer flex items-center gap-2 transition-colors'>
