@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import 'leaflet-draw'
+import 'leaflet-draw/dist/leaflet.draw.css'
 import { getAllZones, createZone, updateZone, deleteZone } from '../../../services/zoneService'
 import { fetchOsmZones } from '../../../services/osmImportService'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from './boundarySnap'
 import LayerSidebar from './LayerSidebar'
-
-const L = window.L
 
 
 const ZONE_TYPES = [
@@ -201,6 +203,11 @@ export default function ArboretumMap() {
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return
 
+    // React StrictMode mounts twice in dev — clear any stale Leaflet stamp
+    if (mapRef.current._leaflet_id) {
+      delete mapRef.current._leaflet_id
+    }
+
     const map = L.map(mapRef.current, {
       attributionControl: false,
       zoomControl: false,
@@ -229,7 +236,6 @@ export default function ArboretumMap() {
     const drawnItems = new L.FeatureGroup()
     map.addLayer(drawnItems)
     drawnItemsRef.current = drawnItems
-
 
     drawHandlerRef.current = new L.Draw.Polygon(map, {
       allowIntersection: false,
