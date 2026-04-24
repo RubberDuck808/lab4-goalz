@@ -1,8 +1,8 @@
-import { getToken } from './session';
+import { getToken } from '../session';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-async function authHeaders() {
+export async function authHeaders() {
   const token = await getToken();
   return {
     'Content-Type': 'application/json',
