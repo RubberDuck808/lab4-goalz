@@ -1,6 +1,4 @@
-﻿using Goalz.Core.DTOs;
-using Goalz.Core.Interfaces;
-using Microsoft.AspNetCore.Http;
+﻿using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Goalz.API.Controllers.Dashboard
@@ -26,7 +24,7 @@ namespace Goalz.API.Controllers.Dashboard
 
             try
             {
-                var results = new List<DatasetPreview>();
+                var results = new List<List<string>>();
 
                 foreach (var file in files)
                 {
@@ -44,6 +42,26 @@ namespace Goalz.API.Controllers.Dashboard
 
                 throw;
             }
+        }
+
+        [HttpPost("store")]
+        public async Task<IActionResult> StoreDataset(List<string> records)
+        {
+            try
+            {
+                await _datasetService.StoreCSVFile(records);
+
+                return Ok("Elements successfully stored!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest($"Invalid dataset format: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while storing the dataset: {ex.Message}");
+            }
+           
         }
     }
 }

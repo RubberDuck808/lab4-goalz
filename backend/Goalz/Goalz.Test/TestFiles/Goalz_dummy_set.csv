@@ -1,0 +1,10 @@
+﻿Name;Type;Longitude;Latitude;IsGreen;ImageUrl
+Oak tree;Tree;-796.065,00;437.282;TRUE;
+Pine Grove;Shrub;-796.071;437.289;TRUE;
+Wetland Pond;Grass/lawn;-796.058;437.275;FALSE;
+Meadow Field;Mulch;-796.065,00;437.282;TRUE;
+Rock Formation;Garden bed;-796.071;437.289;FALSE;
+Maple Tree;Ground cover;-796.058;437.275;FALSE;
+Wildflower Patch;Green roof;-796.065,00;437.282;TRUE;
+Creek Stream;Green roof;-796.071;437.289;FALSE;
+Bird Nest Area;Water body;-796.058;437.275;FALSE;
