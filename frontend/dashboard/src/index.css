@@ -1,0 +1,54 @@
+.leaflet-control-zoom {
+  background: #33A661 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-control-zoom a {
+  color: transparent !important;
+  background: #33A661 !important;
+  border: none !important;
+  font-weight: bold !important;
+  transition: all 0.2s ease !important;
+  border-radius: 4px !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+.leaflet-control-zoom a::before {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: white !important;
+  font-size: 16px !important;
+}
+
+.leaflet-control-zoom a:first-child::before {
+  content: "\f00e" !important; /* fa-search-plus */
+}
+
+.leaflet-control-zoom a:last-child::before {
+  content: "\f010" !important; /* fa-search-minus */
+}
+
+.leaflet-control-zoom a:hover {
+  background: #2a8c52 !important;
+  transform: scale(1.05) !important;
+}
+
+.leaflet-control-zoom a:first-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-radius: 0 0 8px 8px !important;
+}

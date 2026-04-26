@@ -1,0 +1,6 @@
+@Goalz.API_HostAddress = http://localhost:5049
+
+GET {{Goalz.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

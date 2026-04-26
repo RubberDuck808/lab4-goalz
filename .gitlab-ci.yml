@@ -1,0 +1,64 @@
+stages:
+  - install
+  - build
+  - test
+
+variables:
+  NODE_VERSION: "20"
+  DOTNET_VERSION: "9.0"
+
+# ------------------------
+# FRONTEND INSTALL
+# ------------------------
+frontend:install:
+  stage: install
+  image: node:$NODE_VERSION
+  script:
+    - echo "Installing frontend/dashboard"
+    - cd frontend/dashboard
+    - npm ci
+  cache:
+    paths:
+      - frontend/dashboard/node_modules/
+
+# ------------------------
+# FRONTEND BUILD
+# ------------------------
+frontend:build:
+  stage: build
+  image: node:$NODE_VERSION
+  script:
+    - echo "Building frontend/dashboard"
+    - cd frontend/dashboard
+    - npm ci
+    - npm run build
+  dependencies:
+    - frontend:install
+
+# ------------------------
+# BACKEND BUILD
+# ------------------------
+backend:build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  script:
+    - echo "Restoring backend"
+    - cd backend/Goalz
+    - dotnet restore
+
+    - echo "Building backend"
+    - dotnet build --no-restore --configuration Release
+
+# ------------------------
+# BACKEND TEST
+# ------------------------
+backend:test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  script:
+    - echo "Restoring backend"
+    - cd backend/Goalz
+    - dotnet restore
+
+    - echo "Running Goalz.Test"
+    - dotnet test Goalz.Test/Goalz.Test.csproj --no-restore --configuration Release
