@@ -10,6 +10,7 @@ namespace Goalz.Data.Storage
         public DbSet<User> Users { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
         public DbSet<Sensor> Sensors { get; set; }
+        public DbSet<SensorData> SensorData { get; set; }
         public DbSet<Element> Elements { get; set; }
         public DbSet<Zone> Zones { get; set; }
         public DbSet<Section> Sections { get; set; }
@@ -67,6 +68,15 @@ namespace Goalz.Data.Storage
 
                 entity.HasIndex(c => new { c.Type, c.ReferenceId }).IsUnique();
                 entity.HasIndex(c => c.ZoneId);
+            });
+
+            modelBuilder.Entity<SensorData>(entity =>
+            {
+                entity.Property(sd => sd.Id).HasColumnName("id");
+                entity.HasOne(sd => sd.Sensor)
+                    .WithMany()
+                    .HasForeignKey(sd => sd.SensorsId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<ElementType>().ToTable("ElementType");

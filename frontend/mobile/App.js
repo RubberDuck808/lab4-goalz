@@ -18,6 +18,7 @@ import MapPage from './pages/MapPage';
 import QuizCountdownPage from './pages/QuizCountdownPage';
 import QuizPage from './pages/QuizPage';
 import QuizResultPage from './pages/QuizResultPage';
+import SensorDataPage from './pages/SensorDataPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ export default function App() {
           <Stack.Screen name="QuizCountdown" component={QuizCountdownPage} />
           <Stack.Screen name="Quiz"          component={QuizPage} />
           <Stack.Screen name="QuizResult"    component={QuizResultPage} />
+          <Stack.Screen name="SensorData"   component={SensorDataPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
