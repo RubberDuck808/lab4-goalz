@@ -1,64 +1,174 @@
 stages:
-  - install
   - build
-  - test
+  - unit-test
+  - integration-test
+  - e2e-test
 
 variables:
-  NODE_VERSION: "20"
   DOTNET_VERSION: "9.0"
+  NODE_VERSION: "20"
+  # Overridable CI secrets (set in GitLab Settings → CI/CD → Variables)
+  POSTGRES_DB: goalz_test
+  POSTGRES_USER: goalz
+  POSTGRES_PASSWORD: changeme
+  JWT_SECRET: ci-test-secret-key-32-characters!!
 
-# ------------------------
-# FRONTEND INSTALL
-# ------------------------
-frontend:install:
-  stage: install
-  image: node:$NODE_VERSION
-  script:
-    - echo "Installing frontend/dashboard"
-    - cd frontend/dashboard
-    - npm ci
-  cache:
-    paths:
-      - frontend/dashboard/node_modules/
+# ─────────────────────────────────────────────────────────────────────────────
+# BUILD
+# ─────────────────────────────────────────────────────────────────────────────
 
-# ------------------------
-# FRONTEND BUILD
-# ------------------------
-frontend:build:
-  stage: build
-  image: node:$NODE_VERSION
-  script:
-    - echo "Building frontend/dashboard"
-    - cd frontend/dashboard
-    - npm ci
-    - npm run build
-  dependencies:
-    - frontend:install
-
-# ------------------------
-# BACKEND BUILD
-# ------------------------
 backend:build:
   stage: build
   image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
   script:
-    - echo "Restoring backend"
     - cd backend/Goalz
     - dotnet restore
-
-    - echo "Building backend"
     - dotnet build --no-restore --configuration Release
+  artifacts:
+    paths:
+      - backend/Goalz/Goalz.API/bin/Release/
+      - backend/Goalz/Goalz.Test/bin/Release/
+    expire_in: 1 hour
 
-# ------------------------
-# BACKEND TEST
-# ------------------------
-backend:test:
-  stage: test
-  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+frontend:build:
+  stage: build
+  image: node:$NODE_VERSION
   script:
-    - echo "Restoring backend"
+    - cd frontend/dashboard
+    - npm ci
+    - npm run build
+  cache:
+    key: "$CI_COMMIT_REF_SLUG-dashboard"
+    paths:
+      - frontend/dashboard/node_modules/
+  artifacts:
+    paths:
+      - frontend/dashboard/dist/
+      - frontend/dashboard/node_modules/
+    expire_in: 1 hour
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UNIT TESTS  (C# / MSTest — no database required)
+# ─────────────────────────────────────────────────────────────────────────────
+
+backend:unit-test:
+  stage: unit-test
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  needs: [backend:build]
+  script:
     - cd backend/Goalz
     - dotnet restore
+    - dotnet test Goalz.Test/Goalz.Test.csproj
+        --no-restore
+        --configuration Release
+        --logger "trx;LogFileName=test-results.trx"
+        --results-directory TestResults/
+  artifacts:
+    when: always
+    paths:
+      - backend/Goalz/TestResults/
+    reports:
+      junit: backend/Goalz/TestResults/*.trx
+    expire_in: 7 days
 
-    - echo "Running Goalz.Test"
-    - dotnet test Goalz.Test/Goalz.Test.csproj --no-restore --configuration Release
+# ─────────────────────────────────────────────────────────────────────────────
+# INTEGRATION TESTS  (Java / Cucumber — live API + PostgreSQL)
+# ─────────────────────────────────────────────────────────────────────────────
+
+integration:test:
+  stage: integration-test
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  needs: [backend:unit-test]
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+  variables:
+    # Connection strings for the API
+    ConnectionStrings__DefaultConnection: >-
+      Host=postgres;Port=5432;Database=${POSTGRES_DB};
+      Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+    ASPNETCORE_URLS: http://+:5143
+    # Test harness env (picked up by dotenv-java / system env in ApiClient)
+    TEST_API_URL: "http://localhost:5143"
+    TEST_DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}"
+    TEST_DB_USER: "${POSTGRES_USER}"
+    TEST_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+  before_script:
+    # ── Install JDK 17 + Maven ────────────────────────────────────────────────
+    - apt-get update -qq && apt-get install -y -qq openjdk-17-jdk maven curl
+    - export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    # ── Wait for PostgreSQL ───────────────────────────────────────────────────
+    - until pg_isready -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done
+    # ── Apply EF Core migrations ──────────────────────────────────────────────
+    - cd backend/Goalz
+    - dotnet restore
+    - dotnet tool install --global dotnet-ef --version 9.0.4 || true
+    - export PATH="$PATH:$HOME/.dotnet/tools"
+    - dotnet ef database update
+        --project Goalz.Data
+        --startup-project Goalz.API
+        --configuration Release
+    # ── Start API in background ───────────────────────────────────────────────
+    - dotnet run --project Goalz.API --configuration Release &
+    - cd "$CI_PROJECT_DIR"
+    # ── Wait for API to accept connections ────────────────────────────────────
+    - >
+      timeout 60 bash -c '
+        until curl -sf http://localhost:5143/api/game/auth/login \
+          -H "Content-Type: application/json" \
+          -d "{\"email\":\"x\",\"password\":\"x\"}" \
+          -o /dev/null; do
+          sleep 2
+        done
+      ' || (echo "API did not start in time"; exit 1)
+  script:
+    - cd tests/integration
+    - mvn test -B
+        -Dcucumber.filter.tags="@api and not @WIP"
+  after_script:
+    - kill %1 2>/dev/null || true   # stop background API
+  artifacts:
+    when: always
+    paths:
+      - tests/integration/target/cucumber-reports/
+    reports:
+      junit: tests/integration/target/surefire-reports/TEST-*.xml
+    expire_in: 7 days
+  allow_failure: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# E2E TESTS  (Cypress — dashboard web app, API calls are stubbed)
+# ─────────────────────────────────────────────────────────────────────────────
+
+e2e:test:
+  stage: e2e-test
+  image: cypress/included:13.15.0
+  needs: [frontend:build]
+  variables:
+    CYPRESS_BASE_URL: "http://localhost:5173"
+    VITE_API_BASE_URL: "http://localhost:5143"
+  before_script:
+    # Restore node_modules from build artifact, then start Vite dev server
+    - cd frontend/dashboard
+    - npm ci
+    - npx vite --host 0.0.0.0 --port 5173 &
+    # Wait for Vite to be ready
+    - >
+      timeout 30 bash -c '
+        until curl -sf http://localhost:5173 -o /dev/null; do sleep 1; done
+      ' || (echo "Vite dev server did not start in time"; exit 1)
+  script:
+    - cd frontend/dashboard
+    - npx cypress run
+        --config baseUrl=http://localhost:5173
+        --reporter junit
+        --reporter-options "mochaFile=cypress/results/[hash].xml"
+  artifacts:
+    when: always
+    paths:
+      - frontend/dashboard/cypress/screenshots/
+      - frontend/dashboard/cypress/results/
+    reports:
+      junit: frontend/dashboard/cypress/results/*.xml
+    expire_in: 7 days
+  allow_failure: false

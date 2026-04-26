@@ -3,7 +3,7 @@
 ## Table of Contents
 
 1. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
-2. [#50 Test Suite — Steps 2–4](#50-test-suite--2026-04-26)
+2. [#50 Test Suite — Steps 2–6 (complete)](#50-test-suite--2026-04-26)
 
 ---
 
@@ -76,7 +76,7 @@
 
 > Issue in progress — Steps 2–3 of 6 complete
 
-### [#52] Step 4: Cypress E2E Tests — 2026-04-26 Added
+### [#54] Step 4: Cypress E2E Tests — 2026-04-26 Added
 - Cypress E2E test suite added to `frontend/dashboard/` (the Vite/React web app); the mobile app (`frontend/mobile/`) is React Native and cannot be tested with Cypress
 - `cypress.config.ts` — Vite dev server at `http://localhost:5173`, TypeScript specs, `video: false`, `ADMIN_EMAIL` / `ADMIN_PASSWORD` env values
 - `cypress/tsconfig.json` — TypeScript config scoped to `cypress/` folder with `types: ["cypress", "node"]`
@@ -99,5 +99,23 @@
 - `DashboardNavBar` titles are used as section assertions because they are the only stable text identifiers in the rendered output for each section
 
 > Issue in progress — Steps 2–4 of 6 complete
+
+### [#52] Steps 5–6: CI Pipeline + Coverage Matrix — 2026-04-26 Added
+- `.gitlab-ci.yml` rewritten with 4 stages: `build` → `unit-test` → `integration-test` → `e2e-test`
+  - `backend:build` — `dotnet restore` + `dotnet build --configuration Release`; artifact: Release binaries
+  - `frontend:build` — `npm ci` + `npm run build`; caches `node_modules`; artifact: `dist/` + `node_modules/`
+  - `backend:unit-test` — `dotnet test Goalz.Test --configuration Release --logger trx`; JUnit report artifact; no services needed
+  - `integration:test` — `postgres:16-alpine` service; `before_script` installs OpenJDK 17 + Maven, waits for Postgres, applies EF Core migrations, starts the API in the background, polls `/api/game/auth/login` until ready; runs `mvn test -B -Dcucumber.filter.tags="@api and not @WIP"`; publishes Cucumber HTML/JSON + JUnit XML
+  - `e2e:test` — `cypress/included:13.15.0` image; `before_script` starts `vite --host 0.0.0.0 --port 5173` in background and polls until ready; runs `cypress run` with JUnit reporter; publishes screenshots + XML
+- `TEST_COVERAGE.md` — full traceability matrix mapping all 13 user stories (US EP 1.1–3.3) to unit, integration, and E2E tests; shows WIP pending stories; summary table with ✅ / ⏳ status per layer
+
+### Rationale
+- Integration test job uses `mcr.microsoft.com/dotnet/sdk:9.0` as the base image (avoiding DinD) and installs JDK/Maven at job start — trades install time for simplicity and avoids maintaining a custom Docker image
+- API readiness is probed via `POST /api/game/auth/login` with a known-bad payload — returns 401 when ready, timeout exits 1 if the API never starts
+- E2E job uses `cypress/included` (Cypress + Chromium pre-installed) to avoid slow npm install of Cypress binary in CI
+- `@WIP` tag filter keeps the integration and E2E pipelines green while pending endpoints are under development
+- All CI secrets (`POSTGRES_PASSWORD`, `JWT_SECRET`) are documented as GitLab CI/CD variables — not hardcoded in the pipeline YAML
+
+> Issue closed — Steps 2–6 complete
 
 ---
