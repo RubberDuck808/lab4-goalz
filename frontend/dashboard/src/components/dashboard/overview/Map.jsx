@@ -6,43 +6,42 @@ import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import MapLegend from './MapLegend'
 
+function checkpointColor(cp) {
+  if (cp.type === 'sensor') return '#6366f1'
+  if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661'
+  if (cp.elementTypeId === 2) return '#3b82f6'
+  return '#ef4444'
+}
+
 export default function Map({
   showExtent,
   setShowExtent,
   closeModal,
-  elements,
-  setSelectedElement,
+  checkpoints,
+  onCheckpointClick,
 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const clusterGroupRef = useRef(null)
-
-  const handleMarkerClick = (element) => {
-    setSelectedElement(element)
-  }
 
   useEffect(() => {
     if (!mapRef.current) return
 
     const container = mapRef.current
 
-    // Extra safety: destroy previous map if somehow still attached
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove()
       mapInstanceRef.current = null
     }
 
-    // Important: clear Leaflet's internal DOM stamp
     if (container._leaflet_id) {
       container._leaflet_id = null
       delete container._leaflet_id
     }
 
-    const center = [43.7260, -79.6099]
-
     const map = L.map(container, {
       attributionControl: false,
-    }).setView(center, 15)
+    }).setView([43.7260, -79.6099], 15)
 
     mapInstanceRef.current = map
 
@@ -87,47 +86,38 @@ export default function Map({
     }
   }, [])
 
-  // Reset highlight when parent clears selection
   useEffect(() => {
-    if (!clusterGroupRef.current || !elements) return
+    if (!clusterGroupRef.current || !checkpoints) return
 
     const clusterGroup = clusterGroupRef.current
     clusterGroup.clearLayers()
 
-    const newMarkers = elements.map((element) => {
-      const { geom, elementType, isGreen } = element
-      const [lng, lat] = geom.coordinates
-
-      let fillColor = 'red'
-      if (elementType === 1 || isGreen) fillColor = 'green'
-      else if (elementType === 2) fillColor = 'blue'
+    const markers = checkpoints.map((cp) => {
+      const color = checkpointColor(cp)
 
       const icon = L.divIcon({
         html: `
-          <div
-            style="
-              width: 16px;
-              height: 16px;
-              border-radius: 50%;
-              background: ${fillColor};
-              border: 2px solid white;
-              box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
-            "
-          ></div>
+          <div style="
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: ${color};
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+          "></div>
         `,
         className: '',
         iconSize: [16, 16],
         iconAnchor: [8, 8],
       })
 
-      // Leaflet expects [lat, lng]
-      const marker = L.marker([lat, lng], { icon })
-      marker.on('click', () => handleMarkerClick(element))
+      const marker = L.marker([cp.latitude, cp.longitude], { icon })
+      marker.on('click', () => onCheckpointClick?.(cp))
       return marker
     })
 
-    newMarkers.forEach((marker) => clusterGroup.addLayer(marker))
-  }, [elements])
+    markers.forEach((m) => clusterGroup.addLayer(m))
+  }, [checkpoints])
 
   return (
     <div className="h-full w-full overflow-hidden flex flex-col">
@@ -160,9 +150,10 @@ export default function Map({
       </div>
 
       <div className="bg-light-green p-4 w-full rounded-b-lg flex items-center gap-5">
-        <MapLegend text="Tree" color="bg-primary-green" />
-        <MapLegend text="Water" color="bg-blue-500" />
-        <MapLegend text="Sensor" color="bg-red-500" />
+        <MapLegend text="Tree / Green" color="bg-primary-green" />
+        <MapLegend text="Shrub" color="bg-blue-500" />
+        <MapLegend text="Other element" color="bg-red-500" />
+        <MapLegend text="Sensor" color="bg-indigo-500" />
       </div>
     </div>
   )

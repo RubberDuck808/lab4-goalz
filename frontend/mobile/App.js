@@ -14,6 +14,7 @@ import PartyLobbyPage from './pages/PartyLobbyPage';
 import PartyOwnerPage from './pages/PartyOwnerPage';
 import YourRolePage from './pages/YourRolePage';
 import SettingsPage from './pages/SettingsPage';
+import MapPage from './pages/MapPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +34,7 @@ export default function App() {
           <Stack.Screen name="PartyOwner"  component={PartyOwnerPage} />
           <Stack.Screen name="YourRole"    component={YourRolePage} />
           <Stack.Screen name="Settings"   component={SettingsPage} />
+          <Stack.Screen name="Map"         component={MapPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

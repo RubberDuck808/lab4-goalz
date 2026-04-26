@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import Map from "./Map";
 import Chart from "./Chart";
 import DashboardNavBar from "../DashboardNavBar";
@@ -25,24 +24,24 @@ const TREE_TYPE_ID = 1;
 
 export default function DashboardOverview({ setSelectedItem }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const navigate = useNavigate();
-    const [natureElements, setNatureElements] = useState([]);
-    const [sensorsData, setSensorsData] = useState([]);
+    const [checkpoints, setCheckpoints] = useState([]);
     const [selectedElement, setSelectedElement] = useState(null);
     const [selectedSensor, setSelectedSensor] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [coordsPick, setCoordsPick] = useState(null);
 
-    const fetchData = useCallback(async () => {
-        const data = await overviewService.getAllElements();
-        if (data) {
-            setNatureElements(data.element);
-            setSensorsData(data.sensors);
-        }
+    // useOverviewData fetches elements + sensors for charts (and detail panel lookup)
+    const { data, loading, error } = useOverviewData();
+    const elements = data?.element ?? [];
+    const sensors  = data?.sensors ?? [];
+
+    const fetchCheckpoints = useCallback(async () => {
+        const cps = await overviewService.getCheckpoints();
+        setCheckpoints(Array.isArray(cps) ? cps : []);
         setIsLoading(false);
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    useEffect(() => { fetchCheckpoints(); }, [fetchCheckpoints]);
 
     // Opening the add modal clears any selection
     useEffect(() => {
@@ -57,6 +56,16 @@ export default function DashboardOverview({ setSelectedItem }) {
         if (selectedElement || selectedSensor) setIsModalOpen(false);
     }, [selectedElement, selectedSensor]);
 
+    const handleCheckpointClick = useCallback((cp) => {
+        if (cp.type === 'element') {
+            const el = elements.find(e => e.id === cp.referenceId);
+            if (el) setSelectedElement(el);
+        } else if (cp.type === 'sensor') {
+            const sensor = sensors.find(s => s.id === cp.referenceId);
+            if (sensor) setSelectedSensor(sensor);
+        }
+    }, [elements, sensors]);
+
     const handleOnExtentClick = () => {
         setIsModalOpen(false);
         setSelectedElement(null);
@@ -66,28 +75,23 @@ export default function DashboardOverview({ setSelectedItem }) {
 
     const handleElementDeleted = () => {
         setSelectedElement(null);
-        fetchData();
+        fetchCheckpoints();
     };
 
     const handleElementSaved = () => {
         setSelectedElement(null);
-        fetchData();
+        fetchCheckpoints();
     };
 
     const handleSensorDeleted = () => {
         setSelectedSensor(null);
-        fetchData();
+        fetchCheckpoints();
     };
 
     const handleSensorSaved = () => {
         setSelectedSensor(null);
-        fetchData();
+        fetchCheckpoints();
     };
-
-    const { data, loading, error } = useOverviewData();
-
-    const elements = data?.element ?? [];
-    const sensors = data?.sensors ?? [];
 
     const greenChartData = useMemo(() => {
         const green = elements.filter((e) => e.isGreen).length;
@@ -144,13 +148,9 @@ export default function DashboardOverview({ setSelectedItem }) {
                     <Map
                         showExtent={!!sidePanel}
                         setShowExtent={setIsModalOpen}
-                        elements={natureElements}
-                        sensors={sensorsData}
+                        checkpoints={checkpoints}
+                        onCheckpointClick={handleCheckpointClick}
                         closeModal={handleOnExtentClick}
-                        setSelectedElement={setSelectedElement}
-                        selectedElement={selectedElement}
-                        setSelectedSensor={setSelectedSensor}
-                        selectedSensor={selectedSensor}
                         onCoordsPick={isModalOpen ? (c) => setCoordsPick(c) : null}
                         pickedCoords={isModalOpen ? coordsPick : null}
                     />
@@ -158,7 +158,7 @@ export default function DashboardOverview({ setSelectedItem }) {
                         <ManageElement
                             coordsPick={coordsPick}
                             onCoordsConsumed={() => setCoordsPick(null)}
-                            onSaved={fetchData}
+                            onSaved={fetchCheckpoints}
                         />
                     )}
                     {sidePanel === 'element' && (
