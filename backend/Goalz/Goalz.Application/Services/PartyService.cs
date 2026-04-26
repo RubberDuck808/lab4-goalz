@@ -69,6 +69,11 @@ namespace Goalz.Core.Services
             };
         }
 
+        public async Task<List<string>> GetLobbyMembers(long partyId)
+        {
+            return await _partyRepository.GetLobbyMembers(partyId);
+        }
+
         public async Task<PartyResponse> JoinParty(long code, string username)
         {
             var party = await _partyRepository.GetPartyByCode(code) 

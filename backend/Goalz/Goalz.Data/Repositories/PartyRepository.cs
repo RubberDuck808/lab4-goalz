@@ -54,5 +54,14 @@ namespace Goalz.Data.Repositories
         {
             await _context.PartyGroups.AddAsync(group);
         }
+
+        public async Task<List<string>> GetLobbyMembers(long partyId)
+        {
+            return await _context.PartyGroups
+                .Where(pg => pg.PartyId == partyId)
+                .SelectMany(pg => pg.PartyMembers)   
+                .Select(pm => pm.User.Username)
+                .ToListAsync();
+        }
     }
 }

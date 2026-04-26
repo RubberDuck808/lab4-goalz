@@ -16,8 +16,10 @@ namespace Goalz.Test
     [TestClass]
     public sealed class OverviewServiceTest
     {
-        private OverviewService _overviewService;
-        private AppDbContext _context;
+        private OverviewService _overviewService = null!;
+        private AppDbContext _context = null!; //nullable 
+
+        
 
         [TestInitialize]
         public void setup()
