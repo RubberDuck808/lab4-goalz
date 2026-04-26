@@ -70,6 +70,9 @@ namespace Goalz.Data.Storage
                 entity.HasIndex(c => c.ZoneId);
             });
 
+            modelBuilder.Entity<Sensor>()
+                .Property(s => s.Geo).HasColumnName("Geom");
+
             modelBuilder.Entity<SensorData>(entity =>
             {
                 entity.Property(sd => sd.Id).HasColumnName("id");

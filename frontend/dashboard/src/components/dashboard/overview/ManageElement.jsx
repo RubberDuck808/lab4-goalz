@@ -36,7 +36,6 @@ export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved })
         } else {
             setSensorForm((f) => ({ ...f, latitude: lat, longitude: lng }));
         }
-        if (onCoordsConsumed) onCoordsConsumed();
     }, [coordsPick]);
 
     const handleSaveElement = async () => {
