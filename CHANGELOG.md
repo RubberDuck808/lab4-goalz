@@ -3,7 +3,7 @@
 ## Table of Contents
 
 1. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
-2. [#50 Test Suite — Steps 2–3](#50-test-suite--2026-04-26)
+2. [#50 Test Suite — Steps 2–4](#50-test-suite--2026-04-26)
 
 ---
 
@@ -75,5 +75,29 @@
 - Zone update/delete resolve zone ID by name via `GET /api/dashboard/zones` GPath query because `POST /api/dashboard/zones` returns 204 with no body
 
 > Issue in progress — Steps 2–3 of 6 complete
+
+### [#52] Step 4: Cypress E2E Tests — 2026-04-26 Added
+- Cypress E2E test suite added to `frontend/dashboard/` (the Vite/React web app); the mobile app (`frontend/mobile/`) is React Native and cannot be tested with Cypress
+- `cypress.config.ts` — Vite dev server at `http://localhost:5173`, TypeScript specs, `video: false`, `ADMIN_EMAIL` / `ADMIN_PASSWORD` env values
+- `cypress/tsconfig.json` — TypeScript config scoped to `cypress/` folder with `types: ["cypress", "node"]`
+- `cypress/support/commands.ts` — two custom commands: `cy.loginAs(role, path?)` injects `localStorage.user` via `onBeforeLoad` to bypass the login UI; `cy.stubOverviewApi()` stubs `GET /api/dashboard/overview` so map markers don't 404
+- `cypress/support/e2e.ts` — imports commands
+- Page Objects:
+  - `cypress/pages/LoginPage.ts` — selectors for `#email`, `#password`, Sign In button, error div; fluent `fillAndSubmit()`
+  - `cypress/pages/OverviewPage.ts` — selectors for page title, nav items by text, section title
+- E2E specs:
+  - `cypress/e2e/login.cy.ts` — 7 tests: field validation (empty, email-only, password-only), password input type, 404 shows error, 200 redirects to `/overview`, localStorage stores user data after login
+  - `cypress/e2e/navigation.cy.ts` — 7 tests: all 5 nav items visible, default Overview active, clicking each nav item renders the correct `DashboardNavBar` title, back-navigation to Overview
+  - `cypress/e2e/overview.cy.ts` — 9 tests: page title visible, all 4 chart titles visible, `67% Green` / `15 Elements` / `4 Sensors` / `20% Canopy` derived from `overviewMock.js` mock data
+  - `cypress/e2e/settings.cy.ts` — 6 tests: admin sees Create Staff User form; empty submit shows validation; 201 shows success message; 409 shows duplicate-email error; Staff user sees restricted message; Staff user has no submit button
+- `package.json` updated: added `cypress ^13.15.0` to devDependencies; added `cy:open`, `cy:run`, `cy:run:smoke` scripts
+
+### Rationale
+- `onBeforeLoad` localStorage injection avoids routing to the login page before every non-login test — tests stay focused on the section under test
+- All API calls are stubbed with `cy.intercept()` — no backend required to run the E2E suite
+- Chart assertions use the known mock data values (10/15 green = 67%, 3/15 trees = 20%) so they act as regression guards if `overviewMock.js` is changed
+- `DashboardNavBar` titles are used as section assertions because they are the only stable text identifiers in the rendered output for each section
+
+> Issue in progress — Steps 2–4 of 6 complete
 
 ---
