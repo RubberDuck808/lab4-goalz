@@ -10,9 +10,14 @@ export default function HomePage({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Home" />
       <View style={styles.center}>
-        <GameButtons variant="accept" onPress={() => navigation.navigate('RouteMode')}>
-          Start Route
-        </GameButtons>
+        <View style={styles.actions}>
+          <GameButtons variant="accept" onPress={() => navigation.navigate('RouteMode')}>
+            Start Route
+          </GameButtons>
+          <GameButtons variant="task" onPress={() => navigation.navigate('Map')}>
+            View Map
+          </GameButtons>
+        </View>
       </View>
       <BottomNavBar
         onNavigateHome={() => navigation.navigate('Home')}
@@ -25,4 +30,5 @@ export default function HomePage({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  actions: { gap: 12, alignItems: 'center' },
 });

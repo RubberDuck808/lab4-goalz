@@ -5,10 +5,9 @@ import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
 import { useState } from 'react';
-  
-export default function CreatePartyPage({ navigation }) {
 
-  const [userName, setUserName] = useState(''); //empty strings, because on default, it's empty, the placeholder tag is for the placeholder
+export default function CreatePartyPage({ navigation }) {
+  const [userName, setUserName] = useState('');
   const [partyName, setPartyName] = useState('');
 
   return (
@@ -21,7 +20,7 @@ export default function CreatePartyPage({ navigation }) {
           <GameButtons variant="task" size="half">Invite</GameButtons>
         </View>
         <View style={{ marginTop: 8 }}>
-          <GameButtons variant="task" onPress={() => {handleSubmit(); navigation.navigate('PartyOwner')}}>
+          <GameButtons variant="task" onPress={() => navigation.navigate('PartyOwner')}>
             Create Party
           </GameButtons>
         </View>

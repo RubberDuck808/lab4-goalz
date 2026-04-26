@@ -34,6 +34,11 @@ export default function YourRolePage({ navigation, route }) {
         <Text style={styles.tapLabel}>
           {revealed ? 'YOUR ROLE!' : 'TAP TO\nVIEW ROLE'}
         </Text>
+        {revealed && (
+          <TouchableOpacity style={styles.continueBtn} onPress={() => navigation.navigate('Map', { fromGame: true })}>
+            <Text style={styles.continueBtnText}>Continue</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -78,4 +83,6 @@ const styles = StyleSheet.create({
   questionMark: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
   roleText: { fontSize: 22, fontWeight: 'bold', color: '#1CB0F6', textTransform: 'uppercase', textAlign: 'center' },
   tapLabel: { fontSize: 22, fontWeight: 'bold', color: '#3f3f46', textTransform: 'uppercase', textAlign: 'center', lineHeight: 30 },
+  continueBtn: { backgroundColor: '#2D7D46', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 48 },
+  continueBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
 });

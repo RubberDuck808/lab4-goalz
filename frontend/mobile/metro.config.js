@@ -19,7 +19,7 @@ config.resolver = {
     // Block them so Metro resolves these from the project root only,
     // preventing duplicate-React hook errors.
     new RegExp(
-      `${__dirname.replace(/\\/g, '\\\\')}\\\\node_modules\\\\nativewind\\\\node_modules\\\\(react|react-native)\\\\.*`
+      `${__dirname.replace(/\\/g, '\\\\')}\\\\node_modules\\\\nativewind\\\\node_modules\\\\(react|react-native|react-native-reanimated|react-native-worklets)\\\\.*`
     ),
   ],
 };

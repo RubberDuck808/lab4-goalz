@@ -14,6 +14,7 @@ import PartyLobbyPage from './pages/PartyLobbyPage';
 import PartyOwnerPage from './pages/PartyOwnerPage';
 import YourRolePage from './pages/YourRolePage';
 import SettingsPage from './pages/SettingsPage';
+import MapPage from './pages/MapPage';
 import QuizCountdownPage from './pages/QuizCountdownPage';
 import QuizPage from './pages/QuizPage';
 import QuizResultPage from './pages/QuizResultPage';
@@ -36,9 +37,10 @@ export default function App() {
           <Stack.Screen name="PartyOwner"  component={PartyOwnerPage} />
           <Stack.Screen name="YourRole"    component={YourRolePage} />
           <Stack.Screen name="Settings"    component={SettingsPage} />
-          <Stack.Screen name="QuizCountdown"        component={QuizCountdownPage} />
-          <Stack.Screen name="Quiz"        component={QuizPage} />
-          <Stack.Screen name="QuizResult"        component={QuizResultPage} />
+          <Stack.Screen name="Map"         component={MapPage} />
+          <Stack.Screen name="QuizCountdown" component={QuizCountdownPage} />
+          <Stack.Screen name="Quiz"          component={QuizPage} />
+          <Stack.Screen name="QuizResult"    component={QuizResultPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
