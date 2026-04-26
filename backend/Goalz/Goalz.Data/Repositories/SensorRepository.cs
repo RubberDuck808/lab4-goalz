@@ -39,4 +39,10 @@ public class SensorRepository : ISensorRepository
         _context.Sensors.Remove(sensor);
         return await _context.SaveChangesAsync() > 0;
     }
+
+    public async Task<IEnumerable<Sensor>> GetByIdsAsync(IEnumerable<long> ids)
+    {
+        var idSet = ids.ToHashSet();
+        return await _context.Sensors.Where(s => idSet.Contains(s.Id)).ToListAsync();
+    }
 }

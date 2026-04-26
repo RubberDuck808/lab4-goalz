@@ -24,6 +24,22 @@ export const overviewService = {
         }
     },
 
+    getCheckpoints: async () => {
+        try {
+            const response = await APICall(
+                "GET",
+                "/checkpoints",
+                null,
+                localStorage.getItem("jwtToken") ?? ""
+            );
+            if (!response?.ok) throw new Error('Failed to fetch checkpoints');
+            return await response.json();
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    },
+
     getElementTypes: async () => {
         const response = await APICall("GET", "/elements/types", null, localStorage.getItem("jwtToken") ?? "");
         if (!response?.ok) throw new Error('Failed to fetch element types');

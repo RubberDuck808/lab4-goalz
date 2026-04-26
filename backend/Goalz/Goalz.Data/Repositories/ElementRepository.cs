@@ -58,4 +58,10 @@ public class ElementRepository : IElementRepository
     {
         return await _context.ElementTypes.OrderBy(et => et.Name).ToListAsync();
     }
+
+    public async Task<IEnumerable<Element>> GetByIdsAsync(IEnumerable<long> ids)
+    {
+        var idSet = ids.ToHashSet();
+        return await _context.Elements.Where(e => idSet.Contains(e.Id)).ToListAsync();
+    }
 }
