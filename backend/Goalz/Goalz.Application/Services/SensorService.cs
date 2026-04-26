@@ -8,10 +8,12 @@ namespace Goalz.Core.Services;
 public class SensorService : ISensorService
 {
     private readonly ISensorRepository _repository;
+    private readonly ICheckpointService _checkpointService;
 
-    public SensorService(ISensorRepository repository)
+    public SensorService(ISensorRepository repository, ICheckpointService checkpointService)
     {
         _repository = repository;
+        _checkpointService = checkpointService;
     }
 
     public async Task<Sensor> CreateAsync(CreateSensorRequest request)
@@ -21,7 +23,9 @@ public class SensorService : ISensorService
             SensorName = request.SensorName,
             Geo = new Point(request.Longitude, request.Latitude) { SRID = 4326 }
         };
-        return await _repository.CreateAsync(sensor);
+        await _repository.CreateAsync(sensor);
+        await _checkpointService.CreateForSensorAsync(sensor.Id, sensor.Geo);
+        return sensor;
     }
 
     public async Task<(bool Success, string? Error)> UpdateAsync(long id, UpdateSensorRequest request)

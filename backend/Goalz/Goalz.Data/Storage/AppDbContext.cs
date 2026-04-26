@@ -60,12 +60,13 @@ namespace Goalz.Data.Storage
 
             modelBuilder.Entity<Checkpoint>(entity =>
             {
-                entity.HasOne(c => c.Section)
-                    .WithMany(s => s.Checkpoints)
-                    .HasForeignKey(c => c.SectionId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(c => c.Zone)
+                    .WithMany()
+                    .HasForeignKey(c => c.ZoneId)
+                    .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasIndex(c => c.SectionId);
+                entity.HasIndex(c => new { c.Type, c.ReferenceId }).IsUnique();
+                entity.HasIndex(c => c.ZoneId);
             });
 
             modelBuilder.Entity<ElementType>().ToTable("ElementType");

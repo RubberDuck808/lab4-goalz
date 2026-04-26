@@ -5,9 +5,9 @@ namespace Goalz.Domain.Entities;
 public class Checkpoint
 {
     public long Id { get; set; }
-    public long SectionId { get; set; }
-    public Section Section { get; set; } = null!;
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;  // "sensor" | "element"
+    public long ReferenceId { get; set; }
     public Point Location { get; set; } = null!;
+    public long? ZoneId { get; set; }
+    public Zone? Zone { get; set; }
 }
