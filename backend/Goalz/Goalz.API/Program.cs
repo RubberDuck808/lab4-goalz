@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Goalz.Api.Hubs;
 using Goalz.Api.Services;
 using Goalz.Application.Interfaces;
 using Goalz.Core.Interfaces;
@@ -29,7 +30,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:8081")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -91,6 +93,10 @@ builder.Services.AddScoped<IZoneService, ZoneService>();
 builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
+// Lobby
+builder.Services.AddScoped<ILobbyService, LobbyService>();
+builder.Services.AddSignalR();
+
 // Rate limiting — 10 requests per minute per IP on auth endpoints
 builder.Services.AddRateLimiter(options =>
 {
@@ -141,4 +147,5 @@ app.UseRateLimiter();
 app.UseAuthentication(); //implements AddAuthentication()
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<PartyHub>("/hubs/party");
 app.Run();

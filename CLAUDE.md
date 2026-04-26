@@ -84,3 +84,24 @@ Despite living in the `Goalz.Application/` project folder, all files there use `
 
 `Goalz.Infrastructure/Migrations/` is an older, separate chain — do not add to it.
 
+## Changelog
+After every change, you must automatically add an entry 
+to CHANGELOG.md. Format:
+```
+## Table of Contents
+
+1. [Title](#link-to-title)
+
+## [#ISSUE] Title — DATE and TIME (when issue was started)
+### [#SUB-ISSUE] Title — DATE and TIME (when issue was started) Changed/Added/Removed
+- What was done
+
+### Rationale
+- Why was this solution chosen
+- Which alternatives were rejected and why
+
+> Issue closed after (floor((current_time - start_time) / 60)) min
+
+---
+```
+Ask for the issue number if not provided.

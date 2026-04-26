@@ -11,5 +11,6 @@ namespace Goalz.Application.Interfaces
         Task<Party> GetPartyByCode(long Code);
         Task<PartyGroup?> GetPartyGroupByPartyIdAsync(long partyId);
         Task AddGroupAsync(PartyGroup group);
+        Task<List<string>> GetLobbyMembers(long partyId);
     }
 }
