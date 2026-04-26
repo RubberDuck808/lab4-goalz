@@ -8,10 +8,12 @@ namespace Goalz.Core.Services;
 public class ElementService : IElementService
 {
     private readonly IElementRepository _repository;
+    private readonly ICheckpointService _checkpointService;
 
-    public ElementService(IElementRepository repository)
+    public ElementService(IElementRepository repository, ICheckpointService checkpointService)
     {
         _repository = repository;
+        _checkpointService = checkpointService;
     }
 
     public async Task<Element> CreateAsync(CreateElementRequest request)
@@ -27,7 +29,9 @@ public class ElementService : IElementService
             ImageUrl = request.ImageUrl ?? string.Empty,
             IsGreen = request.IsGreen
         };
-        return await _repository.CreateAsync(element);
+        await _repository.CreateAsync(element);
+        await _checkpointService.CreateForElementAsync(element.Id, element.Geom);
+        return element;
     }
 
     public async Task<(bool Success, string? Error)> UpdateAsync(long id, UpdateElementRequest request)

@@ -87,6 +87,10 @@ builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
 builder.Services.AddScoped<IZoneService, ZoneService>();
 
+// Checkpoints
+builder.Services.AddScoped<ICheckpointRepository, CheckpointRepository>();
+builder.Services.AddScoped<ICheckpointService, CheckpointService>();
+
 // Party
 builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPartyRepository, PartyRepository>();

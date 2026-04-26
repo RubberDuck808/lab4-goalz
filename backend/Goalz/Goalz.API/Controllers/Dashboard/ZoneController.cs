@@ -66,5 +66,12 @@ namespace Goalz.Api.Controllers.Dashboard
             var deleted = await _zoneService.DeleteAsync(id);
             return deleted ? NoContent() : NotFound();
         }
+
+        [HttpGet("{id}/generate-preview")]
+        public async Task<IActionResult> GeneratePreview(long id, [FromQuery] int count = 4)
+        {
+            var geometries = await _zoneService.GenerateZonePreviewAsync(id, count);
+            return Ok(geometries);
+        }
     }
 }
