@@ -57,10 +57,10 @@ export default function reports() {
                         <CheckBox name='Species' />
                     </div>
                     <div className="h-full grow-1 p-4 rounded-lg gap-3 flex flex-col">
-                        <CheckBox name='Size' />
-                        <CheckBox name='Healthscore' />
-                        <CheckBox name='Longitude' />
-                        <CheckBox name='Latitude' />
+                        <CheckBox name='Sensor data' />
+                        <CheckBox name='Light' />
+                        <CheckBox name='Temprature' />
+                        <CheckBox name='Humidity' />
                     </div>
                     <div className="h-full grow-1 p-4 rounded-lg gap-3 flex flex-col">
                         <CheckBox name='Green vs non-green' />
