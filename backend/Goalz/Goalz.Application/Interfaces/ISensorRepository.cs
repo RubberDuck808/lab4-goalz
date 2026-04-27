@@ -9,4 +9,5 @@ public interface ISensorRepository
     Task<bool> UpdateAsync(Sensor sensor);
     Task<bool> DeleteAsync(long id);
     Task<IEnumerable<Sensor>> GetByIdsAsync(IEnumerable<long> ids);
+    Task<IEnumerable<Sensor>> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo);
 }
