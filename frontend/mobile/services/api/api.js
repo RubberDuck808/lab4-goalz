@@ -95,6 +95,14 @@ export async function declineFriendRequest(requesterUsername) {
   return { success: false, error: 'Something went wrong.' };
 }
 
+export async function getSensorData(sensorId) {
+  const response = await fetch(`${BASE_URL}/api/game/sensors/${sensorId}/data`, {
+    headers: await authHeaders(),
+  });
+  if (response.ok) return { success: true, data: await response.json() };
+  return { success: false, data: [] };
+}
+
 export async function removeConnection(otherUsername) {
   const response = await fetch(`${BASE_URL}/api/game/friends/connection`, {
     method: 'DELETE',

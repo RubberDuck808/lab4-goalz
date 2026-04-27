@@ -17,7 +17,10 @@
       "bundleIdentifier": "com.goalz.loggin",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "Loggin needs Bluetooth to detect nearby checkpoints.",
-        "NSBluetoothPeripheralUsageDescription": "Loggin needs Bluetooth to detect nearby checkpoints."
+        "NSBluetoothPeripheralUsageDescription": "Loggin needs Bluetooth to detect nearby checkpoints.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {

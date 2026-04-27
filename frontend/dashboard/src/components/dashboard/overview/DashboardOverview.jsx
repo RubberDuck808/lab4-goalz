@@ -59,10 +59,10 @@ export default function DashboardOverview({ setSelectedItem }) {
     const handleCheckpointClick = useCallback((cp) => {
         if (cp.type === 'element') {
             const el = elements.find(e => e.id === cp.referenceId);
-            if (el) setSelectedElement(el);
+            if (el) { setSelectedSensor(null); setSelectedElement(el); }
         } else if (cp.type === 'sensor') {
             const sensor = sensors.find(s => s.id === cp.referenceId);
-            if (sensor) setSelectedSensor(sensor);
+            if (sensor) { setSelectedElement(null); setSelectedSensor(sensor); }
         }
     }, [elements, sensors]);
 

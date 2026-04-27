@@ -57,33 +57,9 @@ namespace Goalz.Test
             if (!_context.Sensors.Any())
             {
                 _context.Sensors.AddRange(
-                    new Sensor
-                    {
-                        Id = 1,
-                        SensorName = "Sensor 1",
-                        Geo = new Point(new Coordinate(10, -72)),
-                        Light = 12,
-                        Humidity = 14,
-                        Temp = 17
-                    },
-                    new Sensor
-                    {
-                        Id = 2,
-                        SensorName = "Sensor 2",
-                        Geo = new Point(new Coordinate(11, -73)),
-                        Light = 13,
-                        Humidity = 15,
-                        Temp = 18
-                    },
-                    new Sensor
-                    {
-                        Id = 3,
-                        SensorName = "Sensor 3",
-                        Geo = new Point(new Coordinate(12, -74)),
-                        Light = 14,
-                        Humidity = 16,
-                        Temp = 19
-                    }
+                    new Sensor { Id = 1, SensorName = "Sensor 1", Geo = new Point(new Coordinate(10, -72)) },
+                    new Sensor { Id = 2, SensorName = "Sensor 2", Geo = new Point(new Coordinate(11, -73)) },
+                    new Sensor { Id = 3, SensorName = "Sensor 3", Geo = new Point(new Coordinate(12, -74)) }
                 );
             }
 
@@ -155,6 +131,32 @@ namespace Goalz.Test
             Assert.IsTrue(result.element.Any(e => e.ElementName == "Element 2"));
             Assert.IsTrue(result.element.Any(e => e.ElementName == "Element 3"));
             Assert.IsTrue(result.element.Any(e => e.ElementName == "Element 4"));
+        }
+
+        [TestMethod]
+        public async Task GetDashboardData_ReturnsCorrectGreenElementCount()
+        {
+            var result = await _overviewService.GetDashboardData();
+
+            var greenElements = result.element.Where(e => e.IsGreen).ToList();
+
+            Assert.AreEqual(2, greenElements.Count);
+        }
+
+        [TestMethod]
+        public async Task GetDashboardData_AllSensorsHaveName()
+        {
+            var result = await _overviewService.GetDashboardData();
+
+            Assert.IsTrue(result.sensors.All(s => !string.IsNullOrEmpty(s.SensorName)));
+        }
+
+        [TestMethod]
+        public async Task GetDashboardData_AllElementsHaveName()
+        {
+            var result = await _overviewService.GetDashboardData();
+
+            Assert.IsTrue(result.element.All(e => !string.IsNullOrEmpty(e.ElementName)));
         }
     }
 }
