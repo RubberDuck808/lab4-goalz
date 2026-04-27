@@ -31,6 +31,12 @@ public class CheckpointRepository : ICheckpointRepository
     public async Task AddAsync(Checkpoint checkpoint)
         => await _context.Checkpoints.AddAsync(checkpoint);
 
+    public Task DeleteAsync(Checkpoint checkpoint)
+    {
+        _context.Checkpoints.Remove(checkpoint);
+        return Task.CompletedTask;
+    }
+
     public async Task SaveChangesAsync()
         => await _context.SaveChangesAsync();
 }

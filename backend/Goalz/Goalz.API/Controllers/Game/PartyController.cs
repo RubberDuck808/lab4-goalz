@@ -19,10 +19,12 @@ namespace Goalz.Api.Controllers.Game
             _partyService = partyService;
         }
 
-        [HttpPost ("create")]
+        [Authorize]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateParty([FromBody] PartyRequest request)
         {
-            return Ok(await _partyService.CreateParty(request));
+            var username = User.Identity!.Name!;
+            return Ok(await _partyService.CreateParty(request, username));
         }
 
         [HttpGet("{id}")]
@@ -41,6 +43,37 @@ namespace Goalz.Api.Controllers.Game
             if (result == null) return NotFound("Party not found");
             return Ok(result);
             
+        }
+
+        [Authorize]
+        [HttpPost("{id}/start")]
+        public async Task<IActionResult> StartGame(long id)
+        {
+            var found = await _partyService.StartGame(id);
+            if (!found) return NotFound("Party not found");
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpGet("{id}/state")]
+        public async Task<IActionResult> GetGameState(long id)
+        {
+            var result = await _partyService.GetGameState(id);
+            if (result == null) return NotFound("Party not found");
+            return Ok(result);
+        }
+
+        public class VisitCheckpointRequest
+        {
+            public long CheckpointId { get; set; }
+        }
+
+        [Authorize]
+        [HttpPost("{id}/visit")]
+        public async Task<IActionResult> VisitCheckpoint(long id, [FromBody] VisitCheckpointRequest request)
+        {
+            await _partyService.VisitCheckpoint(id, request.CheckpointId);
+            return Ok();
         }
     }
 }

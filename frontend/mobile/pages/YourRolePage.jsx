@@ -2,25 +2,42 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
-
-const ROLES = ['Scout', 'Trailblazer'];
+import { useGameContext } from '../context/GameContext';
 
 export default function YourRolePage({ navigation, route }) {
   const singlePlayer = route?.params?.singlePlayer ?? false;
-  const roles = singlePlayer ? ROLES : ['Scout'];
-  const [revealed, setRevealed] = useState(false);
+  const { role, setRole, gameConfig } = useGameContext();
+  const [selectedRole, setSelectedRole] = useState(null);
+
+  // Party mode: wait for role from context before showing the card
+  const partyRole = singlePlayer ? null : role;
+  const singlePlayerRoles = gameConfig?.groupSize == null ? ['Explorer'] : ['Scout', 'Trailblazer'];
+  const roles = singlePlayer ? singlePlayerRoles : (partyRole ? [partyRole] : null);
+
+  const isRevealed = singlePlayer ? selectedRole !== null : selectedRole !== null;
+
+  if (!singlePlayer && !partyRole) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <PageHeader title="Your Role" onBack={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <Text style={styles.tapLabel}>{'WAITING FOR\nROLE...'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Your Role" onBack={() => navigation.goBack()} />
       <View style={styles.center}>
         <View style={singlePlayer ? styles.rowCards : null}>
-          {roles.map((role) => (
-            <TouchableOpacity key={role} onPress={() => setRevealed(r => !r)} activeOpacity={0.9}>
+          {roles.map((r) => (
+            <TouchableOpacity key={r} onPress={() => setSelectedRole(r)} activeOpacity={0.9}>
               <View style={styles.card}>
-                {revealed ? (
+                {selectedRole === r ? (
                   <View style={styles.revealedInner}>
-                    <Text style={styles.roleText}>{role}</Text>
+                    <Text style={styles.roleText}>{r}</Text>
                   </View>
                 ) : (
                   <View style={styles.hiddenInner}>
@@ -32,10 +49,13 @@ export default function YourRolePage({ navigation, route }) {
           ))}
         </View>
         <Text style={styles.tapLabel}>
-          {revealed ? 'YOUR ROLE!' : 'TAP TO\nVIEW ROLE'}
+          {isRevealed ? 'YOUR ROLE!' : 'TAP TO\nVIEW ROLE'}
         </Text>
-        {revealed && (
-          <TouchableOpacity style={styles.continueBtn} onPress={() => navigation.navigate('Map', { fromGame: true })}>
+        {isRevealed && (
+          <TouchableOpacity style={styles.continueBtn} onPress={() => {
+            if (singlePlayer) setRole(selectedRole);
+            navigation.navigate('Map', { fromGame: true });
+          }}>
             <Text style={styles.continueBtnText}>Continue</Text>
           </TouchableOpacity>
         )}
