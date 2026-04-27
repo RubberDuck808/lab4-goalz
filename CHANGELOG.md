@@ -2,7 +2,27 @@
 
 ## Table of Contents
 
-1. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+1. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
+2. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## [#55] SonarQube CI Stage — 2026-04-28 00:00
+### Added
+- New `sonarqube` stage in `.gitlab-ci.yml` (runs after `test`)
+- `sonarqube:analysis` job using `sonarsource/sonar-scanner-cli:latest` image
+- Passes `SONAR_HOST_URL` and `SONAR_TOKEN` from GitLab CI variables
+- Excludes `node_modules`, `bin`, `obj`, and `Migrations` from analysis
+- `GIT_DEPTH: "0"` for full blame/history; `.sonar/cache` cached per job
+- `allow_failure: true` so a SonarQube outage never blocks the pipeline
+- Restricted to `dev` and `main` branches only
+
+### Rationale
+- SonarQube server is only reachable from within the school's GitLab runner, so the job is intentionally not runnable locally
+- `allow_failure: true` prevents a down or misconfigured Sonar instance from blocking merges
+- Migrations and generated bin/obj directories are excluded to avoid noise in the quality report
+
+> Issue closed after 0 min
 
 ---
 
