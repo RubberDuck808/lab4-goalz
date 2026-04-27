@@ -19,10 +19,18 @@ export default function Map({
   closeModal,
   checkpoints,
   onCheckpointClick,
+  onCoordsPick,
+  pickedCoords,
 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const clusterGroupRef = useRef(null)
+  const onCoordsPickRef = useRef(onCoordsPick)
+  const onCheckpointClickRef = useRef(onCheckpointClick)
+  const pickedMarkerRef = useRef(null)
+
+  useEffect(() => { onCoordsPickRef.current = onCoordsPick }, [onCoordsPick])
+  useEffect(() => { onCheckpointClickRef.current = onCheckpointClick }, [onCheckpointClick])
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -44,6 +52,15 @@ export default function Map({
     }).setView([43.7260, -79.6099], 15)
 
     mapInstanceRef.current = map
+
+    map.on('click', (e) => {
+      if (onCoordsPickRef.current) {
+        onCoordsPickRef.current({
+          lat: +e.latlng.lat.toFixed(6),
+          lng: +e.latlng.lng.toFixed(6),
+        })
+      }
+    })
 
     L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
@@ -87,6 +104,32 @@ export default function Map({
   }, [])
 
   useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+    map.getContainer().style.cursor = onCoordsPick ? 'crosshair' : ''
+  }, [onCoordsPick])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    if (pickedMarkerRef.current) {
+      map.removeLayer(pickedMarkerRef.current)
+      pickedMarkerRef.current = null
+    }
+
+    if (pickedCoords) {
+      pickedMarkerRef.current = L.circleMarker([pickedCoords.lat, pickedCoords.lng], {
+        radius: 10,
+        fillColor: '#33A661',
+        color: '#ffffff',
+        weight: 3,
+        fillOpacity: 0.9,
+      }).addTo(map)
+    }
+  }, [pickedCoords])
+
+  useEffect(() => {
     if (!clusterGroupRef.current || !checkpoints) return
 
     const clusterGroup = clusterGroupRef.current
@@ -112,7 +155,7 @@ export default function Map({
       })
 
       const marker = L.marker([cp.latitude, cp.longitude], { icon })
-      marker.on('click', () => onCheckpointClick?.(cp))
+      marker.on('click', () => onCheckpointClickRef.current?.(cp))
       return marker
     })
 

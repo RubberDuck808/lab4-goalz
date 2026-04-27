@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
-import { signUp } from '../services/api';
+
 import { storeUser } from '../services/session';
 
 export default function SignUp({ navigation }) {
