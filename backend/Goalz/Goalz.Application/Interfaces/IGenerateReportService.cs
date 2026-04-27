@@ -1,9 +1,10 @@
-﻿using Goalz.Core.DTOs;
+﻿using System.Text;
+using Goalz.Core.DTOs;
 
 namespace Goalz.Core.Interfaces
 {
     public interface IGenerateReportService
     {
-        public void GenerateReport(GenerateReportDto settings);
+        public StringBuilder GenerateReport(GenerateReportDto settings);
     }
 }

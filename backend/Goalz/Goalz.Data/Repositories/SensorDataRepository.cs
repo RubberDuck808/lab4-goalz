@@ -21,4 +21,9 @@ public class SensorDataRepository : ISensorDataRepository
             .OrderByDescending(sd => sd.Timestamp)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<SensorData>> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo)
+    {
+        return await _context.SensorData.Where(s => s.Timestamp >= dateTimeFrom && s.Timestamp <= dateTimeTo).ToListAsync();
+    }
 }

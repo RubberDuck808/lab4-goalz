@@ -7,7 +7,7 @@
         public bool Water { get; set; }
         public bool Species { get; set; }
         public bool SensorData { get; set; }
-        public bool Temprature { get; set; }
+        public bool Temperature { get; set; }
         public bool Light { get; set; }
         public bool Humidity { get; set; }
         public bool GreenVsNonGreen { get; set; }
