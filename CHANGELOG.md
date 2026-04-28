@@ -2,13 +2,33 @@
 
 ## Table of Contents
 
-1. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
-2. [Auth redirect & PartyId migration fix](#auth-redirect--partyid-migration-fix--2026-04-27)
-3. [Game setup configuration](#game-setup-configuration--2026-04-27)
-4. [Separate Boundary from Zone](#separate-boundary-from-zone--2026-04-27)
-5. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
-6. [Remove ZoneType](#remove-zonetype--2026-04-27)
-7. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
+1. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
+2. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+3. [Auth redirect & PartyId migration fix](#auth-redirect--partyid-migration-fix--2026-04-27)
+4. [Game setup configuration](#game-setup-configuration--2026-04-27)
+5. [Separate Boundary from Zone](#separate-boundary-from-zone--2026-04-27)
+6. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
+7. [Remove ZoneType](#remove-zonetype--2026-04-27)
+8. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
+
+---
+
+## [#55] SonarQube CI Stage — 2026-04-28 00:00
+### Added
+- New `sonarqube` stage in `.gitlab-ci.yml` (runs after `test`)
+- `sonarqube:analysis` job using `sonarsource/sonar-scanner-cli:latest` image
+- Passes `SONAR_HOST_URL` and `SONAR_TOKEN` from GitLab CI variables
+- Excludes `node_modules`, `bin`, `obj`, and `Migrations` from analysis
+- `GIT_DEPTH: "0"` for full blame/history; `.sonar/cache` cached per job
+- `allow_failure: true` so a SonarQube outage never blocks the pipeline
+- Restricted to `dev` and `main` branches only
+
+### Rationale
+- SonarQube server is only reachable from within the school's GitLab runner, so the job is intentionally not runnable locally
+- `allow_failure: true` prevents a down or misconfigured Sonar instance from blocking merges
+- Migrations and generated bin/obj directories are excluded to avoid noise in the quality report
+
+> Issue closed after 0 min
 
 ---
 
