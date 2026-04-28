@@ -140,21 +140,6 @@ backend:deploy:
     - main
     - feature/deployment
 
-# ------------------------
-# MOBILE DEPLOY (EAS Update)
-# ------------------------
-mobile:deploy:
-  stage: deploy
-  image: node:22
-  script:
-    - cd frontend/mobile
-    - npm install --force
-    - npm rebuild
-    - npm install -g eas-cli
-    - EXPO_TOKEN=$EXPO_TOKEN eas update --branch main --message "$CI_COMMIT_MESSAGE" --non-interactive
-  only:
-    - main
-    - feature/deployment
 
 # ------------------------
 # DASHBOARD DEPLOY
