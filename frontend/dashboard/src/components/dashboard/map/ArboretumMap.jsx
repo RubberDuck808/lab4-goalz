@@ -7,22 +7,18 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { getAllZones, createZone, updateZone, deleteZone } from '../../../services/zoneService'
+import { getAllBoundaries, createBoundary, updateBoundary, deleteBoundary } from '../../../services/boundaryService'
 import { fetchOsmZones } from '../../../services/osmImportService'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from './boundarySnap'
 import LayerSidebar from './LayerSidebar'
 
 
-const ZONE_TYPES = [
-  { value: 'boundary', label: 'Boundary',     color: '#1A5C2E' },
-  { value: 'area',     label: 'Area',         color: '#2D7D46' },
-  { value: 'path',     label: 'Trail / Path', color: '#8B6914' },
-]
-
 function buildStyle(zone, selected = false) {
-  const noFill = zone.zoneType === 'path' || zone.zoneType === 'boundary'
+  const isBoundary = zone._isBoundary === true
+  const noFill = isBoundary
   return {
     color: selected ? '#facc15' : (zone.color ?? '#33A661'),
-    weight: selected ? 3 : (zone.zoneType === 'boundary' ? 3 : 2),
+    weight: selected ? 3 : (isBoundary ? 3 : 2),
     fillOpacity: noFill ? 0 : (selected ? 0.25 : 0.15),
     fillColor: zone.color ?? '#33A661',
   }
@@ -33,6 +29,67 @@ function checkpointColor(cp) {
   if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661'
   if (cp.elementTypeId === 2) return '#3B82F6'
   return '#ef4444'
+}
+
+function getApiBase() {
+  return import.meta.env.VITE_API_BASE_URL ?? ''
+}
+
+function extractLatLng(pointLike, fallbackLat, fallbackLng) {
+  if (typeof fallbackLat === 'number' && typeof fallbackLng === 'number') {
+    return { latitude: fallbackLat, longitude: fallbackLng }
+  }
+  if (pointLike?.type === 'Point' && Array.isArray(pointLike.coordinates) && pointLike.coordinates.length >= 2) {
+    return { latitude: pointLike.coordinates[1], longitude: pointLike.coordinates[0] }
+  }
+  if (typeof pointLike?.y === 'number' && typeof pointLike?.x === 'number') {
+    return { latitude: pointLike.y, longitude: pointLike.x }
+  }
+  if (typeof pointLike?.latitude === 'number' && typeof pointLike?.longitude === 'number') {
+    return { latitude: pointLike.latitude, longitude: pointLike.longitude }
+  }
+  return null
+}
+
+function normalizeOverviewToCheckpoints(data) {
+  const sensors = Array.isArray(data?.sensors) ? data.sensors : []
+  const elements = Array.isArray(data?.element) ? data.element : []
+
+  const sensorPoints = sensors
+    .map((sensor) => {
+      const coords = extractLatLng(sensor?.geo, sensor?.latitude, sensor?.longitude)
+      if (!coords) return null
+      return {
+        id: `sensor-${sensor.id}`,
+        type: 'sensor',
+        referenceId: sensor.id,
+        zoneId: null,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        name: sensor.sensorName ?? `Sensor ${sensor.id}`,
+      }
+    })
+    .filter(Boolean)
+
+  const elementPoints = elements
+    .map((element) => {
+      const coords = extractLatLng(element?.geom, element?.latitude, element?.longitude)
+      if (!coords) return null
+      return {
+        id: `element-${element.id}`,
+        type: 'element',
+        referenceId: element.id,
+        zoneId: null,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        elementTypeId: element.elementTypeId,
+        isGreen: element.isGreen,
+        name: element.elementName ?? `Element ${element.id}`,
+      }
+    })
+    .filter(Boolean)
+
+  return [...sensorPoints, ...elementPoints]
 }
 
 // Convert a GeoJSON geometry to an editable Leaflet layer
@@ -90,6 +147,7 @@ export default function ArboretumMap() {
   const [createMode,  setCreateMode]  = useState(null)
   const [createColor, setCreateColor] = useState('#2D7D46')
   const [saving,      setSaving]      = useState(false)
+  const createBoundaryIdRef = useRef(null)  // boundary to link a newly drawn zone to
 
   // edit form
   const [selectedZone,        setSelectedZone]        = useState(null)
@@ -111,22 +169,47 @@ export default function ArboretumMap() {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500)
   }
 
+  const loadCheckpoints = useCallback(async () => {
+    const base = getApiBase()
+
+    try {
+      const checkpointRes = await fetch(`${base}/api/dashboard/checkpoints`)
+      if (checkpointRes.ok) {
+        const checkpointData = await checkpointRes.json()
+        if (Array.isArray(checkpointData) && checkpointData.length > 0) {
+          setCheckpoints(checkpointData)
+          return
+        }
+      }
+    } catch (_) {}
+
+    try {
+      const overviewRes = await fetch(`${base}/api/dashboard/overview`)
+      if (!overviewRes.ok) throw new Error('Failed to fetch overview data')
+      const overviewData = await overviewRes.json()
+      setCheckpoints(normalizeOverviewToCheckpoints(overviewData))
+    } catch (_) {
+      setCheckpoints([])
+    }
+  }, [])
+
   // ── Layer helpers ─────────────────────────────────────────────────────────────
 
   function addZoneLayer(map, zone, onClick) {
-    const pane = zone.zoneType === 'boundary' ? 'boundaryPane' : 'zonePane'
+    const isBoundary = zone._isBoundary === true
+    const pane = isBoundary ? 'boundaryPane' : 'zonePane'
     const layer = L.geoJSON(zone.boundary, { style: () => buildStyle(zone), pane })
     layer.bindTooltip(zone.name, { permanent: false, direction: 'center' })
     layer.on('click', (e) => { L.DomEvent.stopPropagation(e); onClick(zone) })
     layer.on('mouseover', () => {
       if (!zoneLayers.current.get(zone.id)?.selected)
-        layer.setStyle({ weight: 3, fillOpacity: zone.zoneType === 'path' ? 0 : 0.25 })
+        layer.setStyle({ weight: 3, fillOpacity: isBoundary ? 0 : 0.25 })
     })
     layer.on('mouseout', () => {
       if (!zoneLayers.current.get(zone.id)?.selected)
         layer.setStyle(buildStyle(zone))
     })
-    const visible = zone.zoneType === 'boundary'
+    const visible = isBoundary
       ? layerVisibilityRef.current.boundary
       : layerVisibilityRef.current.zones
     if (visible) layer.addTo(map)
@@ -151,17 +234,17 @@ export default function ArboretumMap() {
   }
 
   function reloadZones(map, onClickFn) {
-    return getAllZones().then((zoneList) => {
+    return Promise.all([getAllBoundaries(), getAllZones()]).then(([boundaryList, zoneList]) => {
       zoneLayers.current.forEach(({ layer }) => map.removeLayer(layer))
       zoneLayers.current.clear()
-      zoneList.forEach((zone) => addZoneLayer(map, zone, onClickFn))
-      boundaryRingRef.current = zoneList
-        .filter((z) => z.zoneType === 'boundary')
-        .map(extractBoundaryRing)
-        .filter(Boolean)
-      setZoneCount(zoneList.length)
-      setZones(zoneList)
-      return zoneList
+      const taggedBoundaries = boundaryList.map((b) => ({ ...b, _isBoundary: true }))
+      taggedBoundaries.forEach((b) => addZoneLayer(map, b, onClickFn))
+      zoneList.forEach((z) => addZoneLayer(map, z, onClickFn))
+      boundaryRingRef.current = taggedBoundaries.map(extractBoundaryRing).filter(Boolean)
+      const all = [...taggedBoundaries, ...zoneList]
+      setZoneCount(all.length)
+      setZones(all)
+      return all
     })
   }
 
@@ -371,7 +454,7 @@ export default function ArboretumMap() {
     const map = mapInstance.current
     if (!map) return
     zoneLayers.current.forEach(({ layer, zone }) => {
-      const show = zone.zoneType === 'boundary' ? layerVisibility.boundary : layerVisibility.zones
+      const show = zone._isBoundary ? layerVisibility.boundary : layerVisibility.zones
       if (show && !map.hasLayer(layer)) layer.addTo(map)
       else if (!show && map.hasLayer(layer)) map.removeLayer(layer)
     })
@@ -383,13 +466,8 @@ export default function ArboretumMap() {
   // ── Checkpoint fetch ──────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const base = import.meta.env.VITE_API_BASE_URL
-    if (!base) return
-    fetch(`${base}/api/dashboard/checkpoints`)
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => setCheckpoints(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }, [])
+    loadCheckpoints()
+  }, [loadCheckpoints])
 
   // ── Render checkpoint markers ─────────────────────────────────────────────────
 
@@ -437,6 +515,10 @@ export default function ArboretumMap() {
   // ── Create ────────────────────────────────────────────────────────────────────
 
   const handleStartDraw = (mode) => {
+    // capture the active boundary before clearing selection
+    createBoundaryIdRef.current = (mode !== 'boundary' && selectedZone?._isBoundary)
+      ? selectedZone.id
+      : null
     if (selectedZone) {
       const e = zoneLayers.current.get(selectedZone.id)
       if (e) { e.selected = false; e.layer.setStyle(buildStyle(selectedZone)) }
@@ -467,17 +549,23 @@ export default function ArboretumMap() {
   const handleSaveCreate = async (e) => {
     e.preventDefault()
     if (!createName.trim() || !pendingGeometry) return
-    const zoneType = createMode === 'boundary' ? 'boundary' : 'area'
     setSaving(true)
     try {
-      await createZone({ name: createName.trim(), zoneType, color: createColor, boundary: pendingGeometry })
+      if (createMode === 'boundary') {
+        await createBoundary({ name: createName.trim(), color: createColor, boundary: pendingGeometry })
+      } else {
+        await createZone({
+          name: createName.trim(), color: createColor,
+          boundaryId: createBoundaryIdRef.current,
+          boundary: pendingGeometry,
+        })
+      }
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
       setCreateName(''); setCreateMode(null); setCreateColor('#2D7D46')
       setPendingGeometry(null)
       drawnItemsRef.current?.clearLayers()
       addToast(`"${createName.trim()}" saved`)
-      const base = import.meta.env.VITE_API_BASE_URL
-      if (base) fetch(`${base}/api/dashboard/checkpoints`).then(r => r.ok ? r.json() : []).then(d => setCheckpoints(Array.isArray(d) ? d : [])).catch(() => {})
+      await loadCheckpoints()
     } catch (err) { addToast(err.message, 'error') }
     finally { setSaving(false) }
   }
@@ -532,10 +620,17 @@ export default function ArboretumMap() {
     if (!editName.trim() || !selectedZone) return
     setUpdating(true)
     try {
-      await updateZone(selectedZone.id, {
-        name: editName.trim(), zoneType: selectedZone.zoneType, color: editColor,
-        boundary: editPendingGeometry ?? undefined,
-      })
+      if (selectedZone._isBoundary) {
+        await updateBoundary(selectedZone.id, {
+          name: editName.trim(), color: editColor,
+          boundary: editPendingGeometry ?? undefined,
+        })
+      } else {
+        await updateZone(selectedZone.id, {
+          name: editName.trim(), color: editColor,
+          boundary: editPendingGeometry ?? undefined,
+        })
+      }
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
       addToast(`"${editName.trim()}" saved`)
       setSelectedZone(null); setEditPendingGeometry(null)
@@ -549,12 +644,15 @@ export default function ArboretumMap() {
     setDeleting(true); setConfirmingDelete(false)
     const name = selectedZone.name
     try {
-      await deleteZone(selectedZone.id)
+      if (selectedZone._isBoundary) {
+        await deleteBoundary(selectedZone.id)
+      } else {
+        await deleteZone(selectedZone.id)
+      }
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
       setSelectedZone(null); drawnItemsRef.current?.clearLayers()
       addToast(`"${name}" deleted`)
-      const base = import.meta.env.VITE_API_BASE_URL
-      if (base) fetch(`${base}/api/dashboard/checkpoints`).then(r => r.ok ? r.json() : []).then(d => setCheckpoints(Array.isArray(d) ? d : [])).catch(() => {})
+      await loadCheckpoints()
     } catch (err) { addToast(err.message, 'error') }
     finally { setDeleting(false) }
   }
@@ -570,11 +668,11 @@ export default function ArboretumMap() {
   }
 
   const handleGeneratePreview = async () => {
-    if (!selectedZone) return
+    if (!selectedZone?._isBoundary) return
     setGenerating(true)
     try {
       const base = import.meta.env.VITE_API_BASE_URL
-      const res = await fetch(`${base}/api/dashboard/zones/${selectedZone.id}/generate-preview?count=${genCount}`)
+      const res = await fetch(`${base}/api/dashboard/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`)
       if (!res.ok) throw new Error('Generation failed')
       const geometries = await res.json()
       setGeneratedZones(Array.isArray(geometries) ? geometries : [])
@@ -588,13 +686,12 @@ export default function ArboretumMap() {
     const count = generatedZones.length
     try {
       for (let i = 0; i < count; i++) {
-        await createZone({ name: `${selectedZone.name} Zone ${i + 1}`, zoneType: 'area', color: '#2D7D46', boundary: generatedZones[i] })
+        await createZone({ name: `${selectedZone.name} Zone ${i + 1}`, color: '#2D7D46', boundaryId: selectedZone.id, boundary: generatedZones[i] })
       }
       clearGeneratedZones()
       await reloadZones(mapInstance.current, zone => handleZoneClickRef.current(zone))
       addToast(`${count} zone${count !== 1 ? 's' : ''} saved`)
-      const base = import.meta.env.VITE_API_BASE_URL
-      if (base) fetch(`${base}/api/dashboard/checkpoints`).then(r => r.ok ? r.json() : []).then(d => setCheckpoints(Array.isArray(d) ? d : [])).catch(() => {})
+      await loadCheckpoints()
     } catch (err) { addToast(err.message, 'error') }
     finally { setSavingGen(false) }
   }
@@ -619,7 +716,7 @@ export default function ArboretumMap() {
       const osmZones = await fetchOsmZones()
       let failed = 0
       for (const z of osmZones) {
-        try { await createZone({ name: z.name, zoneType: z.zoneType, color: z.color, boundary: z.geometry }) }
+        try { await createZone({ name: z.name, color: z.color, boundary: z.geometry }) }
         catch (_) { failed++ }
       }
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
@@ -756,7 +853,7 @@ export default function ArboretumMap() {
           )}
 
           {/* ── Boundary selected ── */}
-          {!drawing && !pendingGeometry && selectedZone?.zoneType === 'boundary' && (
+          {!drawing && !pendingGeometry && selectedZone?._isBoundary && (
             <>
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -853,9 +950,9 @@ export default function ArboretumMap() {
                 <div className="flex items-center justify-between">
                   <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">
                     Zones
-                    {zones.filter(z => z.zoneType !== 'boundary').length > 0 && (
+                    {zones.filter(z => !z._isBoundary).length > 0 && (
                       <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
-                        {zones.filter(z => z.zoneType !== 'boundary').length}
+                        {zones.filter(z => !z._isBoundary).length}
                       </span>
                     )}
                   </p>
@@ -864,17 +961,16 @@ export default function ArboretumMap() {
                     <i className="fa-solid fa-plus text-xs" /> Add Zone
                   </button>
                 </div>
-                {zones.filter(z => z.zoneType !== 'boundary').length === 0 ? (
+                {zones.filter(z => !z._isBoundary).length === 0 ? (
                   <p className="font text-gray-400 text-sm">No zones yet — click Add Zone to draw one.</p>
                 ) : (
                   <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
-                    {zones.filter(z => z.zoneType !== 'boundary').map((zone) => (
+                    {zones.filter(z => !z._isBoundary).map((zone) => (
                       <button key={zone.id} type="button"
                         onClick={() => handleZoneClickRef.current(zone)}
                         className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: zone.color }} />
                         <span className="font text-gray-800 text-sm flex-1 truncate">{zone.name}</span>
-                        <span className="font text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0 capitalize">{zone.zoneType}</span>
                       </button>
                     ))}
                   </div>
@@ -920,7 +1016,7 @@ export default function ArboretumMap() {
           )}
 
           {/* ── Zone selected ── */}
-          {!drawing && !pendingGeometry && selectedZone && selectedZone.zoneType !== 'boundary' && (
+          {!drawing && !pendingGeometry && selectedZone && !selectedZone._isBoundary && (
             <>
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -928,7 +1024,7 @@ export default function ArboretumMap() {
                     <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: selectedZone.color }} />
                     <h2 className="font text-gray-900 font-semibold">{selectedZone.name}</h2>
                     <span className="font text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
-                      {ZONE_TYPES.find(t => t.value === selectedZone.zoneType)?.label ?? selectedZone.zoneType}
+                      Zone
                     </span>
                   </div>
                   <p className="font text-gray-500 text-sm">
