@@ -2,7 +2,8 @@
 
 ## Table of Contents
 
-1. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
+1. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
+2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 2. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
 3. [Auth redirect & PartyId migration fix](#auth-redirect--partyid-migration-fix--2026-04-27)
 4. [Game setup configuration](#game-setup-configuration--2026-04-27)
@@ -10,6 +11,21 @@
 6. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
 7. [Remove ZoneType](#remove-zonetype--2026-04-27)
 8. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
+
+---
+
+## Security: Remove hardcoded secrets from appsettings.json — 2026-04-28 13:45
+### Changed
+- `appsettings.json`: replaced real Supabase connection string and JWT secret with empty strings
+- Created `appsettings.Development.json.example` as a safe template for local dev setup
+
+### Rationale
+- SonarCloud flagged the Supabase password and JWT secret as hardcoded credentials (Blocker + Medium severity)
+- Production values are injected via Cloud Run environment variables (`ConnectionStrings__DefaultConnection`, `Jwt__Secret`)
+- Local dev values go in `appsettings.Development.json` which is already gitignored
+- Placeholder `.example` file gives developers the expected structure without exposing real values
+
+> **Action required:** rotate the Supabase database password and generate a new JWT secret — the old values are in git history
 
 ---
 

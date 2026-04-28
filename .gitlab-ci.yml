@@ -3,10 +3,13 @@ stages:
   - build
   - test
   - sonarqube
+  - deploy
 
 variables:
   NODE_VERSION: "20"
   DOTNET_VERSION: "9.0"
+  GCP_PROJECT: "goalz-loggin"
+  GCP_REGION: "europe-west1"
 
 # ------------------------
 # FRONTEND INSTALL
@@ -99,3 +102,73 @@ sonarqube:analysis:
     - ci/sonarqube
     - dev
     - main
+
+# ------------------------
+# BACKEND DEPLOY
+# ------------------------
+backend:deploy:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  dependencies:
+    - backend:build
+  before_script:
+    - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_KEY
+    - gcloud config set project $GCP_PROJECT
+  script:
+    - echo "Building and pushing backend image"
+    - cd backend/Goalz
+    - gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT .
+
+    - echo "Deploying backend to Cloud Run"
+    - gcloud run deploy goalz-api
+        --image gcr.io/$GCP_PROJECT/goalz-api
+        --region $GCP_REGION
+        --allow-unauthenticated
+        --port 8080
+        --project $GCP_PROJECT
+        --update-env-vars "^|^ConnectionStrings__DefaultConnection=$DB_CONNECTION_STRING|^Jwt__Secret=$JWT_SECRET|^AllowedOrigins=http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081,https://goalz-dashboard-237169763190.europe-west1.run.app"
+  only:
+    - main
+    - feature/deployment
+
+# ------------------------
+# MOBILE DEPLOY (EAS Update)
+# ------------------------
+mobile:deploy:
+  stage: deploy
+  image: node:$NODE_VERSION
+  script:
+    - cd frontend/mobile
+    - npm ci
+    - npm install -g eas-cli
+    - EXPO_TOKEN=$EXPO_TOKEN eas update --branch main --message "$CI_COMMIT_MESSAGE" --non-interactive
+  only:
+    - main
+    - feature/deployment
+
+# ------------------------
+# DASHBOARD DEPLOY
+# ------------------------
+dashboard:deploy:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  dependencies:
+    - frontend:build
+  before_script:
+    - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_KEY
+    - gcloud config set project $GCP_PROJECT
+  script:
+    - echo "Building and pushing dashboard image"
+    - cd frontend/dashboard
+    - gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT .
+
+    - echo "Deploying dashboard to Cloud Run"
+    - gcloud run deploy goalz-dashboard
+        --image gcr.io/$GCP_PROJECT/goalz-dashboard
+        --region $GCP_REGION
+        --allow-unauthenticated
+        --port 8080
+        --project $GCP_PROJECT
+  only:
+    - main
+    - feature/deployment
