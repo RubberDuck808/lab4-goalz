@@ -148,7 +148,7 @@ mobile:deploy:
   image: node:22
   script:
     - cd frontend/mobile
-    - npm ci
+    - npm install
     - npm install -g eas-cli
     - EXPO_TOKEN=$EXPO_TOKEN eas update --branch main --message "$CI_COMMIT_MESSAGE" --non-interactive
   only:
