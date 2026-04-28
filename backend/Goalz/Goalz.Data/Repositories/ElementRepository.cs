@@ -64,4 +64,7 @@ public class ElementRepository : IElementRepository
         var idSet = ids.ToHashSet();
         return await _context.Elements.Where(e => idSet.Contains(e.Id)).ToListAsync();
     }
+
+    public async Task<IEnumerable<Element>> GetAllAsync()
+        => await _context.Elements.ToListAsync();
 }
