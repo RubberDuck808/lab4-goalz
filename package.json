@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@capacitor/camera": "^8.1.0",
+    "@ionic/react": "^8.8.4",
     "@tailwindcss/postcss": "^4.2.2",
     "expo": "^55.0.15",
     "postcss": "^8.5.9",
