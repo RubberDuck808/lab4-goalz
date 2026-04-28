@@ -29,7 +29,7 @@ export default function Overview() {
 
   return (
     <main className='h-full w-full flex flex'>
-      <div className='w-[300px] h-full'>
+      <div className='h-full'>
         <Navbar selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
       </div>
       <div className='w-full h-full overflow-y-auto'>
