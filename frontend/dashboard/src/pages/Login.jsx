@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { authService } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import Loading from '../components/Loading/Loading';
 
 export default function Login() {
@@ -9,6 +9,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  if (authService.getToken()) return <Navigate to='/overview' replace />;
 
   const handleLogin = async () => {
     if (email === '' || password === '') {

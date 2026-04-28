@@ -1,5 +1,14 @@
 import { APICall } from "../hooks/useAPI";
 
+const decodeToken = (token) => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return { email: payload.sub, name: payload.name, role: payload.role };
+    } catch {
+        return null;
+    }
+};
+
 export const authService = {
     authenticate: async (email, password) => {
         const response = await APICall("POST", "/auth/login", JSON.stringify({ email, password }), null);
@@ -11,16 +20,22 @@ export const authService = {
         }
 
         const data = await response.json();
-        localStorage.setItem("user", JSON.stringify({ email: data.email, name: data.name, role: data.role }));
+        localStorage.removeItem("user");
+        localStorage.setItem("token", data.token);
         return data;
     },
 
     getUser: () => {
-        const raw = localStorage.getItem("user");
-        return raw ? JSON.parse(raw) : null;
+        const token = localStorage.getItem("token");
+        return token ? decodeToken(token) : null;
+    },
+
+    getToken: () => {
+        return localStorage.getItem("token");
     },
 
     logout: () => {
+        localStorage.removeItem("token");
         localStorage.removeItem("user");
     }
 }
