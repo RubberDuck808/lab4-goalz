@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator,
@@ -6,11 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
-import { submitElement } from '../services/api';
+import { submitElement, getElementTypes } from '../services/api';
 
 const PLACEHOLDER_IMAGE = 'https://imgs.search.brave.com/hRkvl3LnUzM9OaDvHhso94cLNguVIeXnscwD_ck_6hA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tYXJr/ZXRwbGFjZS5jYW52/YS5jb20vTUFEQ0FL/MXNGS3cvMS90aHVt/Ym5haWxfbGFyZ2Ut/MS9jYW52YS1iZWVj/aC10cmVlLU1BRENB/SzFzRkt3LmpwZw';
-
-const ELEMENT_TYPES = ['tree', 'shrub', 'bush'];
 
 function parseGps(gpsStr) {
   const match = gpsStr?.match(/([-\d.]+),\s*([-\d.]+)/);
@@ -22,11 +20,16 @@ export default function ImageUploadScreenPage({ navigation, route }) {
   const imageUri = route?.params?.imageUri ?? PLACEHOLDER_IMAGE;
   const gps      = route?.params?.gps      ?? null;
 
+  const [elementTypes, setElementTypes] = useState([]);
   const [typeOpen, setTypeOpen]   = useState(false);
   const [elementType, setElementType] = useState('');
   const [species, setSpecies]     = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState('');
+
+  useEffect(() => {
+    getElementTypes().then(setElementTypes);
+  }, []);
 
   const canUpload = !!imageUri && !!elementType && species.trim().length > 0;
 
@@ -90,7 +93,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
 
           {typeOpen && (
             <View style={styles.optionList}>
-              {ELEMENT_TYPES.map(type => (
+              {elementTypes.map(type => (
                 <TouchableOpacity
                   key={type}
                   style={[styles.option, elementType === type && styles.optionSelected]}

@@ -115,8 +115,17 @@ export async function removeConnection(otherUsername) {
 
 // ── Elements ─────────────────────────────────────────────────────────────────
 
+export async function getElementTypes() {
+  const response = await fetch(`${BASE_URL}/api/game/elements/types`, {
+    headers: await authHeaders(),
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.map(t => t.name);
+}
+
 export async function submitElement({ elementName, elementType, latitude, longitude, imageUrl, isGreen }) {
-  const response = await fetch(`${BASE_URL}/api/dashboard/elements`, {
+  const response = await fetch(`${BASE_URL}/api/game/elements`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ elementName, elementType, latitude, longitude, imageUrl, isGreen }),

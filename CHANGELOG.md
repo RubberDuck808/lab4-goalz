@@ -2,11 +2,29 @@
 
 ## Table of Contents
 
-1. [#48 ImageUploadScreen — element type dropdown + species form + API](#48-imageuploadscreen-element-type-dropdown--species-form--api--2026-04-27)
-2. [#48 UserPhoto](#48-userphoto--2026-04-27)
-2. [#48 ImageUploadScreen](#48-imageuploadscreen--2026-04-27)
-2. [#48 Camera Page Placeholder](#48-camera-page-placeholder--2026-04-27)
-3. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+1. [#48 Element types fetched from API](#48-element-types-fetched-from-api--2026-04-28)
+2. [#48 ImageUploadScreen — element type dropdown + species form + API](#48-imageuploadscreen-element-type-dropdown--species-form--api--2026-04-27)
+3. [#48 UserPhoto](#48-userphoto--2026-04-27)
+4. [#48 ImageUploadScreen](#48-imageuploadscreen--2026-04-27)
+5. [#48 Camera Page Placeholder](#48-camera-page-placeholder--2026-04-27)
+6. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## [#48] Element types fetched from API — 2026-04-28
+### Added
+- `Controllers/Game/ElementController.cs` — new game controller at `/api/game/elements`; `GET /api/game/elements/types` is public (`[AllowAnonymous]`), `POST /api/game/elements` requires JWT; reuses existing `IElementRepository` and `IElementService`
+
+### Changed
+- `services/api/api.js` — `getElementTypes()` fetches `/api/game/elements/types`; `submitElement()` posts to `/api/game/elements`; both previously pointed at `/api/dashboard/` routes
+- `pages/ImageUploadScreen.jsx` — removed hardcoded `ELEMENT_TYPES` constant; replaced with `useEffect` that calls `getElementTypes()` on mount and stores results in `elementTypes` state; dropdown renders from live API data
+- `agent_docs/api_endpoints.md` — documented `GET /api/game/elements/types` and `POST /api/game/elements`
+
+### Rationale
+- Dashboard routes (`/api/dashboard/elements`) are for the staff web app; mobile players submit through `/api/game/` which applies JWT auth to the write endpoint
+- No new service or repository needed — `IElementService.CreateAsync` and `IElementRepository.GetAllElementTypesAsync` already exist and are injected directly
+
+> Issue closed after 0 min
 
 ---
 
