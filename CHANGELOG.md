@@ -8,6 +8,14 @@
 4. [#48 ImageUploadScreen](#48-imageuploadscreen--2026-04-27)
 5. [#48 Camera Page Placeholder](#48-camera-page-placeholder--2026-04-27)
 6. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+7. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
+8. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+9. [Auth redirect & PartyId migration fix](#auth-redirect--partyid-migration-fix--2026-04-27)
+10. [Game setup configuration](#game-setup-configuration--2026-04-27)
+11. [Separate Boundary from Zone](#separate-boundary-from-zone--2026-04-27)
+12. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
+13. [Remove ZoneType](#remove-zonetype--2026-04-27)
+14. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
 
 ---
 
@@ -100,14 +108,6 @@
 - Route params (`temp`, `humidity`, `aqi`) default to the Figma sample values so the screen renders standalone during development
 
 > Issue closed after 0 min
-1. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
-2. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
-3. [Auth redirect & PartyId migration fix](#auth-redirect--partyid-migration-fix--2026-04-27)
-4. [Game setup configuration](#game-setup-configuration--2026-04-27)
-5. [Separate Boundary from Zone](#separate-boundary-from-zone--2026-04-27)
-6. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
-7. [Remove ZoneType](#remove-zonetype--2026-04-27)
-8. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
 
 ---
 
