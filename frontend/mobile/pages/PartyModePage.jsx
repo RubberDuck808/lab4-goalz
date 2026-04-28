@@ -28,7 +28,7 @@ export default function PartyModePage({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Party Mode" onBack={() => navigation.goBack()} />
       <View style={styles.form}>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error && <Text style={styles.errorText}>{error}</Text>}
         <TextInput placeholder="Party code" value={code} onChangeText={setCode} />
         <View style={{ marginTop: 8 }}>
           <GameButtons variant="task" onPress={handleJoin}>

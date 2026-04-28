@@ -7,17 +7,17 @@ namespace Goalz.Api.Controllers.Game;
 [Route("api/game/zones")]
 public class ZoneController : ControllerBase
 {
-    private readonly IZoneRepository _zoneRepository;
+    private readonly IZoneService _zoneService;
 
-    public ZoneController(IZoneRepository zoneRepository)
+    public ZoneController(IZoneService zoneService)
     {
-        _zoneRepository = zoneRepository;
+        _zoneService = zoneService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] long? boundaryId = null)
     {
-        var zones = await _zoneRepository.GetAllAsync();
+        var zones = await _zoneService.GetAllAsync();
         if (boundaryId.HasValue)
             zones = zones.Where(z => z.BoundaryId == boundaryId.Value);
         var result = zones.Select(z => new { z.Id, z.Name, z.BoundaryId });

@@ -63,11 +63,6 @@ namespace Goalz.Api.Controllers.Game
             return Ok(result);
         }
 
-        public class VisitCheckpointRequest
-        {
-            public long CheckpointId { get; set; }
-        }
-
         [Authorize]
         [HttpPost("{id}/visit")]
         public async Task<IActionResult> VisitCheckpoint(long id, [FromBody] VisitCheckpointRequest request)

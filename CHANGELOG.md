@@ -8,6 +8,23 @@
 4. [Separate Boundary from Zone](#separate-boundary-from-zone--2026-04-27)
 5. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
 6. [Remove ZoneType](#remove-zonetype--2026-04-27)
+7. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
+
+---
+
+## Address PR #47 review comments — 2026-04-28 14:00
+### Changed
+- `Game/BoundaryController`: inject `IBoundaryService` instead of `IBoundaryRepository` — controllers must not bypass the service layer
+- `Game/ZoneController`: inject `IZoneService` instead of `IZoneRepository` — same reason; `boundaryId` filter applied after `GetAllAsync()`
+- `VisitCheckpointRequest` moved from nested class inside `PartyController` to its own file ([`VisitCheckpointRequest.cs`](backend/Goalz/Goalz.API/Controllers/Game/VisitCheckpointRequest.cs))
+- Split multi-class DTO files into one class per file: `BoundaryDto`, `CreateBoundaryDto`, `UpdateBoundaryDto`, `ZoneDto`, `CreateZoneDto`, `UpdateZoneDto`, `GameStateResponse`, `MemberRoleDto`
+- `PartyModePage.jsx`: `{error && <Text>}` shorthand instead of ternary-with-null
+
+### Rationale
+- Reviewer flagged direct repository injection in controllers — the service layer enforces business rules and must not be skipped
+- One class per file is a standard C# convention the reviewer expected; the original bundling was a draft shortcut
+
+> Issue closed after 5 min
 
 ---
 

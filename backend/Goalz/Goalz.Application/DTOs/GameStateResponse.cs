@@ -1,11 +1,5 @@
 namespace Goalz.Core.DTOs
 {
-    public class MemberRoleDto
-    {
-        public string Username { get; set; } = string.Empty;
-        public string? Role { get; set; }
-    }
-
     public class GameStateResponse
     {
         public string Status { get; set; } = string.Empty;
