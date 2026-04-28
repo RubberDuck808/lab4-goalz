@@ -44,7 +44,6 @@ namespace Goalz.Data.Repositories
         public async Task<Zone?> FindContainingZoneAsync(Point point)
             => await _context.Zones
                 .Where(z => z.Boundary.Contains(point))
-                .OrderBy(z => z.ZoneType == "boundary" ? 1 : 0)
                 .FirstOrDefaultAsync();
     }
 }

@@ -201,6 +201,29 @@ Body:    { username: string }   ← friend's username
 
 ---
 
+## Game — Elements (`/api/game/elements/`)
+
+Controller has `[Authorize]` — all endpoints require JWT except `types`.
+
+### GET `/api/game/elements/types`
+**Auth:** — | **File:** `Controllers/Game/ElementController.cs`
+
+```
+200 OK:  [{ id: int, name: string }, ...]
+```
+
+---
+
+### POST `/api/game/elements`
+**Auth:** JWT | **File:** `Controllers/Game/ElementController.cs`
+
+```
+Body:    { elementName: string, elementType: string, latitude: float, longitude: float, imageUrl: string, isGreen: bool }
+201:     Created — element object
+```
+
+---
+
 ## Quick Reference
 
 | Method | Route | Auth | Purpose |
@@ -221,5 +244,7 @@ Body:    { username: string }   ← friend's username
 | PUT | `/api/game/friends/accept` | JWT | Accept friend request |
 | DELETE | `/api/game/friends/decline` | JWT | Decline friend request |
 | DELETE | `/api/game/friends/connection` | JWT | Remove friend |
+| GET | `/api/game/elements/types` | — | List element types |
+| POST | `/api/game/elements` | JWT | Submit a new element |
 
 `—` = public, `RL` = rate limited (10/min), `JWT` = Bearer token required

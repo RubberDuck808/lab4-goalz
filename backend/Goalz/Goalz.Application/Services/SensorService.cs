@@ -46,6 +46,7 @@ public class SensorService : ISensorService
         var deleted = await _repository.DeleteAsync(id);
         if (!deleted)
             return (false, "not_found");
+        await _checkpointService.DeleteByReferenceAsync("sensor", id);
         return (true, null);
     }
 }

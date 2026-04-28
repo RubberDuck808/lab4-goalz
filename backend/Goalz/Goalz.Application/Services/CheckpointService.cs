@@ -89,14 +89,20 @@ public class CheckpointService : ICheckpointService
         await _checkpointRepository.SaveChangesAsync();
     }
 
-    public async Task AssignZonesForNewZoneAsync(long zoneId, Geometry boundary, string zoneType)
+    public async Task DeleteByReferenceAsync(string type, long referenceId)
+    {
+        var checkpoint = await _checkpointRepository.GetByReferenceAsync(type, referenceId);
+        if (checkpoint is null) return;
+        await _checkpointRepository.DeleteAsync(checkpoint);
+        await _checkpointRepository.SaveChangesAsync();
+    }
+
+    public async Task AssignZonesForNewZoneAsync(long zoneId, Geometry boundary)
     {
         var inside = await _checkpointRepository.FindInsideBoundaryAsync(boundary);
         foreach (var cp in inside)
         {
             if (cp.ZoneId == null)
-                cp.ZoneId = zoneId;
-            else if (zoneType != "boundary" && cp.Zone?.ZoneType == "boundary")
                 cp.ZoneId = zoneId;
         }
         await _checkpointRepository.SaveChangesAsync();

@@ -1,28 +1,41 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-const USER_KEY = 'loggin_user';
-const TOKEN_KEY = 'loggin_token';
+const USER_KEY = 'login_user';
+const TOKEN_KEY = 'login_token';
 
 export async function storeUser(user) {
-  const { token, ...profile } = user;
+  // Backend DTOs use PascalCase (Token, Username, ...). Normalize to camelCase
+  // so the rest of the app can consistently use `username`/`token`.
+  const token = user?.token ?? user?.Token ?? null;
+
+  const profile = {
+    username: user?.username ?? user?.Username ?? '',
+    name: user?.name ?? user?.Name ?? '',
+    email: user?.email ?? user?.Email ?? '',
+    createdAt: user?.createdAt ?? user?.CreatedAt ?? null,
+  };
+
+  if (!token) {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+  }
   await Promise.all([
-    AsyncStorage.setItem(USER_KEY, JSON.stringify(profile)),
-    token ? AsyncStorage.setItem(TOKEN_KEY, token) : Promise.resolve(),
+    SecureStore.setItemAsync(USER_KEY, JSON.stringify(profile)),
+    token ? SecureStore.setItemAsync(TOKEN_KEY, token) : Promise.resolve(),
   ]);
 }
 
 export async function getUser() {
-  const json = await AsyncStorage.getItem(USER_KEY);
+  const json = await SecureStore.getItemAsync(USER_KEY);
   return json ? JSON.parse(json) : null;
 }
 
 export async function getToken() {
-  return AsyncStorage.getItem(TOKEN_KEY);
+  return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
 export async function clearUser() {
   await Promise.all([
-    AsyncStorage.removeItem(USER_KEY),
-    AsyncStorage.removeItem(TOKEN_KEY),
+    SecureStore.deleteItemAsync(USER_KEY),
+    SecureStore.deleteItemAsync(TOKEN_KEY),
   ]);
 }
