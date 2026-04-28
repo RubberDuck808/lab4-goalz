@@ -46,6 +46,12 @@ module.exports = {
     web: {
       favicon: './assets/favicon.png',
     },
+    updates: {
+      url: 'https://u.expo.dev/56f66eca-5087-48dc-af70-ff32e2274a80',
+    },
+    runtimeVersion: {
+      policy: 'appVersion',
+    },
     plugins: [
       'expo-secure-store',
       'expo-location',
