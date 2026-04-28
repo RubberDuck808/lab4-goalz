@@ -16,6 +16,53 @@
 12. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
 13. [Remove ZoneType](#remove-zonetype--2026-04-27)
 14. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
+1. [Dashboard JWT Login](#dashboard-jwt-login--2026-04-28)
+2. [Admin User Management](#56admin-user-management--2026-04-28)
+3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
+4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## Dashboard JWT Login — 2026-04-28 00:00
+### Changed
+- `DashboardLoginResponse` now includes a `Token` field
+- `AuthService.CheckAuth` injects `IJwtService` and generates a JWT (using `email` as the `sub` claim and `role`) on successful login
+- `authService.jsx` stores the token in `localStorage` under `"token"` key on login and removes it on logout
+- `authService.getToken()` helper added to retrieve the stored token
+
+### Rationale
+- Reuses the existing `IJwtService` singleton — no new infrastructure needed
+- Token stored in localStorage to match how the game app manages session state, making it available for future `[Authorize]` enforcement on dashboard endpoints
+
+> Issue closed after 0 min
+
+---
+
+## Admin User Management — 2026-04-28 00:00
+### Added
+- `GET /api/dashboard/auth/users?adminEmail=` — returns all Staff and Admin users as `StaffUserDto[]`
+- `PUT /api/dashboard/auth/users/{id}/role` — changes a user's role between Staff and Admin (admin-only)
+- `DELETE /api/dashboard/auth/users/{id}?adminEmail=` — deletes a user; self-deletion is blocked (admin-only)
+- `StaffUserDto` (`Id`, `Name`, `Email`, `Role`) and `ChangeRoleRequest` (`AdminEmail`, `NewRole`) DTOs
+- `GetAllStaffAndAdminAsync`, `GetByIdAsync`, `DeleteUserAsync`, `SaveChangesAsync` on `IAuthRepository` / `AuthRepository`
+- `GetStaffUsersAsync`, `ChangeUserRoleAsync`, `DeleteUserAsync` on `IAuthService` / `AuthService`
+- `userManagementService.jsx` — frontend service for list, role-change, and delete API calls
+- **Settings page** now shows a "User Management" table (admin only): lists all Staff/Admin users with role badge, "Make Admin/Staff" toggle button, and "Delete" button; own account row is disabled to prevent self-lockout; list refreshes automatically after create/role-change/delete
+
+### Rationale
+- Follows the existing `adminEmail` in request pattern used by `CreateStaffUserAsync` — no new auth mechanism needed
+- Self-deletion guard added server-side (and buttons disabled client-side) to prevent accidental admin lockout
+- Friendship cascade-delete (`OnDelete(DeleteBehavior.Cascade)`) already handles FK cleanup when a user is removed
+
+> Issue closed after 0 min
+1. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
+2. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+3. [Auth redirect & PartyId migration fix](#auth-redirect--partyid-migration-fix--2026-04-27)
+4. [Game setup configuration](#game-setup-configuration--2026-04-27)
+5. [Separate Boundary from Zone](#separate-boundary-from-zone--2026-04-27)
+6. [Link Zone to Boundary](#link-zone-to-boundary--2026-04-27)
+7. [Remove ZoneType](#remove-zonetype--2026-04-27)
+8. [Address PR #47 review comments](#address-pr-47-review-comments--2026-04-28)
 
 ---
 
