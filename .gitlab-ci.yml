@@ -117,7 +117,7 @@ backend:deploy:
   script:
     - echo "Building and pushing backend image"
     - cd backend/Goalz
-    - gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT .
+    - gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT . --suppress-logs
 
     - echo "Deploying backend to Cloud Run"
     - gcloud run deploy goalz-api
@@ -136,7 +136,7 @@ backend:deploy:
 # ------------------------
 mobile:deploy:
   stage: deploy
-  image: node:$NODE_VERSION
+  image: node:22
   script:
     - cd frontend/mobile
     - npm ci
@@ -160,7 +160,7 @@ dashboard:deploy:
   script:
     - echo "Building and pushing dashboard image"
     - cd frontend/dashboard
-    - gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT .
+    - gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT . --suppress-logs
 
     - echo "Deploying dashboard to Cloud Run"
     - gcloud run deploy goalz-dashboard
