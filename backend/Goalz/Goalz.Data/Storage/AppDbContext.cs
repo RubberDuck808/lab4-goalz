@@ -13,12 +13,13 @@ namespace Goalz.Data.Storage
         public DbSet<SensorData> SensorData { get; set; }
         public DbSet<Element> Elements { get; set; }
         public DbSet<Zone> Zones { get; set; }
-        public DbSet<Section> Sections { get; set; }
+        public DbSet<Boundary> Boundaries { get; set; }
         public DbSet<Checkpoint> Checkpoints { get; set; }
         public DbSet<ElementType> ElementTypes { get; set; }
         public DbSet<Party> Parties { get; set; }
         public DbSet<PartyMember> PartyMembers { get; set; }
         public DbSet<PartyGroup> PartyGroups { get; set; }
+        public DbSet<PartyVisitedCheckpoint> PartyVisitedCheckpoints { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,15 +49,19 @@ namespace Goalz.Data.Storage
                     .IsUnique();
             });
 
-            modelBuilder.Entity<Section>(entity =>
+            modelBuilder.Entity<Boundary>(entity =>
             {
-                entity.HasOne(s => s.Zone)
-                    .WithOne()
-                    .HasForeignKey<Section>(s => s.ZoneId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(b => b.Geometry).HasMethod("gist");
+            });
 
-                entity.HasIndex(s => s.ZoneId).IsUnique();
-                entity.HasIndex(s => s.OrderIndex).IsUnique();
+            modelBuilder.Entity<Zone>(entity =>
+            {
+                entity.HasOne<Boundary>()
+                    .WithMany()
+                    .HasForeignKey(z => z.BoundaryId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(z => z.BoundaryId);
             });
 
             modelBuilder.Entity<Checkpoint>(entity =>
@@ -89,6 +94,17 @@ namespace Goalz.Data.Storage
                 entity.HasOne(e => e.ElementType)
                     .WithMany(et => et.Elements)
                     .HasForeignKey(e => e.ElementTypeId);
+            });
+
+            modelBuilder.Entity<PartyVisitedCheckpoint>(entity =>
+            {
+                entity.ToTable("PartyVisitedCheckpoints");
+                entity.HasOne(pvc => pvc.Party)
+                    .WithMany()
+                    .HasForeignKey(pvc => pvc.PartyId);
+                entity.HasOne(pvc => pvc.Checkpoint)
+                    .WithMany()
+                    .HasForeignKey(pvc => pvc.CheckpointId);
             });
 
             base.OnModelCreating(modelBuilder);

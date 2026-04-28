@@ -26,18 +26,15 @@ namespace Goalz.Api.Controllers.Dashboard
         public async Task<IActionResult> Create([FromBody] CreateZoneDto dto)
         {
             var (success, error) = await _zoneService.CreateAsync(dto);
-
             if (!success)
             {
                 return error switch
                 {
-                    "invalid_name" => BadRequest("Zone name is required."),
-                    "invalid_zone_type" => BadRequest("Zone type must be 'boundary', 'area', or 'path'."),
+                    "invalid_name"     => BadRequest("Zone name is required."),
                     "invalid_geometry" => BadRequest("A valid GeoJSON geometry is required."),
-                    _ => BadRequest("Something went wrong.")
+                    _                  => BadRequest("Something went wrong."),
                 };
             }
-
             return NoContent();
         }
 
@@ -45,18 +42,15 @@ namespace Goalz.Api.Controllers.Dashboard
         public async Task<IActionResult> Update(long id, [FromBody] UpdateZoneDto dto)
         {
             var (success, error) = await _zoneService.UpdateAsync(id, dto);
-
             if (!success)
             {
                 return error switch
                 {
-                    "not_found" => NotFound(),
+                    "not_found"    => NotFound(),
                     "invalid_name" => BadRequest("Zone name is required."),
-                    "invalid_zone_type" => BadRequest("Zone type must be 'boundary', 'area', or 'path'."),
-                    _ => BadRequest("Something went wrong.")
+                    _              => BadRequest("Something went wrong."),
                 };
             }
-
             return NoContent();
         }
 
@@ -65,13 +59,6 @@ namespace Goalz.Api.Controllers.Dashboard
         {
             var deleted = await _zoneService.DeleteAsync(id);
             return deleted ? NoContent() : NotFound();
-        }
-
-        [HttpGet("{id}/generate-preview")]
-        public async Task<IActionResult> GeneratePreview(long id, [FromQuery] int count = 4)
-        {
-            var geometries = await _zoneService.GenerateZonePreviewAsync(id, count);
-            return Ok(geometries);
         }
     }
 }

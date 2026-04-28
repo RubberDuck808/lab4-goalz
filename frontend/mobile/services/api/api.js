@@ -1,6 +1,19 @@
-import { getToken } from '../session';
+import { getToken, clearUser } from '../session';
+import { navigationRef } from '../navigationRef';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+async function handle401() {
+  await clearUser();
+  navigationRef.current?.reset({ index: 0, routes: [{ name: 'Login' }] });
+}
+
+// Wrapper used for all authenticated fetch calls. Triggers auto-logout on 401.
+export async function apiFetch(url, options = {}) {
+  const response = await fetch(url, options);
+  if (response.status === 401) await handle401();
+  return response;
+}
 
 export async function authHeaders() {
   const token = await getToken();
@@ -41,7 +54,7 @@ export async function signUp(username, name, email, password) {
 // ── Friends ──────────────────────────────────────────────────────────────────
 
 export async function searchUsers(query) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${BASE_URL}/api/game/friends/search?q=${encodeURIComponent(query)}`,
     { headers: await authHeaders() }
   );
@@ -56,7 +69,7 @@ export async function getConnections(username) {
 }
 
 export async function getFriendRequests() {
-  const response = await fetch(`${BASE_URL}/api/game/friends/requests`, {
+  const response = await apiFetch(`${BASE_URL}/api/game/friends/requests`, {
     headers: await authHeaders(),
   });
   if (response.ok) return { success: true, data: await response.json() };
@@ -64,7 +77,7 @@ export async function getFriendRequests() {
 }
 
 export async function sendFriendRequest(addresseeUsername) {
-  const response = await fetch(`${BASE_URL}/api/game/friends/request`, {
+  const response = await apiFetch(`${BASE_URL}/api/game/friends/request`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ username: addresseeUsername }),
@@ -76,7 +89,7 @@ export async function sendFriendRequest(addresseeUsername) {
 }
 
 export async function acceptFriendRequest(requesterUsername) {
-  const response = await fetch(`${BASE_URL}/api/game/friends/accept`, {
+  const response = await apiFetch(`${BASE_URL}/api/game/friends/accept`, {
     method: 'PUT',
     headers: await authHeaders(),
     body: JSON.stringify({ username: requesterUsername }),
@@ -86,7 +99,7 @@ export async function acceptFriendRequest(requesterUsername) {
 }
 
 export async function declineFriendRequest(requesterUsername) {
-  const response = await fetch(`${BASE_URL}/api/game/friends/decline`, {
+  const response = await apiFetch(`${BASE_URL}/api/game/friends/decline`, {
     method: 'DELETE',
     headers: await authHeaders(),
     body: JSON.stringify({ username: requesterUsername }),
@@ -104,7 +117,7 @@ export async function getSensorData(sensorId) {
 }
 
 export async function removeConnection(otherUsername) {
-  const response = await fetch(`${BASE_URL}/api/game/friends/connection`, {
+  const response = await apiFetch(`${BASE_URL}/api/game/friends/connection`, {
     method: 'DELETE',
     headers: await authHeaders(),
     body: JSON.stringify({ username: otherUsername }),

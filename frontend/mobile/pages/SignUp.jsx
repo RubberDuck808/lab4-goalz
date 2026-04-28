@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
-
-import { storeUser } from '../services/session';
+import { signUp } from '../services/api';
+import { getToken, storeUser } from '../services/session';
 
 export default function SignUp({ navigation }) {
   const [username, setUsername] = useState('');
@@ -39,6 +39,11 @@ export default function SignUp({ navigation }) {
       const result = await signUp(username, name, email, password);
       if (result.success) {
         await storeUser(result.data);
+        const token = await getToken();
+        if (!token) {
+          setError('Sign up succeeded but no token was stored. Please try again.');
+          return;
+        }
         navigation.replace('Home');
       } else {
         setError(result.error);
