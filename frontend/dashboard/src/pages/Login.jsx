@@ -35,7 +35,7 @@ export default function Login() {
       }
         <div className='hidden md:block w-1/2 bg-primary-green p-[100px]'>
           <div className='w-[72px] h-[72px] rounded-full bg-secondary-green flex items-center justify-center mb-5'>
-            <i class="fa-solid fa-leaf text-white text-3xl"></i>
+            <i className="fa-solid fa-leaf text-white text-3xl"></i>
           </div>
           <div>
             <h1 className='font text-4xl font-bold text-white'>Arboretum</h1>

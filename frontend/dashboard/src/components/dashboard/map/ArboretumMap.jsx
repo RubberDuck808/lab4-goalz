@@ -768,8 +768,8 @@ export default function ArboretumMap() {
       {/* Header */}
       <div className='h-[70px] bg-white w-full border-b border-gray-300 shadow flex items-center justify-between px-[20px] shrink-0'>
         <div>
-          <h1 className='font font-bold text-xl'>Arboretum Map</h1>
-          <p className='font text-gray-500 font-extralight text-sm'>Office of Sustainability · Now updated</p>
+          <h1 className='font font-bold text-xl ps-[50px] md:ps-0'>Arboretum Map</h1>
+          <p className='font text-gray-500 font-extralight text-sm hidden md:block'>Office of Sustainability · Now updated</p>
         </div>
         <div className="flex items-center gap-3">
           {loading && (
@@ -789,7 +789,7 @@ export default function ArboretumMap() {
 
         {/* Map + layer sidebar */}
         <div className="flex gap-3 shrink-0" style={{ height: '460px' }}>
-          <div className="rounded-xl overflow-hidden relative shadow border border-gray-300 flex-1">
+          <div className="rounded-xl overflow-hidden relative shadow border border-gray-300 flex-1 z-[10]">
             <div ref={mapRef} className="h-full w-full" />
           </div>
           <LayerSidebar visibility={layerVisibility} onToggle={handleToggleLayer} />
