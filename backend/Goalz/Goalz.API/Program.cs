@@ -43,6 +43,9 @@ var jwtSecret = builder.Configuration["Jwt:Secret"]
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // ASP.NET Core 9 defaults to JsonWebTokenHandler, but JwtService generates tokens
+        // with JwtSecurityTokenHandler. Force the legacy handler so they match.
+        options.UseSecurityTokenValidators = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -87,9 +90,15 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
+builder.Services.AddScoped<IGenerateReportService, GenerateReportService>();
+
 // Zones
 builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
 builder.Services.AddScoped<IZoneService, ZoneService>();
+
+// Boundaries
+builder.Services.AddScoped<IBoundaryRepository, BoundaryRepository>();
+builder.Services.AddScoped<IBoundaryService, BoundaryService>();
 
 // Checkpoints
 builder.Services.AddScoped<ICheckpointRepository, CheckpointRepository>();
@@ -101,6 +110,7 @@ builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
 // Lobby
 builder.Services.AddScoped<ILobbyService, LobbyService>();
+builder.Services.AddHostedService<PartyCleanupService>();
 builder.Services.AddSignalR();
 
 // Rate limiting — 10 requests per minute per IP on auth endpoints
@@ -110,6 +120,14 @@ builder.Services.AddRateLimiter(options =>
     {
         limiter.Window = TimeSpan.FromMinutes(1);
         limiter.PermitLimit = 10;
+        limiter.QueueLimit = 0;
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
+    options.AddFixedWindowLimiter("party", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 100; // Allow enough for polling every few seconds
         limiter.QueueLimit = 0;
         limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
     });

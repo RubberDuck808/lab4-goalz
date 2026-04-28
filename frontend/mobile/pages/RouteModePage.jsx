@@ -9,7 +9,7 @@ export default function RouteModePage({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Route Mode" onBack={() => navigation.goBack()} />
       <View style={styles.center}>
-        <GameButtons variant="task" size="square" onPress={() => navigation.navigate('YourRole', { singlePlayer: true })}>
+        <GameButtons variant="task" size="square" onPress={() => navigation.navigate('GameSetup', { singlePlayer: true })}>
           Single
         </GameButtons>
         <GameButtons variant="party" size="square" onPress={() => navigation.navigate('PartyMode')}>

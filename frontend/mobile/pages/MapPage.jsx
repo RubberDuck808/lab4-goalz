@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polygon, Polyline, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
+import MapView, { Marker, Polygon, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
-import GameButtons from '../components/GameButtons';
+import { useGameContext } from '../context/GameContext';
+import { visitCheckpoint } from '../services/api/partyApi';
 
 const ARBORETUM_REGION = {
   latitude: 48.1468,
@@ -16,6 +17,12 @@ const ARBORETUM_REGION = {
 
 const VISIT_RADIUS_METERS = 30;
 
+// ── Zone styles ───────────────────────────────────────────────────────────────
+const STYLE_ACTIVE    = { strokeColor: '#29e87b', strokeWidth: 3,   fillColor: 'rgba(41,232,123,0.18)' };
+const STYLE_DONE      = { strokeColor: '#1A5C2E', strokeWidth: 2,   fillColor: 'rgba(26,92,46,0.22)' };
+const STYLE_LOCKED    = { strokeColor: '#1e1e1e', strokeWidth: 2,   fillColor: 'rgba(10,10,10,0.55)' };
+
+// ── Pure helpers ──────────────────────────────────────────────────────────────
 function haversineMeters(a, b) {
   const R = 6371000;
   const toRad = d => (d * Math.PI) / 180;
@@ -26,37 +33,8 @@ function haversineMeters(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-const ZONE_STYLES = {
-  boundary: { strokeColor: '#1A5C2E', strokeWidth: 3 },
-  path:     { strokeColor: '#8B6914', strokeWidth: 2 },
-  area:     { strokeColor: '#2D7D46', strokeWidth: 2, fillColor: 'rgba(45,125,70,0.15)' },
-};
-
-function checkpointColor(cp) {
-  if (cp.type === 'sensor') return '#6366f1';
-  if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661';
-  if (cp.elementTypeId === 2) return '#3B82F6';
-  return '#EF4444';
-}
-
-function renderCheckpoint(cp, i, onPress) {
-  if (cp.latitude == null || cp.longitude == null) return null;
-  return (
-    <Marker
-      key={`cp-${i}`}
-      coordinate={{ latitude: cp.latitude, longitude: cp.longitude }}
-      anchor={{ x: 0.5, y: 0.5 }}
-      onPress={onPress ? () => onPress(cp) : undefined}
-    >
-      <View style={[styles.dot, { backgroundColor: checkpointColor(cp) }]} />
-    </Marker>
-  );
-}
-
 function safeParseGeometry(raw) {
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return null; }
-  }
+  if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
   return raw && typeof raw === 'object' ? raw : null;
 }
 
@@ -66,191 +44,269 @@ function coordsToLatLng(ring) {
 
 function extractRings(geometry) {
   switch (geometry?.type) {
-    case 'Polygon':         return [geometry.coordinates[0]];
-    case 'MultiPolygon':    return geometry.coordinates.map(p => p[0]);
-    case 'LineString':      return [geometry.coordinates];
-    case 'MultiLineString': return geometry.coordinates;
-    default: return [];
+    case 'Polygon':      return [geometry.coordinates[0]];
+    case 'MultiPolygon': return geometry.coordinates.map(p => p[0]);
+    default:             return [];
   }
 }
 
-function renderZone(zone, zoneIndex, greyOut = false) {
-  const geom = safeParseGeometry(zone?.boundary);
-  if (!geom) return null;
-
-  const type = (zone.zoneType || 'area').toLowerCase();
-  const style = greyOut
-    ? { strokeColor: '#c4c4c4', strokeWidth: 1, fillColor: 'rgba(180,180,180,0.08)' }
-    : ZONE_STYLES[type] || ZONE_STYLES.area;
-  const rings = extractRings(geom);
-  const isArea = type === 'area';
-
-  return rings.map((ring, ringIndex) => {
-    const coords = coordsToLatLng(ring);
-    const key = `${zoneIndex}-${ringIndex}`;
-    if (isArea) {
-      return (
-        <Polygon
-          key={key}
-          coordinates={coords}
-          strokeColor={style.strokeColor}
-          strokeWidth={style.strokeWidth}
-          fillColor={style.fillColor}
-        />
-      );
-    }
-    return (
-      <Polyline
-        key={key}
-        coordinates={coords}
-        strokeColor={style.strokeColor}
-        strokeWidth={style.strokeWidth}
-      />
-    );
-  });
+function ringCentroid(ring) {
+  if (!ring?.length) return null;
+  const sum = ring.reduce((a, [lng, lat]) => ({ lat: a.lat + lat, lng: a.lng + lng }), { lat: 0, lng: 0 });
+  return { latitude: sum.lat / ring.length, longitude: sum.lng / ring.length };
 }
 
+function zoneCentroid(zone) {
+  const geom = safeParseGeometry(zone?.boundary);
+  if (!geom) return null;
+  return ringCentroid(extractRings(geom)[0]);
+}
+
+function pickCpForZone(zone, allCps, role) {
+  const cps = allCps.filter(cp => {
+    if (cp.zoneId !== zone.id) return false;
+    if (role === 'Scout')      return cp.type === 'sensor';
+    if (role === 'Trailblazer') return cp.type !== 'sensor';
+    return true;
+  });
+  return cps.length ? cps[Math.floor(Math.random() * cps.length)] : null;
+}
+
+function nearestLocked(fromZone, allZones, doneIds) {
+  const locked = allZones.filter(z => !doneIds.has(z.id) && z.id !== fromZone.id);
+  if (!locked.length) return null;
+  const from = zoneCentroid(fromZone);
+  if (!from) return locked[0];
+  return locked.sort((a, b) => {
+    const ca = zoneCentroid(a), cb = zoneCentroid(b);
+    return (ca ? haversineMeters(from, ca) : Infinity) - (cb ? haversineMeters(from, cb) : Infinity);
+  })[0];
+}
+
+// ── Map rendering helpers ─────────────────────────────────────────────────────
+function renderZone(zone, idx, status) {
+  const geom = safeParseGeometry(zone?.boundary);
+  if (!geom) return null;
+  const style = status === 'active' ? STYLE_ACTIVE : status === 'done' ? STYLE_DONE : STYLE_LOCKED;
+  const rings = extractRings(geom);
+
+  const polys = rings.map((ring, ri) => (
+    <Polygon
+      key={`z-${idx}-${ri}`}
+      coordinates={coordsToLatLng(ring)}
+      strokeColor={style.strokeColor}
+      strokeWidth={style.strokeWidth}
+      fillColor={style.fillColor}
+    />
+  ));
+
+  if (status === 'locked') {
+    const center = ringCentroid(rings[0]);
+    return [
+      ...polys,
+      center && (
+        <Marker key={`lock-${idx}`} coordinate={center} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+          <View style={styles.lockBadge}>
+            <Text style={styles.lockEmoji}>🔒</Text>
+          </View>
+        </Marker>
+      ),
+    ];
+  }
+
+  if (status === 'done') {
+    const center = ringCentroid(rings[0]);
+    return [
+      ...polys,
+      center && (
+        <Marker key={`done-${idx}`} coordinate={center} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+          <View style={styles.doneBadge}>
+            <Text style={styles.doneEmoji}>✓</Text>
+          </View>
+        </Marker>
+      ),
+    ];
+  }
+
+  return polys;
+}
+
+function checkpointColor(cp) {
+  if (cp.type === 'sensor') return '#6366f1';
+  if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661';
+  if (cp.elementTypeId === 2) return '#3B82F6';
+  return '#EF4444';
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function MapPage({ navigation, route }) {
   const fromGame = route?.params?.fromGame ?? false;
-  const mapRef = useRef(null);
+  const mapRef   = useRef(null);
 
-  const [zones, setZones]             = useState([]);
+  const [zones,       setZones]       = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
-  const [assignedZone, setAssignedZone]         = useState(null);
-  const [targetCheckpoint, setTargetCheckpoint] = useState(null);
-  const [nearTarget, setNearTarget]       = useState(false);
-  const [visited, setVisited]             = useState(false);
-  const [showVisitModal, setShowVisitModal] = useState(false);
-  const assignedRef = useRef(false);
 
-  // Request location permission + watch position to detect proximity to target checkpoint
+  // Game state
+  const [activeZone,       setActiveZone]       = useState(null);
+  const [completedZoneIds, setCompletedZoneIds] = useState(new Set());
+  const [targetCp,         setTargetCp]         = useState(null);
+  const [nearTarget,       setNearTarget]        = useState(false);
+  const [flashMsg,         setFlashMsg]         = useState(null); // "Zone Complete!" etc.
+  const flashAnim = useRef(new Animated.Value(0)).current;
+
+  const initRef = useRef(false);
+  const { partyId, markVisited, role } = useGameContext();
+
+  // ── Flash helper ────────────────────────────────────────────────────────────
+  function showFlash(msg) {
+    setFlashMsg(msg);
+    flashAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(flashAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.delay(1600),
+      Animated.timing(flashAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start(() => setFlashMsg(null));
+  }
+
+  // ── Fly to zone ─────────────────────────────────────────────────────────────
+  function flyToZone(zone) {
+    const geom = safeParseGeometry(zone.boundary);
+    if (!geom) return;
+    const coords = extractRings(geom).flatMap(coordsToLatLng);
+    if (!coords.length) return;
+    setTimeout(() => {
+      mapRef.current?.fitToCoordinates(coords, {
+        edgePadding: { top: 100, right: 80, bottom: 120, left: 80 },
+        animated: true,
+      });
+    }, 400);
+  }
+
+  // ── Location watcher ────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!fromGame) return;
     let sub;
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync().catch(() => ({ status: 'denied' }));
-      if (status !== 'granted' || !fromGame) return;
+      if (status !== 'granted') return;
       sub = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, distanceInterval: 5 },
         ({ coords }) => {
-          setTargetCheckpoint(prev => {
+          setTargetCp(prev => {
             if (!prev) return prev;
-            const dist = haversineMeters(coords, { latitude: prev.latitude, longitude: prev.longitude });
-            setNearTarget(dist <= VISIT_RADIUS_METERS);
+            setNearTarget(haversineMeters(coords, { latitude: prev.latitude, longitude: prev.longitude }) <= VISIT_RADIUS_METERS);
             return prev;
           });
         },
       ).catch(() => null);
     })();
-    return () => { sub?.remove?.(); };
+    return () => sub?.remove?.();
   }, [fromGame]);
 
+  // ── Fetch zones + checkpoints ───────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-    const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
-    if (!baseUrl) return;
-
+    const base = process.env.EXPO_PUBLIC_API_BASE_URL;
+    if (!base) return;
     (async () => {
       try {
-        const [zonesRes, cpRes] = await Promise.all([
-          fetch(`${baseUrl}/api/dashboard/zones`),
-          fetch(`${baseUrl}/api/dashboard/checkpoints`),
+        const [zr, cr] = await Promise.all([
+          fetch(`${base}/api/dashboard/zones`),
+          fetch(`${base}/api/dashboard/checkpoints`),
         ]);
         if (cancelled) return;
-        if (zonesRes.ok) {
-          const json = await zonesRes.json();
-          if (!cancelled) setZones(Array.isArray(json) ? json : []);
-        }
-        if (cpRes.ok) {
-          const json = await cpRes.json();
-          if (!cancelled) setCheckpoints(Array.isArray(json) ? json : []);
-        }
-      } catch {
-        // ignore (offline / bad cert / unreachable)
-      }
+        if (zr.ok) { const j = await zr.json(); if (!cancelled) setZones(Array.isArray(j) ? j : []); }
+        if (cr.ok) { const j = await cr.json(); if (!cancelled) setCheckpoints(Array.isArray(j) ? j : []); }
+      } catch {}
     })();
-
     return () => { cancelled = true; };
   }, []);
 
-  // Assign zone + target checkpoint once data loads (game mode only)
+  // ── Initial zone assignment ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!fromGame || assignedRef.current || !zones.length) return;
-    const candidates = zones.filter(z => z.zoneType !== 'boundary');
-    if (!candidates.length) return;
-    assignedRef.current = true;
-    const zone = candidates[Math.floor(Math.random() * candidates.length)];
-    setAssignedZone(zone);
-    const zoneCps = checkpoints.filter(cp => cp.zoneId === zone.id);
-    if (zoneCps.length) {
-      setTargetCheckpoint(zoneCps[Math.floor(Math.random() * zoneCps.length)]);
+    if (!fromGame || initRef.current || !zones.length || !checkpoints.length) return;
+    initRef.current = true;
+    const zone = zones[Math.floor(Math.random() * zones.length)];
+    setActiveZone(zone);
+    setTargetCp(pickCpForZone(zone, checkpoints, role));
+    flyToZone(zone);
+  }, [zones, checkpoints, fromGame, role]);
+
+  // ── Zone complete → unlock nearest ─────────────────────────────────────────
+  async function handleVisit() {
+    if (!targetCp || !activeZone) return;
+
+    markVisited(targetCp.id);
+    if (partyId) await visitCheckpoint(partyId, targetCp.id).catch(() => {});
+
+    const newDone = new Set(completedZoneIds).add(activeZone.id);
+    setCompletedZoneIds(newDone);
+    setNearTarget(false);
+
+    const next = nearestLocked(activeZone, zones, newDone);
+    if (next) {
+      showFlash('Zone Complete! 🎉');
+      setActiveZone(next);
+      setTargetCp(pickCpForZone(next, checkpoints, role));
+      flyToZone(next);
+    } else {
+      showFlash('All zones complete! 🏆');
+      setActiveZone(null);
+      setTargetCp(null);
     }
-  }, [zones, checkpoints, fromGame]);
+  }
 
-  // Fly to assigned zone once it's set
-  useEffect(() => {
-    if (!assignedZone || !mapRef.current) return;
-    const geom = safeParseGeometry(assignedZone.boundary);
-    if (!geom) return;
-    const coords = extractRings(geom).flatMap(ring => coordsToLatLng(ring));
-    if (!coords.length) return;
-    // Small delay to let the map finish its initial render before animating
-    const t = setTimeout(() => {
-      mapRef.current?.fitToCoordinates(coords, {
-        edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
-        animated: true,
-      });
-    }, 500);
-    return () => clearTimeout(t);
-  }, [assignedZone]);
+  // ── Derived counts ──────────────────────────────────────────────────────────
+  const totalZones     = zones.length;
+  const doneCount      = completedZoneIds.size;
+  const remainingCount = totalZones - doneCount;
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Map" onBack={() => navigation.goBack()} />
-      {fromGame && targetCheckpoint && (
-        <View style={styles.visitBanner}>
-          <Text style={styles.visitLabel}>VISIT</Text>
-          <Text style={styles.visitName}>{targetCheckpoint.name}</Text>
+
+      {/* ── HUD bar ── */}
+      {fromGame && totalZones > 0 && (
+        <View style={styles.hud}>
+          <View style={styles.hudLeft}>
+            <Text style={styles.hudCount}>{remainingCount}</Text>
+            <Text style={styles.hudLabel}>{remainingCount === 1 ? 'zone left' : 'zones left'}</Text>
+          </View>
+          <View style={styles.hudDots}>
+            {zones.map(z => {
+              const done   = completedZoneIds.has(z.id);
+              const active = activeZone?.id === z.id;
+              return (
+                <View
+                  key={z.id}
+                  style={[styles.hudDot, done && styles.hudDotDone, active && styles.hudDotActive]}
+                />
+              );
+            })}
+          </View>
+          <Text style={styles.hudFraction}>{doneCount}/{totalZones}</Text>
         </View>
       )}
+
       <View style={styles.mapWrap}>
-        {fromGame && nearTarget && !visited && targetCheckpoint && (
+        {/* ── Near-checkpoint button ── */}
+        {fromGame && nearTarget && targetCp && (
           <View style={styles.visitOverlay}>
-            <TouchableOpacity
-              style={styles.visitBtn}
-              onPress={() => {
-                if (targetCheckpoint.type === 'sensor') {
-                  setShowVisitModal(true);
-                } else {
-                  setVisited(true);
-                }
-              }}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.visitBtnText}>You visited {targetCheckpoint.name}</Text>
+            <TouchableOpacity style={styles.visitBtn} onPress={handleVisit} activeOpacity={0.85}>
+              <Text style={styles.visitBtnLabel}>CHECKPOINT REACHED</Text>
+              <Text style={styles.visitBtnSub}>Tap to collect</Text>
             </TouchableOpacity>
           </View>
         )}
-        {fromGame && visited && (
-          <View style={styles.visitOverlay}>
-            <View style={[styles.visitBtn, styles.visitBtnDone]}>
-              <Text style={styles.visitBtnText}>✓ Visited!</Text>
-            </View>
-          </View>
+
+        {/* ── Flash message ── */}
+        {flashMsg && (
+          <Animated.View style={[styles.flash, { opacity: flashAnim, transform: [{ scale: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }]}>
+            <Text style={styles.flashText}>{flashMsg}</Text>
+          </Animated.View>
         )}
 
-        <Modal visible={showVisitModal} transparent animationType="fade">
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>You Visited</Text>
-              <GameButtons
-                variant="decline"
-                onPress={() => { setShowVisitModal(false); setVisited(true); }}
-              >
-                Close
-              </GameButtons>
-            </View>
-          </View>
-        </Modal>
         <MapView
           ref={mapRef}
           style={styles.map}
@@ -272,14 +328,34 @@ export default function MapPage({ navigation, route }) {
             tileCachePath={FileSystem.cacheDirectory + 'map-tiles/'}
             tileCacheMaxAge={604800}
           />
+
           {zones.map((zone, i) => {
-            const greyOut = fromGame && assignedZone != null && zone.id !== assignedZone.id && zone.zoneType !== 'boundary';
-            return renderZone(zone, i, greyOut);
+            const status = completedZoneIds.has(zone.id) ? 'done'
+              : fromGame && activeZone?.id === zone.id ? 'active'
+              : fromGame ? 'locked'
+              : 'active';
+            return renderZone(zone, i, status);
           })}
-          {checkpoints.map((cp, i) => renderCheckpoint(cp, i, (tapped) => {
-            setTargetCheckpoint(tapped);
-            setShowVisitModal(true);
-          }))}
+
+          {/* show target checkpoint dot */}
+          {fromGame && targetCp?.latitude != null && (
+            <Marker
+              coordinate={{ latitude: targetCp.latitude, longitude: targetCp.longitude }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false}
+            >
+              <View style={[styles.cpDot, { backgroundColor: checkpointColor(targetCp) }]} />
+            </Marker>
+          )}
+
+          {/* non-game mode: show all checkpoints */}
+          {!fromGame && checkpoints.map((cp, i) =>
+            cp.latitude != null && (
+              <Marker key={`cp-${i}`} coordinate={{ latitude: cp.latitude, longitude: cp.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
+                <View style={[styles.cpDot, { backgroundColor: checkpointColor(cp) }]} />
+              </Marker>
+            )
+          )}
         </MapView>
       </View>
     </SafeAreaView>
@@ -287,19 +363,60 @@ export default function MapPage({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: '#fff' },
-  mapWrap:     { flex: 1 },
-  map:         { flex: 1 },
-  dot:         { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: 'white' },
-  visitBanner:  { backgroundColor: '#2D7D46', paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center' },
-  visitLabel:   { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' },
-  visitName:    { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 2 },
-  visitOverlay: { position: 'absolute', bottom: 32, left: 20, right: 20, zIndex: 10, alignItems: 'center' },
-  visitBtn:     { backgroundColor: '#2D7D46', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 32, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 6 },
-  visitBtnDone: { backgroundColor: '#1A5C2E' },
-  visitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
-  modalCard:     { width: 360, backgroundColor: '#fff', borderRadius: 20, padding: 32, alignItems: 'center', gap: 24,
-                   shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, elevation: 8 },
-  modalTitle:    { fontSize: 22, fontWeight: 'bold', color: '#3f3f46', textTransform: 'uppercase', letterSpacing: 1 },
+  safe:    { flex: 1, backgroundColor: '#111' },
+  mapWrap: { flex: 1 },
+  map:     { flex: 1 },
+
+  // ── HUD ──────────────────────────────────────────────────────────────────────
+  hud: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#111', paddingHorizontal: 20, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: '#222',
+  },
+  hudLeft:     { alignItems: 'flex-start', minWidth: 52 },
+  hudCount:    { color: '#29e87b', fontSize: 22, fontWeight: '900', lineHeight: 24 },
+  hudLabel:    { color: '#666', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
+  hudDots:     { flexDirection: 'row', gap: 6, flexWrap: 'wrap', flex: 1, justifyContent: 'center' },
+  hudDot:      { width: 10, height: 10, borderRadius: 5, backgroundColor: '#333', borderWidth: 1, borderColor: '#444' },
+  hudDotDone:  { backgroundColor: '#1A5C2E', borderColor: '#29e87b' },
+  hudDotActive:{ backgroundColor: '#29e87b', borderColor: '#29e87b', shadowColor: '#29e87b', shadowOpacity: 0.8, shadowRadius: 4, elevation: 4 },
+  hudFraction: { color: '#555', fontSize: 12, fontWeight: '700', minWidth: 32, textAlign: 'right' },
+
+  // ── Visit button ─────────────────────────────────────────────────────────────
+  visitOverlay: { position: 'absolute', bottom: 36, left: 24, right: 24, zIndex: 10, alignItems: 'center' },
+  visitBtn: {
+    backgroundColor: '#29e87b', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 40,
+    alignItems: 'center',
+    shadowColor: '#29e87b', shadowOpacity: 0.55, shadowRadius: 16, elevation: 8,
+  },
+  visitBtnLabel: { color: '#0a1a0f', fontSize: 14, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
+  visitBtnSub:   { color: 'rgba(10,26,15,0.6)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+
+  // ── Flash ─────────────────────────────────────────────────────────────────────
+  flash: {
+    position: 'absolute', top: '40%', left: 40, right: 40, zIndex: 20,
+    backgroundColor: 'rgba(10,10,10,0.88)', borderRadius: 20, paddingVertical: 18,
+    alignItems: 'center', borderWidth: 1.5, borderColor: '#29e87b',
+  },
+  flashText: { color: '#29e87b', fontSize: 20, fontWeight: '900', letterSpacing: 0.5 },
+
+  // ── Zone badges ───────────────────────────────────────────────────────────────
+  lockBadge: {
+    backgroundColor: 'rgba(10,10,10,0.82)', borderRadius: 22, padding: 8,
+    borderWidth: 1.5, borderColor: '#333',
+    shadowColor: '#000', shadowOpacity: 0.6, shadowRadius: 6, elevation: 5,
+  },
+  lockEmoji: { fontSize: 18 },
+
+  doneBadge: {
+    backgroundColor: 'rgba(26,92,46,0.9)', borderRadius: 22, width: 34, height: 34,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#29e87b',
+    shadowColor: '#29e87b', shadowOpacity: 0.4, shadowRadius: 6, elevation: 4,
+  },
+  doneEmoji: { color: '#29e87b', fontSize: 16, fontWeight: '900' },
+
+  // ── Checkpoint dot ────────────────────────────────────────────────────────────
+  cpDot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2.5, borderColor: 'white',
+           shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 3, elevation: 3 },
 });

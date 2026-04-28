@@ -1,31 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import avatar from '../assets/UserAvatar_1.png';
-
-const STATUS_COLORS = { Creator: '#58CC02', Joined: '#1CB0F6', Invited: '#FFC107' };
-
-const MOCK_PLAYERS = [
-  { id: 1, name: 'maximax', status: 'Creator' },
-  { id: 2, name: 'User',    status: 'Joined'  },
-  { id: 3, name: 'User',    status: 'Joined'  },
-  { id: 4, name: 'User',    status: 'Joined'  },
-  { id: 5, name: 'User',    status: 'Invited' },
-];
+import { useGameContext } from '../context/GameContext';
 
 export default function PartyLobbyPage({ navigation }) {
+  const { partyStatus, members, resetGame } = useGameContext();
+
+  useEffect(() => {
+    if (partyStatus === 'InGame') {
+      navigation.navigate('YourRole', { singlePlayer: false });
+    }
+  }, [partyStatus, navigation]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Party" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.list}>
-        {MOCK_PLAYERS.map(({ id, name, status }) => (
-          <View key={id} style={styles.row}>
-            <Text style={styles.num}>{id}</Text>
+        {members.map((member, i) => (
+          <View key={i} style={styles.row}>
+            <Text style={styles.num}>{i + 1}</Text>
             <Image source={avatar} style={styles.avatar} />
-            <Text style={styles.name}>{name}</Text>
-            <Text style={[styles.status, { color: STATUS_COLORS[status] }]}>{status}</Text>
+            <Text style={styles.name}>{member}</Text>
+            <Text style={[styles.status, { color: '#1CB0F6' }]}>Joined</Text>
           </View>
         ))}
         <View style={styles.waiting}>
@@ -33,7 +32,7 @@ export default function PartyLobbyPage({ navigation }) {
         </View>
       </ScrollView>
       <View style={styles.btnWrap}>
-        <GameButtons variant="decline" onPress={() => navigation.navigate('PartyMode')}>
+        <GameButtons variant="decline" onPress={() => { resetGame(); navigation.navigate('PartyMode'); }}>
           Leave Party
         </GameButtons>
       </View>
