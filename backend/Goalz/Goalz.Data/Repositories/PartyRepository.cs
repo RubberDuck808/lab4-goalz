@@ -48,7 +48,9 @@ namespace Goalz.Data.Repositories
         public async Task<PartyGroup?> GetPartyGroupByPartyIdAsync(long partyId)
         {
             return await _context.PartyGroups
-                .FirstOrDefaultAsync(pg => pg.PartyId == partyId);
+                .Where(pg => pg.PartyId == partyId)
+                .OrderBy(pg => pg.PartyMembers.Count)
+                .FirstOrDefaultAsync();
         }
         public async Task AddGroupAsync(PartyGroup group)
         {
@@ -62,6 +64,70 @@ namespace Goalz.Data.Repositories
                 .SelectMany(pg => pg.PartyMembers)   
                 .Select(pm => pm.User.Username)
                 .ToListAsync();
+        }
+
+        public async Task<List<PartyMember>> GetPartyMembersWithUsersAsync(long partyId)
+        {
+            return await _context.PartyGroups
+                .Where(pg => pg.PartyId == partyId)
+                .SelectMany(pg => pg.PartyMembers)
+                .Include(pm => pm.User)
+                .ToListAsync();
+        }
+
+        public async Task<List<long>> GetVisitedCheckpointsAsync(long partyId)
+        {
+            return await _context.PartyVisitedCheckpoints
+                .Where(pvc => pvc.PartyId == partyId)
+                .Select(pvc => pvc.CheckpointId)
+                .ToListAsync();
+        }
+
+        public async Task VisitCheckpointAsync(long partyId, long checkpointId)
+        {
+            var exists = await _context.PartyVisitedCheckpoints.AnyAsync(pvc => pvc.PartyId == partyId && pvc.CheckpointId == checkpointId);
+            if (!exists)
+            {
+                await _context.PartyVisitedCheckpoints.AddAsync(new PartyVisitedCheckpoint { PartyId = partyId, CheckpointId = checkpointId });
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<bool> IsMemberAsync(long partyId, long userId)
+        {
+            return await _context.PartyMembers.AnyAsync(pm => pm.PartyId == partyId && pm.UserId == userId);
+        }
+
+        public async Task<List<Party>> GetStaleLobbyPartiesAsync(DateTime cutoff)
+        {
+            return await _context.Parties
+                .Where(p => p.Status == "Lobby" && p.CreatedAt < cutoff)
+                .ToListAsync();
+        }
+
+        public async Task DeleteAsync(Party party)
+        {
+            var visitedCheckpoints = await _context.PartyVisitedCheckpoints
+                .Where(pvc => pvc.PartyId == party.Id)
+                .ToListAsync();
+            _context.PartyVisitedCheckpoints.RemoveRange(visitedCheckpoints);
+
+            var memberIds = await _context.PartyMembers
+                .Where(pm => pm.PartyId == party.Id)
+                .Select(pm => pm.Id)
+                .ToListAsync();
+            var members = await _context.PartyMembers
+                .Where(pm => memberIds.Contains(pm.Id))
+                .ToListAsync();
+            _context.PartyMembers.RemoveRange(members);
+
+            var groups = await _context.PartyGroups
+                .Where(pg => pg.PartyId == party.Id)
+                .ToListAsync();
+            _context.PartyGroups.RemoveRange(groups);
+
+            _context.Parties.Remove(party);
+            await _context.SaveChangesAsync();
         }
     }
 }
