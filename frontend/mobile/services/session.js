@@ -1,6 +1,16 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-const USER_KEY = 'login_user';
+// expo-secure-store is native-only; fall back to localStorage on web
+const storage = Platform.OS === 'web'
+  ? {
+      setItemAsync:    async (key, val) => { localStorage.setItem(key, val); },
+      getItemAsync:    async (key)      => localStorage.getItem(key) ?? null,
+      deleteItemAsync: async (key)      => { localStorage.removeItem(key); },
+    }
+  : SecureStore;
+
+const USER_KEY  = 'login_user';
 const TOKEN_KEY = 'login_token';
 
 export async function storeUser(user) {
@@ -16,26 +26,26 @@ export async function storeUser(user) {
   };
 
   if (!token) {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await storage.deleteItemAsync(TOKEN_KEY);
   }
   await Promise.all([
-    SecureStore.setItemAsync(USER_KEY, JSON.stringify(profile)),
-    token ? SecureStore.setItemAsync(TOKEN_KEY, token) : Promise.resolve(),
+    storage.setItemAsync(USER_KEY, JSON.stringify(profile)),
+    token ? storage.setItemAsync(TOKEN_KEY, token) : Promise.resolve(),
   ]);
 }
 
 export async function getUser() {
-  const json = await SecureStore.getItemAsync(USER_KEY);
+  const json = await storage.getItemAsync(USER_KEY);
   return json ? JSON.parse(json) : null;
 }
 
 export async function getToken() {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  return storage.getItemAsync(TOKEN_KEY);
 }
 
 export async function clearUser() {
   await Promise.all([
-    SecureStore.deleteItemAsync(USER_KEY),
-    SecureStore.deleteItemAsync(TOKEN_KEY),
+    storage.deleteItemAsync(USER_KEY),
+    storage.deleteItemAsync(TOKEN_KEY),
   ]);
 }

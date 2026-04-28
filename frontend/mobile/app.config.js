@@ -1,0 +1,54 @@
+export default {
+  expo: {
+    name: 'Loggin',
+    slug: 'loggin',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/icon.png',
+    userInterfaceStyle: 'light',
+    newArchEnabled: true,
+    splash: {
+      image: './assets/splash-icon.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
+    ios: {
+      supportsTablet: false,
+      bundleIdentifier: 'com.goalz.loggin',
+      infoPlist: {
+        NSBluetoothAlwaysUsageDescription: 'Loggin needs Bluetooth to detect nearby checkpoints.',
+        NSBluetoothPeripheralUsageDescription: 'Loggin needs Bluetooth to detect nearby checkpoints.',
+        NSAppTransportSecurity: {
+          NSAllowsArbitraryLoads: true,
+        },
+      },
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#ffffff',
+      },
+      permissions: [
+        'android.permission.BLUETOOTH',
+        'android.permission.BLUETOOTH_ADMIN',
+        'android.permission.BLUETOOTH_SCAN',
+        'android.permission.BLUETOOTH_CONNECT',
+        'android.permission.ACCESS_FINE_LOCATION',
+        'android.permission.ACCESS_COARSE_LOCATION',
+      ],
+      package: 'com.goalz.loggin',
+      config: {
+        googleMaps: {
+          apiKey: process.env.GOOGLE_MAPS_API_KEY,
+        },
+      },
+    },
+    web: {
+      favicon: './assets/favicon.png',
+    },
+    plugins: [
+      'expo-secure-store',
+      'expo-location',
+    ],
+  },
+};
