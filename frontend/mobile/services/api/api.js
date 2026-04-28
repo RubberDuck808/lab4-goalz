@@ -112,3 +112,15 @@ export async function removeConnection(otherUsername) {
   if (response.status === 204) return { success: true };
   return { success: false, error: 'Something went wrong.' };
 }
+
+// ── Elements ─────────────────────────────────────────────────────────────────
+
+export async function submitElement({ elementName, elementType, latitude, longitude, imageUrl, isGreen }) {
+  const response = await fetch(`${BASE_URL}/api/dashboard/elements`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify({ elementName, elementType, latitude, longitude, imageUrl, isGreen }),
+  });
+  if (response.status === 201) return { success: true, data: await response.json() };
+  return { success: false, error: 'Could not save element.' };
+}
