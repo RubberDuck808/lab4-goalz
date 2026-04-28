@@ -20,6 +20,8 @@ frontend/**/obj/
 *.suo
 *.rsuser
 
+backend/Goalz/.sonarqube/
+
 # =========================
 
 # Visual Studio
