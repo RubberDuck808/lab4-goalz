@@ -19,6 +19,9 @@ import QuizCountdownPage from './pages/QuizCountdownPage';
 import QuizPage from './pages/QuizPage';
 import QuizResultPage from './pages/QuizResultPage';
 import SensorDataPage from './pages/SensorDataPage';
+import CameraPage from './pages/Camera';
+import ImageUploadScreenPage from './pages/ImageUploadScreen';
+import UserPhoto from './pages/UserPhoto';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +46,9 @@ export default function App() {
           <Stack.Screen name="Quiz"          component={QuizPage} />
           <Stack.Screen name="QuizResult"    component={QuizResultPage} />
           <Stack.Screen name="SensorData"   component={SensorDataPage} />
+          <Stack.Screen name="Camera"        component={CameraPage} />
+          <Stack.Screen name="ImageUpload"   component={ImageUploadScreenPage} />
+          <Stack.Screen name="UserPhoto"     component={UserPhoto} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

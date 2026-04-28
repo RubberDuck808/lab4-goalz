@@ -129,8 +129,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -147,8 +145,8 @@ else
     }));
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication(); //implements AddAuthentication()
 app.UseAuthorization();
