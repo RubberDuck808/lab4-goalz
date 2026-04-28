@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   expo: {
     name: 'Loggin',
     slug: 'loggin',
@@ -39,16 +39,28 @@ export default {
       package: 'com.goalz.loggin',
       config: {
         googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY,
+          apiKey: process.env.GOOGLE_MAPS_API_KEY ?? '',
         },
       },
     },
     web: {
       favicon: './assets/favicon.png',
     },
+    updates: {
+      url: 'https://u.expo.dev/56f66eca-5087-48dc-af70-ff32e2274a80',
+    },
+    runtimeVersion: {
+      policy: 'appVersion',
+    },
     plugins: [
       'expo-secure-store',
       'expo-location',
     ],
+    extra: {
+      eas: {
+        projectId: '56f66eca-5087-48dc-af70-ff32e2274a80',
+      },
+    },
+    owner: 'goalz',
   },
 };

@@ -17,9 +17,10 @@ config.resolver = {
   blockList: [
     // nativewind 4.2.x bundles its own react and react-native (0.85.x).
     // Block them so Metro resolves these from the project root only,
-    // preventing duplicate-React hook errors.
+    // preventing duplicate-React hook errors and VirtualView codegen failures.
+    // Use [/\\] to match both Linux (/) and Windows (\) path separators.
     new RegExp(
-      `${__dirname.replace(/\\/g, '\\\\')}\\\\node_modules\\\\nativewind\\\\node_modules\\\\(react|react-native|react-native-reanimated|react-native-worklets)\\\\.*`
+      `${__dirname.replace(/[/\\]/g, '[/\\\\]')}[/\\\\]node_modules[/\\\\]nativewind[/\\\\]node_modules[/\\\\](react|react-native|react-native-reanimated|react-native-worklets)[/\\\\].*`
     ),
   ],
 };
