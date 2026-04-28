@@ -1,12 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePhotoGallery } from '../src/hooks/usePhotoGallery';
 
 export default function CameraPage({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const { takePhoto } = usePhotoGallery();
   const temp     = route?.params?.temp     ?? 18.4;
   const humidity = route?.params?.humidity ?? 62;
   const aqi      = route?.params?.aqi      ?? 32;
+
+  async function handleShutter() {
+    const uri = await takePhoto();
+    navigation.navigate('UserPhoto', {
+      imageUri: uri ?? null,
+      gps: route?.params?.gps ?? null,
+    });
+  }
 
   const topBarHeight = insets.top + 63;
   const bottomBarHeight = insets.bottom + 100;
@@ -48,10 +58,7 @@ export default function CameraPage({ navigation, route }) {
         <TouchableOpacity
           style={styles.shutterOuter}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('UserPhoto', {
-            imageUri: route?.params?.imageUri ?? null,
-            gps: route?.params?.gps ?? null,
-          })}
+          onPress={handleShutter}
         >
           <View style={styles.shutterInner} />
         </TouchableOpacity>
