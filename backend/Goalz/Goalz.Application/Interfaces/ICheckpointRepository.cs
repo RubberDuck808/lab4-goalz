@@ -9,5 +9,6 @@ public interface ICheckpointRepository
     Task<IEnumerable<Checkpoint>> FindInsideBoundaryAsync(Geometry boundary);
     Task<Checkpoint?> GetByReferenceAsync(string type, long referenceId);
     Task AddAsync(Checkpoint checkpoint);
+    Task DeleteAsync(Checkpoint checkpoint);
     Task SaveChangesAsync();
 }

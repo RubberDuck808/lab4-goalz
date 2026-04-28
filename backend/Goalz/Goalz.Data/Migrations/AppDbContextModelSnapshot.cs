@@ -172,15 +172,34 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("BoundaryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("CheckpointsPerZone")
+                        .HasColumnType("integer");
+
                     b.Property<long>("Code")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("GroupSize")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("QuizId")
+                    b.Property<long?>("QuizId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ZoneCount")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -251,6 +270,9 @@ namespace Goalz.Data.Migrations
                     b.Property<long>("PartyId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("Role")
+                        .HasColumnType("text");
+
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
@@ -261,6 +283,29 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("PartyMembers");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.PartyVisitedCheckpoint", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CheckpointId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PartyId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckpointId");
+
+                    b.HasIndex("PartyId");
+
+                    b.ToTable("PartyVisitedCheckpoints", (string)null);
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Question", b =>
@@ -298,34 +343,6 @@ namespace Goalz.Data.Migrations
                     b.ToTable("Quiz");
                 });
 
-            modelBuilder.Entity("Goalz.Domain.Entities.Section", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("CompletionCriteria")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ZoneId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderIndex")
-                        .IsUnique();
-
-                    b.HasIndex("ZoneId")
-                        .IsUnique();
-
-                    b.ToTable("Sections");
-                });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Sensor", b =>
                 {
@@ -336,24 +353,46 @@ namespace Goalz.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<Point>("Geo")
-                        .IsRequired()
-                        .HasColumnType("geometry");
-
-                    b.Property<long>("Humidity")
-                        .HasColumnType("bigint");
-
-                    b.Property<long?>("Light")
-                        .HasColumnType("bigint");
+                        .HasColumnType("geometry")
+                        .HasColumnName("Geom");
 
                     b.Property<string>("SensorName")
                         .HasColumnType("text");
 
-                    b.Property<long>("Temp")
-                        .HasColumnType("bigint");
-
                     b.HasKey("Id");
 
                     b.ToTable("Sensors");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.SensorData", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("Humidity")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Light")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SensorsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Temp")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SensorsId");
+
+                    b.ToTable("SensorData");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.User", b =>
@@ -392,6 +431,34 @@ namespace Goalz.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Goalz.Domain.Entities.Boundary", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Geometry>("Geometry")
+                        .IsRequired()
+                        .HasColumnType("geometry");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Geometry")
+                        .HasAnnotation("Npgsql:IndexMethod", "gist");
+
+                    b.ToTable("Boundaries");
+                });
+
             modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
                 {
                     b.Property<long>("Id")
@@ -404,6 +471,9 @@ namespace Goalz.Data.Migrations
                         .IsRequired()
                         .HasColumnType("geometry");
 
+                    b.Property<long?>("BoundaryId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasColumnType("text");
@@ -412,11 +482,9 @@ namespace Goalz.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ZoneType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("BoundaryId");
 
                     b.ToTable("Zones");
                 });
@@ -476,9 +544,7 @@ namespace Goalz.Data.Migrations
                 {
                     b.HasOne("Goalz.Domain.Entities.Quiz", "Quiz")
                         .WithMany("Parties")
-                        .HasForeignKey("QuizId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("QuizId");
 
                     b.Navigation("Quiz");
                 });
@@ -532,6 +598,25 @@ namespace Goalz.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Goalz.Domain.Entities.PartyVisitedCheckpoint", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.Checkpoint", "Checkpoint")
+                        .WithMany()
+                        .HasForeignKey("CheckpointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Goalz.Domain.Entities.Party", "Party")
+                        .WithMany()
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Checkpoint");
+
+                    b.Navigation("Party");
+                });
+
             modelBuilder.Entity("Goalz.Domain.Entities.Question", b =>
                 {
                     b.HasOne("Goalz.Domain.Entities.Quiz", "Quiz")
@@ -543,15 +628,23 @@ namespace Goalz.Data.Migrations
                     b.Navigation("Quiz");
                 });
 
-            modelBuilder.Entity("Goalz.Domain.Entities.Section", b =>
+            modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
                 {
-                    b.HasOne("Goalz.Domain.Entities.Zone", "Zone")
-                        .WithOne()
-                        .HasForeignKey("Goalz.Domain.Entities.Section", "ZoneId")
+                    b.HasOne("Goalz.Domain.Entities.Boundary", null)
+                        .WithMany()
+                        .HasForeignKey("BoundaryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.SensorData", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.Sensor", "Sensor")
+                        .WithMany()
+                        .HasForeignKey("SensorsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Zone");
+                    b.Navigation("Sensor");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Answer", b =>
