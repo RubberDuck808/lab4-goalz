@@ -29,6 +29,7 @@ export default function MapPage({ navigation, route }) {
 
   const [zones,       setZones]       = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
+  const [boundaries,  setBoundaries]  = useState([]);
 
   const [activeZone,       setActiveZone]       = useState(null);
   const [completedZoneIds, setCompletedZoneIds] = useState(new Set());
@@ -104,17 +105,43 @@ export default function MapPage({ navigation, route }) {
     if (!base) return;
     (async () => {
       try {
-        const [zr, cr] = await Promise.all([
+        const [zr, cr, br] = await Promise.all([
           fetch(`${base}/api/dashboard/zones`),
           fetch(`${base}/api/dashboard/checkpoints`),
+          fetch(`${base}/api/dashboard/boundaries`),
         ]);
         if (cancelled) return;
         if (zr.ok) { const j = await zr.json(); if (!cancelled) setZones(Array.isArray(j) ? j : []); }
         if (cr.ok) { const j = await cr.json(); if (!cancelled) setCheckpoints(Array.isArray(j) ? j : []); }
+        if (br.ok) { const j = await br.json(); if (!cancelled) setBoundaries(Array.isArray(j) ? j : []); }
       } catch {}
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // ── Fit map to loaded boundaries ───────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady) return;
+    let allCoords = boundaries.flatMap(b => {
+      const geom = safeParseGeometry(b.boundary);
+      if (!geom) return [];
+      return extractRings(geom).flatMap(coordsToLatLng);
+    });
+    if (!allCoords.length) {
+      allCoords = zones.flatMap(z => {
+        const geom = safeParseGeometry(z.boundary);
+        if (!geom) return [];
+        return extractRings(geom).flatMap(coordsToLatLng);
+      });
+    }
+    if (!allCoords.length) return;
+    setTimeout(() => {
+      mapRef.current?.fitToCoordinates(allCoords, {
+        edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
+        animated: true,
+      });
+    }, 200);
+  }, [mapReady, zones, boundaries]);
 
   // ── Initial zone assignment ─────────────────────────────────────────────────
   useEffect(() => {

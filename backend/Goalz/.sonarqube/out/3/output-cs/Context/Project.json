@@ -1,0 +1,7 @@
+{
+  "language": "C#",
+  "targetFramework": "net9.0",
+  "assemblyName": "Goalz.Test",
+  "projectType": "Test",
+  "projectPath": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/Goalz.Test.csproj"
+}

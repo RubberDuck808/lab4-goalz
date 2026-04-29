@@ -1,0 +1,260 @@
+{
+  "scannerProperties": [
+    {
+      "key": "sonar.scanner.app",
+      "value": "ScannerMSBuild"
+    },
+    {
+      "key": "sonar.scanner.appVersion",
+      "value": "11.2.1"
+    },
+    {
+      "key": "sonar.scanner.bootstrapStartTime",
+      "value": "1777453410000"
+    },
+    {
+      "key": "sonar.projectKey",
+      "value": "goalz-loggin_goalz-backend"
+    },
+    {
+      "key": "sonar.working.directory",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/.sonar"
+    },
+    {
+      "key": "sonar.projectBaseDir",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz"
+    },
+    {
+      "key": "sonar.pullrequest.cache.basepath",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz"
+    },
+    {
+      "key": "sonar.sources",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/cloudbuild.yaml"
+    },
+    {
+      "key": "sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "sonar.modules",
+      "value": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67,F941C0BF-7353-44F5-937D-FF3623CEE4BB,4D230910-E306-4A1C-957A-D6AB11584FFC,15FB64D5-F4AD-4D79-B784-F20F35EF10B7,0F082C0D-35ED-4FEE-918E-A08F0BDB4055"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.projectKey",
+      "value": "goalz-loggin_goalz-backend:2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.projectName",
+      "value": "Goalz.Domain"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.projectBaseDir",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.working.directory",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/.sonar/mod0"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.sourceEncoding",
+      "value": "utf-8"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.sources",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Answer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Boundary.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Checkpoint.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Element.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/ElementType.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Friendship.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/FriendshipStatus.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Information.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Party.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/PartyGroup.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/PartyGroupAnswer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/PartyMember.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/PartyVisitedCheckpoint.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Question.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Quiz.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Role.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Sensor.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/SensorData.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/User.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Entities/Zone.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Interfaces/IRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/README.md,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/obj/Goalz.Domain.csproj.nuget.dgspec.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/obj/project.assets.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/bin/Debug/net9.0/Goalz.Domain.deps.json"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.cs.analyzer.projectOutPaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/0"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.cs.roslyn.reportFilePaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/0/Issues.json"
+    },
+    {
+      "key": "2F0CD3F0-2BC3-4187-B1A8-FF779F88EA67.sonar.cs.scanner.telemetry",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/0/Telemetry.json"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.projectKey",
+      "value": "goalz-loggin_goalz-backend:F941C0BF-7353-44F5-937D-FF3623CEE4BB"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.projectName",
+      "value": "Goalz.Core"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.projectBaseDir",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.working.directory",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/.sonar/mod1"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.sourceEncoding",
+      "value": "utf-8"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.sources",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/obj/Goalz.Core.csproj.nuget.dgspec.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/obj/project.assets.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/bin/Debug/net9.0/Goalz.Core.deps.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/BoundaryDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/ChangeRoleRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/CheckpointDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/CreateBoundaryDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/CreateElementRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/CreateSensorRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/CreateStaffUserRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/CreateZoneDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/DashboardLoginResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/DashboardSignUpRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/DatasetPreview.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/ElementsDTO.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/FriendDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/FriendRequestDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/GameLoginRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/GameLoginResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/GameSignUpRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/GameSignUpResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/GameStateResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/GenerateReportDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/JoinPartyRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/LobbyResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/LoginRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/MemberRoleDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/PartnerUsernameDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/PartyRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/PartyResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/ReportSettingsDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/ReportTypeEnum.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/SensorDataResponse.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/StaffUserDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/UpdateBoundaryDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/UpdateElementRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/UpdateSensorRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/UpdateZoneDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/UserSearchDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/DTOs/ZoneDto.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IAuthRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IAuthService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IBoundaryRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IBoundaryService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ICheckpointRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ICheckpointService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IDatasetService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IElementRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IElementService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IFriendshipRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IFriendshipService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IGenerateReportService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IJwtService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ILobbyService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/INatureElementRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IOverviewRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IOverviewService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IPartyRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IPartyService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ISensorDataRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ISensorDataService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ISensorRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/ISensorService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IUserRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IUserService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IZoneRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Interfaces/IZoneService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/AuthService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/BoundaryService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/CheckpointService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/DatasetService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/ElementService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/FriendshipService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/GenerateReportService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/LobbyService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/OverviewService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/PartyService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/SensorDataService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/SensorService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/UserService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Services/ZoneService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/Utils/CodeGenerator.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Application/README.md"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.cs.analyzer.projectOutPaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/1"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.cs.roslyn.reportFilePaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/1/Issues.json"
+    },
+    {
+      "key": "F941C0BF-7353-44F5-937D-FF3623CEE4BB.sonar.cs.scanner.telemetry",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/1/Telemetry.json"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.projectKey",
+      "value": "goalz-loggin_goalz-backend:4D230910-E306-4A1C-957A-D6AB11584FFC"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.projectName",
+      "value": "Goalz.API"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.projectBaseDir",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.working.directory",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/.sonar/mod2"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.sourceEncoding",
+      "value": "utf-8"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.sources",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Dockerfile,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/appsettings.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/appsettings.Development.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Goalz.API.csproj.nuget.dgspec.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/project.assets.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Properties/launchSettings.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/staticwebassets.build.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/staticwebassets.build.endpoints.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/rjsmrazor.dswa.cache.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/rjsmcshtml.dswa.cache.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/rpswa.dswa.cache.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/bin/Debug/net9.0/Goalz.API.runtimeconfig.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/bin/Debug/net9.0/Goalz.API.deps.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/bin/Debug/net9.0/appsettings.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/bin/Debug/net9.0/Goalz.API.staticwebassets.endpoints.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/bin/Debug/net9.0/appsettings.Development.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/AuthController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/BoundaryController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/CheckpointController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/ElementController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/GenerateReportsController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/ImportDatasetController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/OverviewController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/SensorController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Dashboard/ZoneController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/AuthController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/BoundaryController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/ElementController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/FriendshipController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/LobbyController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/PartyController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/SensorDataController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/VisitCheckpointRequest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/Game/ZoneController.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Hubs/PartyHub.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Models/DatasetModel.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Models/GenerateReportsModel.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Models/MapElements.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Program.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Services/JwtService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Services/PartyCleanupService.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/Goalz.API.GlobalUsings.g.cs,\"/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs\",/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/Goalz.API.AssemblyInfo.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/obj/Debug/net9.0/Goalz.API.MvcApplicationPartsAssemblyInfo.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Controllers/.gitkeep,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Goalz.API.http,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/README.md"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.cs.analyzer.projectOutPaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/4"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.cs.roslyn.reportFilePaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/4/Issues.json"
+    },
+    {
+      "key": "4D230910-E306-4A1C-957A-D6AB11584FFC.sonar.cs.scanner.telemetry",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/4/Telemetry.json"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.projectKey",
+      "value": "goalz-loggin_goalz-backend:15FB64D5-F4AD-4D79-B784-F20F35EF10B7"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.projectName",
+      "value": "Goalz.Test"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.projectBaseDir",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.working.directory",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/.sonar/mod3"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.sourceEncoding",
+      "value": "utf-8"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.sources",
+      "value": ""
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.tests",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/obj/project.assets.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/obj/Goalz.Test.csproj.nuget.dgspec.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/bin/Debug/net9.0/Goalz.Test.runtimeconfig.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/bin/Debug/net9.0/Goalz.Test.deps.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/DatasetServiceTest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/MSTestSettings.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/OverviewServiceTest.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/TestFiles/Goalz_dummy_set.csv"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.cs.analyzer.projectOutPaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/3"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.cs.roslyn.reportFilePaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/3/Issues.json"
+    },
+    {
+      "key": "15FB64D5-F4AD-4D79-B784-F20F35EF10B7.sonar.cs.scanner.telemetry",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/3/Telemetry.json"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.projectKey",
+      "value": "goalz-loggin_goalz-backend:0F082C0D-35ED-4FEE-918E-A08F0BDB4055"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.projectName",
+      "value": "Goalz.Data"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.projectBaseDir",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.working.directory",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/.sonar/mod4"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.sourceEncoding",
+      "value": "utf-8"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.sources",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/obj/Goalz.Data.csproj.nuget.dgspec.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/obj/project.assets.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/bin/Debug/net9.0/Goalz.Data.runtimeconfig.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/bin/Debug/net9.0/Goalz.Data.deps.json,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260415105321_InitialCreate.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260415105321_InitialCreate.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260415105504_AddUserCreatedAt.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260415105504_AddUserCreatedAt.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260415111426_AddFriendships.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260415111426_AddFriendships.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260420112432_AddZones.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260420112432_AddZones.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260422183016_AddSections.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260422183016_AddSections.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260423080000_AddCheckpoints.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260423080000_AddCheckpoints.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260425110916_AlterCheckpointRedesign.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260425110916_AlterCheckpointRedesign.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260426205518_AddGamePlayState.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260426205518_AddGamePlayState.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260426214146_MakePartyQuizIdNullable.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260426214146_MakePartyQuizIdNullable.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427000001_AddPartyMemberPartyId.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427000001_AddPartyMemberPartyId.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427151538_FixSensorDataCascadeDelete.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427151538_FixSensorDataCascadeDelete.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427162225_AddPartyCreatedAt.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427162225_AddPartyCreatedAt.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427163224_AddPartyGameConfig.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427163224_AddPartyGameConfig.Designer.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427200000_SeparateBoundaryFromZone.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427210000_AddZoneBoundaryId.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/20260427220000_DropZoneType.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Migrations/AppDbContextModelSnapshot.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/AuthRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/BoundaryRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/CheckpointRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/ElementRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/FriendshipRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/NatureElementRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/OverviewRepositorycs.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/PartyRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/SensorDataRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/SensorRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/UserRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Repositories/ZoneRepository.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Storage/AppDbContext.cs,/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/README.md"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.cs.analyzer.projectOutPaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/2"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.cs.roslyn.reportFilePaths",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/2/Issues.json"
+    },
+    {
+      "key": "0F082C0D-35ED-4FEE-918E-A08F0BDB4055.sonar.cs.scanner.telemetry",
+      "value": "/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/2/Telemetry.json"
+    },
+    {
+      "key": "sonar.token",
+      "value": "***"
+    },
+    {
+      "key": "sonar.host.url",
+      "value": "https://sonarcloud.io/"
+    },
+    {
+      "key": "sonar.organization",
+      "value": "goalz-loggin"
+    },
+    {
+      "key": "sonar.visualstudio.enable",
+      "value": "false"
+    }
+  ]
+}
