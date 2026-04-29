@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, PanResponder, LayoutAnimation, UIManager, Platform,
@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import AppTextInput from '../components/TextInput';
-import { createParty, getZones, getBoundaries } from '../services/api/partyApi';
+import { createParty, getZones, getBoundaries, getCheckpoints } from '../services/api/partyApi';
 import { useGameContext } from '../context/GameContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental)
@@ -119,6 +119,7 @@ export default function GameSetupPage({ navigation, route }) {
   const [cpPerZone, setCpPerZone]           = useState(2);
   const [boundaries, setBoundaries]         = useState([]);
   const [zones, setZones]                   = useState([]);
+  const [checkpoints, setCheckpoints]       = useState([]);
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
 
@@ -134,7 +135,39 @@ export default function GameSetupPage({ navigation, route }) {
     getZones().then((res) => {
       if (res.success) setZones(res.data);
     });
+    getCheckpoints().then((res) => {
+      if (res.success) setCheckpoints(res.data);
+    });
   }, []);
+
+  // Zones belonging to the selected boundary.
+  const zonesInBoundary = useMemo(
+    () => (boundaryId ? zones.filter(z => z.boundaryId === boundaryId) : zones),
+    [zones, boundaryId],
+  );
+
+  // Max zones slider = how many zones the boundary actually has.
+  const maxZones = Math.max(1, zonesInBoundary.length);
+
+  // Max checkpoints per zone = the smallest checkpoint count across all zones
+  // in this boundary (every zone must be able to satisfy the configured value).
+  const maxCpPerZone = useMemo(() => {
+    if (!zonesInBoundary.length || !checkpoints.length) return 10;
+    const counts = zonesInBoundary
+      .map(z => checkpoints.filter(cp => cp.zoneId === z.id).length)
+      .filter(c => c > 0);
+    return counts.length ? Math.min(...counts) : 10;
+  }, [zonesInBoundary, checkpoints]);
+
+  // Clamp zoneCount and cpPerZone whenever their ceilings shrink (e.g. boundary
+  // switched to one that has fewer zones or checkpoints than the current values).
+  useEffect(() => {
+    setZoneCount(prev => Math.min(prev, maxZones));
+  }, [maxZones]);
+
+  useEffect(() => {
+    setCpPerZone(prev => Math.min(prev, maxCpPerZone));
+  }, [maxCpPerZone]);
 
   function toggleGroups(val) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -169,9 +202,6 @@ export default function GameSetupPage({ navigation, route }) {
     }
     setLoading(false);
   }
-
-  const zonesInBoundary = boundaryId ? zones.filter(z => z.boundaryId === boundaryId) : zones;
-  const maxZones = Math.max(1, zonesInBoundary.length);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -230,8 +260,13 @@ export default function GameSetupPage({ navigation, route }) {
 
         {/* Checkpoints per zone */}
         <Section title={`Checkpoints per zone: ${cpPerZone}`}>
-          <Slider min={1} max={10} value={cpPerZone} onChange={setCpPerZone} />
-          <Stepper min={1} max={10} value={cpPerZone} onChange={setCpPerZone} />
+          <Slider min={1} max={maxCpPerZone} value={cpPerZone} onChange={setCpPerZone} />
+          <Stepper min={1} max={maxCpPerZone} value={cpPerZone} onChange={setCpPerZone} />
+          {maxCpPerZone < 10 && (
+            <Text style={styles.hint}>
+              Max <Text style={styles.hintBold}>{maxCpPerZone}</Text> — limited by the fewest checkpoints in any zone of this boundary.
+            </Text>
+          )}
         </Section>
 
         {/* Groups — party only */}

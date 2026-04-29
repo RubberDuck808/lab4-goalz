@@ -141,6 +141,7 @@ backend:deploy:
     - dev
     - feature/deployment
     - feature/mobile-profile-leaderboard-accessibility
+    - fix/party-role-assignment-and-game-completion
 
 
 # ------------------------
@@ -179,3 +180,4 @@ dashboard:deploy:
     - main
     - dev
     - feature/mobile-profile-leaderboard-accessibility
+    - fix/party-role-assignment-and-game-completion

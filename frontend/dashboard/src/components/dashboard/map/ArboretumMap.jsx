@@ -628,6 +628,7 @@ export default function ArboretumMap() {
       } else {
         await updateZone(selectedZone.id, {
           name: editName.trim(), color: editColor,
+          boundaryId: selectedZone.boundaryId ?? undefined,
           boundary: editPendingGeometry ?? undefined,
         })
       }
@@ -947,34 +948,41 @@ export default function ArboretumMap() {
 
               {/* Zones within this boundary */}
               <div className="pt-3 border-t border-gray-200 mt-1 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">
-                    Zones
-                    {zones.filter(z => !z._isBoundary).length > 0 && (
-                      <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
-                        {zones.filter(z => !z._isBoundary).length}
-                      </span>
-                    )}
-                  </p>
-                  <button type="button" onClick={() => handleStartDraw('section')}
-                    className="font flex items-center gap-1.5 bg-secondary-green hover:bg-[#286f3e] text-white px-3 py-1 rounded text-sm font-bold transition-colors cursor-pointer">
-                    <i className="fa-solid fa-plus text-xs" /> Add Zone
-                  </button>
-                </div>
-                {zones.filter(z => !z._isBoundary).length === 0 ? (
-                  <p className="font text-gray-400 text-sm">No zones yet — click Add Zone to draw one.</p>
-                ) : (
-                  <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
-                    {zones.filter(z => !z._isBoundary).map((zone) => (
-                      <button key={zone.id} type="button"
-                        onClick={() => handleZoneClickRef.current(zone)}
-                        className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: zone.color }} />
-                        <span className="font text-gray-800 text-sm flex-1 truncate">{zone.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  const boundaryZones = zones.filter(z => !z._isBoundary && z.boundaryId === selectedZone.id)
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">
+                          Zones
+                          {boundaryZones.length > 0 && (
+                            <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
+                              {boundaryZones.length}
+                            </span>
+                          )}
+                        </p>
+                        <button type="button" onClick={() => handleStartDraw('section')}
+                          className="font flex items-center gap-1.5 bg-secondary-green hover:bg-[#286f3e] text-white px-3 py-1 rounded text-sm font-bold transition-colors cursor-pointer">
+                          <i className="fa-solid fa-plus text-xs" /> Add Zone
+                        </button>
+                      </div>
+                      {boundaryZones.length === 0 ? (
+                        <p className="font text-gray-400 text-sm">No zones yet — click Add Zone to draw one.</p>
+                      ) : (
+                        <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
+                          {boundaryZones.map((zone) => (
+                            <button key={zone.id} type="button"
+                              onClick={() => handleZoneClickRef.current(zone)}
+                              className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: zone.color }} />
+                              <span className="font text-gray-800 text-sm flex-1 truncate">{zone.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
 
               {/* Generate Zones */}
