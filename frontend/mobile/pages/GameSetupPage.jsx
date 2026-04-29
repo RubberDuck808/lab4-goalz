@@ -289,7 +289,7 @@ export default function GameSetupPage({ navigation, route }) {
   );
 }
 
-const GREEN = '#2D7D46';
+const GREEN = '#58CC02';
 const BLUE  = '#1CB0F6';
 
 const styles = StyleSheet.create({
