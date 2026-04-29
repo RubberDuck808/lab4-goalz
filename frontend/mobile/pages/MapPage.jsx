@@ -37,8 +37,8 @@ export default function MapPage({ navigation, route }) {
   const flashAnim = useRef(new Animated.Value(0)).current;
 
   const [mapReady,      setMapReady]      = useState(false);
-  const [elementModal,  setElementModal]  = useState(false);
-  const [sensorModal,   setSensorModal]   = useState(null); // { sensorId, sensorName } | null
+  const [elementModal,  setElementModal]  = useState(null); // { cp, zone } | null
+  const [sensorModal,   setSensorModal]   = useState(null); // { cp, zone, sensorId, sensorName } | null
 
   const initRef = useRef(false);
   const { partyId, markVisited, role } = useGameContext();
@@ -124,19 +124,16 @@ export default function MapPage({ navigation, route }) {
   }, [zones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
-  async function handleVisit() {
-    if (!targetCp || !activeZone) return;
+  // Called after the user dismisses the modal to advance the zone.
+  async function completeCheckpoint(cp, zone) {
+    markVisited(cp.id);
+    if (partyId) await visitCheckpoint(partyId, cp.id).catch(() => {});
 
-    const { type, referenceId, name } = targetCp;
-
-    markVisited(targetCp.id);
-    if (partyId) await visitCheckpoint(partyId, targetCp.id).catch(() => {});
-
-    const newDone = new Set(completedZoneIds).add(activeZone.id);
+    const newDone = new Set(completedZoneIds).add(zone.id);
     setCompletedZoneIds(newDone);
     setNearTarget(false);
 
-    const next = nearestLocked(activeZone, zones, newDone);
+    const next = nearestLocked(zone, zones, newDone);
     if (next) {
       showFlash('Zone Complete! 🎉');
       setActiveZone(next);
@@ -147,11 +144,15 @@ export default function MapPage({ navigation, route }) {
       setActiveZone(null);
       setTargetCp(null);
     }
+  }
 
-    if (type === 'sensor') {
-      setSensorModal({ sensorId: referenceId, sensorName: name });
+  function handleVisit() {
+    if (!targetCp || !activeZone) return;
+    setNearTarget(false);
+    if (targetCp.type === 'sensor') {
+      setSensorModal({ cp: targetCp, zone: activeZone, sensorId: targetCp.referenceId, sensorName: targetCp.name });
     } else {
-      setElementModal(true);
+      setElementModal({ cp: targetCp, zone: activeZone });
     }
   }
 
@@ -232,15 +233,28 @@ export default function MapPage({ navigation, route }) {
       </View>
 
       <ElementModal
-        visible={elementModal}
-        onClose={() => setElementModal(false)}
-        onTakePhoto={() => { setElementModal(false); navigation.navigate('Camera'); }}
+        visible={!!elementModal}
+        onClose={() => {
+          const { cp, zone } = elementModal;
+          setElementModal(null);
+          completeCheckpoint(cp, zone);
+        }}
+        onTakePhoto={() => {
+          const { cp, zone } = elementModal;
+          setElementModal(null);
+          completeCheckpoint(cp, zone);
+          navigation.navigate('Camera');
+        }}
       />
       <SensorModal
         visible={!!sensorModal}
         sensorId={sensorModal?.sensorId}
         sensorName={sensorModal?.sensorName ?? 'Nearby Sensor'}
-        onClose={() => setSensorModal(null)}
+        onClose={() => {
+          const { cp, zone } = sensorModal;
+          setSensorModal(null);
+          completeCheckpoint(cp, zone);
+        }}
       />
     </SafeAreaView>
   );
