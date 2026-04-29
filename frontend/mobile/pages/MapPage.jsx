@@ -20,6 +20,7 @@ import {
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
 import ElementModal from './map/ElementModal';
+import SensorModal from './map/SensorModal';
 
 export default function MapPage({ navigation, route }) {
   const fromGame = route?.params?.fromGame ?? false;
@@ -37,6 +38,7 @@ export default function MapPage({ navigation, route }) {
 
   const [mapReady,      setMapReady]      = useState(false);
   const [elementModal,  setElementModal]  = useState(false);
+  const [sensorModal,   setSensorModal]   = useState(null); // { sensorId, sensorName } | null
 
   const initRef = useRef(false);
   const { partyId, markVisited, role } = useGameContext();
@@ -147,7 +149,7 @@ export default function MapPage({ navigation, route }) {
     }
 
     if (type === 'sensor') {
-      navigation.navigate('SensorData', { sensorId: referenceId, sensorName: name });
+      setSensorModal({ sensorId: referenceId, sensorName: name });
     } else {
       setElementModal(true);
     }
@@ -229,7 +231,17 @@ export default function MapPage({ navigation, route }) {
         </MapView>
       </View>
 
-      <ElementModal visible={elementModal} onClose={() => setElementModal(false)} />
+      <ElementModal
+        visible={elementModal}
+        onClose={() => setElementModal(false)}
+        onTakePhoto={() => { setElementModal(false); navigation.navigate('Camera'); }}
+      />
+      <SensorModal
+        visible={!!sensorModal}
+        sensorId={sensorModal?.sensorId}
+        sensorName={sensorModal?.sensorName ?? 'Nearby Sensor'}
+        onClose={() => setSensorModal(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -2,7 +2,8 @@
 
 ## Table of Contents
 
-1. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
+1. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
+2. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
 2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 3. [#48 Element types fetched from API](#48-element-types-fetched-from-api--2026-04-28)
@@ -21,6 +22,28 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## Mobile: Party UX improvements, sensor modal, camera checkpoint — 2026-04-29
+
+### Changed
+- `GameSetupPage` party name field now uses the shared `AppTextInput` component instead of a raw `TextInput`
+- Party buttons (Start, End Party, Leave Party) now have explicit `alignItems: 'center'` wrappers so they are centred regardless of parent flex layout
+- `PartyOwnerPage` End Party button now triggers the same confirmation dialog as the header back button
+- `ElementModal` updated to show "Photo Checkpoint" prompt with a "Take Photo" primary action and "Dismiss" link instead of just a close button
+
+### Added
+- **Back-press confirmation in party screens**: pressing hardware back or the header back button in `PartyOwnerPage` shows an Alert "Cancel Party?" (owner) and in `PartyLobbyPage` shows "Leave Party?" — navigating away only on confirmation; hardware back intercepted via `useFocusEffect` + `BackHandler`
+- **`SensorModal`** (`pages/map/SensorModal.jsx`) — inline `Modal` overlay on the map that shows "Sensor Detected!" prompt, loads sensor readings on demand, and displays temp/humidity/light cards; replaces the `navigation.navigate('SensorData')` call so the map stays visible in the background
+- **Backend auto-reduce group size**: `PartyService.StartGame` reduces `GroupSize` to `members.count` if fewer players joined than configured (falls back to `null`/Explorer for fewer than 2 players), preventing mis-assigned roles when a party is undersized
+
+### Rationale
+- Sensor data as a modal keeps the player oriented on the map — navigating away to a blank page breaks spatial context
+- Confirmation on back-press prevents accidental party abandonment
+- Group-size auto-reduce ensures every player always has a valid Scout/Trailblazer/Explorer role even with low attendance
+
+> Issue closed after 0 min
 
 ---
 

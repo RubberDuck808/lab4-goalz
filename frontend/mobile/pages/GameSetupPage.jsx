@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
+import AppTextInput from '../components/TextInput';
 import { createParty, getZones, getBoundaries } from '../services/api/partyApi';
 import { useGameContext } from '../context/GameContext';
 
@@ -183,12 +184,11 @@ export default function GameSetupPage({ navigation, route }) {
         {/* Party name — party mode only */}
         {!singlePlayer && (
           <Section title="Party Name">
-            <TextInput
-              style={styles.nameInput}
+            <AppTextInput
               placeholder="Enter party name"
-              placeholderTextColor="#a1a1aa"
               value={partyName}
               onChangeText={setPartyName}
+              style={{ width: '100%', alignSelf: 'stretch' }}
             />
           </Section>
         )}
@@ -275,7 +275,7 @@ export default function GameSetupPage({ navigation, route }) {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <View style={{ marginTop: 8, marginBottom: 24 }}>
+        <View style={{ marginTop: 8, marginBottom: 24, alignItems: 'center' }}>
           {loading ? (
             <ActivityIndicator size="large" color="#1CB0F6" />
           ) : (
@@ -298,12 +298,6 @@ const styles = StyleSheet.create({
 
   section:      { marginBottom: 24 },
   sectionTitle: { fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase', color: '#71717a', letterSpacing: 0.5, marginBottom: 10 },
-
-  nameInput: {
-    borderWidth: 1.5, borderColor: '#e4e4e7', borderRadius: 12,
-    paddingHorizontal: 16, paddingVertical: 12,
-    fontSize: 16, color: '#18181b',
-  },
 
   // slider
   trackContainer: { height: 40, justifyContent: 'center', paddingHorizontal: 12, marginBottom: 4 },

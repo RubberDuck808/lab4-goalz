@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Alert, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import UserRow from '../components/UserRow';
@@ -15,9 +16,30 @@ export default function PartyLobbyPage({ navigation }) {
     }
   }, [partyStatus, navigation]);
 
+  const confirmLeave = useCallback(() => {
+    Alert.alert(
+      'Leave Party',
+      'Are you sure you want to leave the party?',
+      [
+        { text: 'Stay', style: 'cancel' },
+        { text: 'Leave Party', style: 'destructive', onPress: () => { resetGame(); navigation.navigate('PartyMode'); } },
+      ]
+    );
+  }, [resetGame, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        confirmLeave();
+        return true;
+      });
+      return () => sub.remove();
+    }, [confirmLeave])
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
-      <PageHeader title="Party" onBack={() => navigation.goBack()} />
+      <PageHeader title="Party" onBack={confirmLeave} />
       <ScrollView contentContainerStyle={styles.list}>
         {members.map((member, i) => (
           <View key={i} style={styles.row}>
@@ -29,7 +51,7 @@ export default function PartyLobbyPage({ navigation }) {
         </View>
       </ScrollView>
       <View style={styles.btnWrap}>
-        <GameButtons variant="decline" onPress={() => { resetGame(); navigation.navigate('PartyMode'); }}>
+        <GameButtons variant="decline" onPress={confirmLeave}>
           Leave Party
         </GameButtons>
       </View>
