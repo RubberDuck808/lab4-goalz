@@ -140,6 +140,7 @@ backend:deploy:
     - main
     - dev
     - feature/deployment
+    - fix/dashboard-cors-env-config
 
 
 # ------------------------
@@ -177,3 +178,4 @@ dashboard:deploy:
   only:
     - main
     - dev
+    - fix/dashboard-cors-env-config
