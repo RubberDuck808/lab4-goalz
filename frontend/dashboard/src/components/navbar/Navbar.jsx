@@ -1,8 +1,16 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navitem from "./Navitem";
+import { authService } from "../../services/authService";
 
 export default function Navbar({ selectedItem, setSelectedItem }) {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    authService.logout();
+    navigate("/");
+  };
 
   const handleSelect = (item) => {
     setSelectedItem(item);
@@ -26,7 +34,7 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
 
       <nav
         className={`
-          bg-secondary-black w-[260px] h-full fixed md:static top-0 left-0 z-50
+          relative bg-secondary-black w-[260px] h-full fixed md:static top-0 left-0 z-50
           transform transition-transform duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
@@ -57,15 +65,15 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
           </button>
         </div>
 
-        <div className="w-full flex flex-col">
+        <div className="w-full flex flex-col flex-1">
           <Navitem
-            name="Overview"
+            name="Arboretum Overview"
             icon="fa-chart-line"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />
           <Navitem
-            name="Arboretum Map"
+            name="Game Map"
             icon="fa-map"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
@@ -88,6 +96,16 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />
+        </div>
+
+        <div className="absolute bottom-0 left-0 w-full p-4 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+          >
+            <i className="fa-solid fa-right-from-bracket text-sm w-4"></i>
+            <span className="text-sm font-medium">Log Out</span>
+          </button>
         </div>
       </nav>
     </>

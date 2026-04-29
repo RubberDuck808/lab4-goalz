@@ -7,13 +7,13 @@ import ArboretumMap from '../components/dashboard/map/ArboretumMap';
 import Settings from '../components/dashboard/settings/Settings';
 
 export default function Overview() {
-  const [selectedItem, setSelectedItem] = useState("Overview");
+  const [selectedItem, setSelectedItem] = useState("Arboretum Overview");
 
   const renderContent = () => {
     switch (selectedItem) {
-      case "Overview":
+      case "Arboretum Overview":
         return <DashboardOverview setSelectedItem={setSelectedItem} />;
-      case "Arboretum Map":
+      case "Game Map":
         return <ArboretumMap />;
       case "Reports":
         return <Reports />;

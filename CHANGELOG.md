@@ -2,7 +2,9 @@
 
 ## Table of Contents
 
-1. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
+1. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
+2. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
+2. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
 2. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
 2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
@@ -22,6 +24,34 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## Dashboard: Rename nav items — 2026-04-29 14:10
+
+### Changed
+- Nav item "Overview" → "Arboretum Map Overview" (Navbar.jsx, Overview.jsx initial state + switch case)
+- Nav item "Arboretum Map" → "Game Map" (Navbar.jsx, Overview.jsx switch case)
+- Page title in DashboardOverview: "Alboretum Overview" → "Arboretum Map Overview"
+
+### Rationale
+- Label updates to better reflect the content shown in each section
+
+> Issue closed after 0 min
+
+---
+
+## Dashboard: Log Out button in navbar — 2026-04-29 14:00
+
+### Added
+- Log Out button pinned to the bottom-left of the dashboard sidebar (`Navbar.jsx`)
+- Clicking it calls `authService.logout()` (clears `token` and `user` from localStorage) then redirects to `/` via `useNavigate`
+
+### Rationale
+- `authService.logout()` already existed but had no UI trigger; adding it to the navbar is the most accessible location since the nav is always visible
+- Used `absolute bottom-0` positioning inside the `relative` nav so the button stays at the bottom regardless of content height
+
+> Issue closed after 0 min
 
 ---
 
