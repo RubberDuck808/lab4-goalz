@@ -138,6 +138,7 @@ backend:deploy:
         --update-env-vars "^|^ConnectionStrings__DefaultConnection=$DB_CONNECTION_STRING|^Jwt__Secret=$JWT_SECRET|^AllowedOrigins=http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081,https://goalz-dashboard-237169763190.europe-west1.run.app"
   only:
     - main
+    - dev
     - feature/deployment
 
 
@@ -175,4 +176,4 @@ dashboard:deploy:
         --project $GCP_PROJECT
   only:
     - main
-    - feature/deployment
+    - dev
