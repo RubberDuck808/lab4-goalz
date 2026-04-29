@@ -1,3 +1,4 @@
+using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Goalz.Data.Storage;
 using Goalz.Domain.Entities;
@@ -52,9 +53,37 @@ namespace Goalz.Data.Repositories
             await _context.Users.AddAsync(user);
         }
 
+        public Task UpdateAsync(User user)
+        {
+            _context.Users.Update(user);
+            return Task.CompletedTask;
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(int limit = 50)
+        {
+            var scores = await _context.Users
+                .Select(u => new
+                {
+                    Username = u.Username,
+                    TotalPoints = u.PartyMembers
+                        .SelectMany(pm => pm.PartyGroup.PartyGroupAnswers)
+                        .Sum(pga => (long?)pga.ReceivedPoints) ?? 0L,
+                })
+                .OrderByDescending(x => x.TotalPoints)
+                .Take(limit)
+                .ToListAsync();
+
+            return scores.Select((x, i) => new LeaderboardEntryDto
+            {
+                Rank = i + 1,
+                Username = x.Username,
+                TotalPoints = x.TotalPoints,
+            });
         }
     }
 }

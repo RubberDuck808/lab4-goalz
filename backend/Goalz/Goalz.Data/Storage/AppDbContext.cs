@@ -19,6 +19,7 @@ namespace Goalz.Data.Storage
         public DbSet<Party> Parties { get; set; }
         public DbSet<PartyMember> PartyMembers { get; set; }
         public DbSet<PartyGroup> PartyGroups { get; set; }
+        public DbSet<PartyGroupAnswer> PartyGroupAnswers { get; set; }
         public DbSet<PartyVisitedCheckpoint> PartyVisitedCheckpoints { get; set; }
 
 

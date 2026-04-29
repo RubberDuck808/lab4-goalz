@@ -5,13 +5,13 @@ import NavigationIcon from '../assets/Navigation.svg';
 import UserIcon from '../assets/User.svg';
 
 const NAV_ITEMS = [
-  { Icon: AwardIcon,      alt: 'Goals',   onPressKey: null,      width: 22, height: 22 },
-  { Icon: NavigationIcon, alt: 'Explore', onPressKey: 'home',    width: 22, height: 22 },
-  { Icon: UserIcon,       alt: 'Profile', onPressKey: 'profile', width: 22, height: 25 },
+  { Icon: AwardIcon,      alt: 'Goals',   onPressKey: 'leaderboard', width: 22, height: 22 },
+  { Icon: NavigationIcon, alt: 'Explore', onPressKey: 'home',        width: 22, height: 22 },
+  { Icon: UserIcon,       alt: 'Profile', onPressKey: 'profile',     width: 22, height: 25 },
 ];
 
-export default function BottomNavBar({ onNavigateHome, onNavigateToProfile }) {
-  const handlers = { home: onNavigateHome, profile: onNavigateToProfile };
+export default function BottomNavBar({ onNavigateHome, onNavigateToProfile, onNavigateToLeaderboard }) {
+  const handlers = { home: onNavigateHome, profile: onNavigateToProfile, leaderboard: onNavigateToLeaderboard };
 
   return (
     <View style={styles.container}>

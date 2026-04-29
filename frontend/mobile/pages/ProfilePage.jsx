@@ -67,7 +67,7 @@ export default function ProfilePage({ navigation, route }) {
 
       <View style={styles.infoRow}>
         <View style={styles.textBlock}>
-          <Text style={styles.username}>{viewedUsername ?? '—'}</Text>
+          <Text style={styles.username}>{viewedUsername ?? user?.username ?? '—'}</Text>
           <Text style={styles.joined}>
             {!isOther && user?.createdAt
               ? `Joined ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
@@ -91,7 +91,7 @@ export default function ProfilePage({ navigation, route }) {
             <View style={{ width: 156 }} />
           )
         ) : (
-          <GameButtons variant="task" size="half">Edit Profile</GameButtons>
+          <GameButtons variant="task" size="half" onPress={() => navigation.navigate('EditProfile')}>Edit Profile</GameButtons>
         )}
         <View style={{ width: 156 }} />
       </View>
@@ -111,8 +111,9 @@ export default function ProfilePage({ navigation, route }) {
       </View>
 
       <BottomNavBar
-        onNavigateHome={() => navigation.popTo('Home')}
-        onNavigateToProfile={() => navigation.popTo('Profile', { username: undefined, incomingRequest: false })}
+        onNavigateHome={() => navigation.navigate('Home')}
+        onNavigateToProfile={() => navigation.navigate('Profile', { username: undefined, incomingRequest: false })}
+        onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
       />
     </SafeAreaView>
   );

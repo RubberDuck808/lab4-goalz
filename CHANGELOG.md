@@ -2,7 +2,8 @@
 
 ## Table of Contents
 
-1. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
+1. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
+2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 3. [#48 Element types fetched from API](#48-element-types-fetched-from-api--2026-04-28)
 4. [#48 ImageUploadScreen — element type dropdown + species form + API](#48-imageuploadscreen-element-type-dropdown--species-form--api--2026-04-27)
@@ -20,6 +21,35 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility — 2026-04-29 00:00
+
+### Fixed
+- `BottomNavBar` called `navigation.popTo()` which does not exist in React Navigation v6 — replaced with `navigation.navigate()` to prevent runtime crashes
+- `ProfilePage` showed `—` for own username because it read only the `viewedUsername` route param — now falls back to `user?.username` from session
+
+### Added
+- **`UserRow` component** (`components/UserRow.jsx`) — shared row for displaying a user with optional rank, score, badge, and tap handler; replaces inline user rows in `FriendsTab`, `PartyOwnerPage`, and `PartyLobbyPage`
+- **`LeaderboardPage`** (`pages/LeaderboardPage.jsx`) — ranked list of users by total game points; highlights the current user; wired to the Award icon in `BottomNavBar`
+- **`EditProfilePage`** (`pages/EditProfilePage.jsx`) — form to update username and email, plus a separate section to change password with current-password verification; wired to the "Edit Profile" button on `ProfilePage`
+- **`AccessibilityContext`** (`context/AccessibilityContext.jsx`) — persisted font-scale (Default / Large / Extra Large) and color-mode (None / High Contrast) settings; wraps the entire app
+- **`SettingsPage`** expanded with font-size selector and high-contrast toggle above the existing logout button
+- **Backend** `PUT /api/game/users/profile` — updates username and/or email (validates uniqueness, JWT-required)
+- **Backend** `POST /api/game/users/change-password` — verifies current password, applies new hash (JWT-required)
+- **Backend** `GET /api/game/leaderboard` — returns top-50 users ranked by sum of `ReceivedPoints` across all `PartyGroupAnswers` (public)
+- `PartyGroupAnswers` DbSet registered in `AppDbContext` for EF navigation in the leaderboard query
+- `updateStoredUser()` added to `session.js` to patch the local user cache after profile edits
+- API functions `updateProfile()`, `changePassword()`, `getLeaderboard()` added to `api.js`
+
+### Rationale
+- `navigate()` is the correct React Navigation v6 API for going to a named screen; `popTo()` does not exist
+- A shared `UserRow` component eliminates duplicated layout code across friends, party, and leaderboard views
+- Leaderboard aggregates points through `User → PartyMember → PartyGroup → PartyGroupAnswer` — no new schema changes needed
+- `AccessibilityProvider` wraps the outermost shell so font-scale and color-mode are available to every screen
+
+> Issue closed after 0 min
 
 ---
 
