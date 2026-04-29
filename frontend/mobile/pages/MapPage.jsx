@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
@@ -20,6 +21,7 @@ import {
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
 import ElementModal from './map/ElementModal';
+import SensorModal from './map/SensorModal';
 
 export default function MapPage({ navigation, route }) {
   const fromGame = route?.params?.fromGame ?? false;
@@ -37,9 +39,12 @@ export default function MapPage({ navigation, route }) {
   const flashAnim = useRef(new Animated.Value(0)).current;
 
   const [mapReady,      setMapReady]      = useState(false);
-  const [elementModal,  setElementModal]  = useState(false);
+  const [elementModal,  setElementModal]  = useState(null); // { cp, zone } | null
+  const [sensorModal,   setSensorModal]   = useState(null); // { cp, zone, sensorId, sensorName } | null
 
   const initRef = useRef(false);
+  const pendingCpRef = useRef(null);       // checkpoint to complete when map regains focus
+  const completeCheckpointRef = useRef(null); // always points to latest completeCheckpoint
   const { partyId, markVisited, role } = useGameContext();
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -149,19 +154,15 @@ export default function MapPage({ navigation, route }) {
   }, [zones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
-  async function handleVisit() {
-    if (!targetCp || !activeZone) return;
+  async function completeCheckpoint(cp, zone) {
+    markVisited(cp.id);
+    if (partyId) await visitCheckpoint(partyId, cp.id).catch(() => {});
 
-    const { type, referenceId, name } = targetCp;
-
-    markVisited(targetCp.id);
-    if (partyId) await visitCheckpoint(partyId, targetCp.id).catch(() => {});
-
-    const newDone = new Set(completedZoneIds).add(activeZone.id);
+    const newDone = new Set(completedZoneIds).add(zone.id);
     setCompletedZoneIds(newDone);
     setNearTarget(false);
 
-    const next = nearestLocked(activeZone, zones, newDone);
+    const next = nearestLocked(zone, zones, newDone);
     if (next) {
       showFlash('Zone Complete! 🎉');
       setActiveZone(next);
@@ -172,11 +173,27 @@ export default function MapPage({ navigation, route }) {
       setActiveZone(null);
       setTargetCp(null);
     }
+  }
+  completeCheckpointRef.current = completeCheckpoint;
 
-    if (type === 'sensor') {
-      navigation.navigate('SensorData', { sensorId: referenceId, sensorName: name });
+  // Complete any checkpoint that was deferred while the camera was open.
+  useFocusEffect(
+    useCallback(() => {
+      const pending = pendingCpRef.current;
+      if (pending) {
+        pendingCpRef.current = null;
+        completeCheckpointRef.current(pending.cp, pending.zone);
+      }
+    }, [])
+  );
+
+  function handleVisit() {
+    if (!targetCp || !activeZone) return;
+    setNearTarget(false);
+    if (targetCp.type === 'sensor') {
+      setSensorModal({ cp: targetCp, zone: activeZone, sensorId: targetCp.referenceId, sensorName: targetCp.name });
     } else {
-      setElementModal(true);
+      setElementModal({ cp: targetCp, zone: activeZone });
     }
   }
 
@@ -256,7 +273,30 @@ export default function MapPage({ navigation, route }) {
         </MapView>
       </View>
 
-      <ElementModal visible={elementModal} onClose={() => setElementModal(false)} />
+      <ElementModal
+        visible={!!elementModal}
+        onClose={() => {
+          const { cp, zone } = elementModal;
+          setElementModal(null);
+          completeCheckpoint(cp, zone);
+        }}
+        onTakePhoto={() => {
+          const { cp, zone } = elementModal;
+          setElementModal(null);
+          pendingCpRef.current = { cp, zone };
+          navigation.navigate('Camera');
+        }}
+      />
+      <SensorModal
+        visible={!!sensorModal}
+        sensorId={sensorModal?.sensorId}
+        sensorName={sensorModal?.sensorName ?? 'Nearby Sensor'}
+        onClose={() => {
+          const { cp, zone } = sensorModal;
+          setSensorModal(null);
+          completeCheckpoint(cp, zone);
+        }}
+      />
     </SafeAreaView>
   );
 }

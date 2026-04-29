@@ -2,25 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import UserIcon from '../assets/User.svg';
+import UserRow from './UserRow';
 import { getConnections, getFriendRequests } from '../services/api';
 
 const VISIBLE_LIMIT = 3;
-
-function Avatar() {
-  return <View style={styles.avatar} />;
-}
-
-function FriendRow({ username, onAction, actionLabel }) {
-  return (
-    <View style={styles.row}>
-      <Avatar />
-      <Text style={styles.name}>{username}</Text>
-      <TouchableOpacity style={styles.actionBtn} onPress={onAction} accessibilityLabel={actionLabel}>
-        <UserIcon width={22} height={22} color="#3b82f6" />
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 export default function FriendsTab({ currentUsername, viewedUsername, connectionsOnly = false, onViewProfile }) {
   const targetUsername = viewedUsername ?? currentUsername;
@@ -84,15 +69,16 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
         <View style={styles.list}>
           {visible.map((item, idx) => (
             <React.Fragment key={item.friendshipId}>
-              <FriendRow
-                username={item.username}
-                actionLabel={isConnections ? 'View profile' : 'View requester profile'}
-                onAction={
-                  isConnections
-                    ? (onViewProfile ? () => onViewProfile(item.username, false) : undefined)
-                    : (onViewProfile ? () => onViewProfile(item.username, true) : undefined)
-                }
-              />
+              <View style={styles.rowWrap}>
+                <UserRow
+                  username={item.username}
+                  onPress={
+                    onViewProfile
+                      ? () => onViewProfile(item.username, !isConnections)
+                      : undefined
+                  }
+                />
+              </View>
               {idx < visible.length - 1 && <View style={styles.rowDivider} />}
             </React.Fragment>
           ))}
@@ -148,24 +134,8 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13, color: '#a1a1aa' },
 
   list: { flex: 1 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
-  },
+  rowWrap: { paddingHorizontal: 16 },
   rowDivider: { height: 1, backgroundColor: '#f4f4f5', marginHorizontal: 16 },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#d4d4d8' },
-  name: { flex: 1, fontSize: 16, fontWeight: '600', color: '#27272a' },
-  actionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#f4f4f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
   moreRow: { alignItems: 'center', paddingVertical: 8 },
   moreText: { fontSize: 14, color: '#71717a', fontWeight: '500' },

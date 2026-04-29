@@ -126,6 +126,38 @@ export async function removeConnection(otherUsername) {
   return { success: false, error: 'Something went wrong.' };
 }
 
+// ── Users ────────────────────────────────────────────────────────────────────
+
+export async function updateProfile(username, email) {
+  const response = await apiFetch(`${BASE_URL}/api/game/users/profile`, {
+    method: 'PUT',
+    headers: await authHeaders(),
+    body: JSON.stringify({ username, email }),
+  });
+  if (response.ok) return { success: true, data: await response.json() };
+  if (response.status === 409) return { success: false, error: await response.text() };
+  return { success: false, error: 'Something went wrong.' };
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  const response = await apiFetch(`${BASE_URL}/api/game/users/change-password`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (response.status === 204) return { success: true };
+  if (response.status === 400) return { success: false, error: await response.text() };
+  return { success: false, error: 'Something went wrong.' };
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+export async function getLeaderboard() {
+  const response = await fetch(`${BASE_URL}/api/game/leaderboard`);
+  if (response.ok) return { success: true, data: await response.json() };
+  return { success: false, data: [] };
+}
+
 // ── Elements ─────────────────────────────────────────────────────────────────
 
 export async function getElementTypes() {
