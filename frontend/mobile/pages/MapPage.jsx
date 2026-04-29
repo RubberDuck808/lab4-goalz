@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
@@ -41,6 +42,8 @@ export default function MapPage({ navigation, route }) {
   const [sensorModal,   setSensorModal]   = useState(null); // { cp, zone, sensorId, sensorName } | null
 
   const initRef = useRef(false);
+  const pendingCpRef = useRef(null);       // checkpoint to complete when map regains focus
+  const completeCheckpointRef = useRef(null); // always points to latest completeCheckpoint
   const { partyId, markVisited, role } = useGameContext();
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -124,7 +127,6 @@ export default function MapPage({ navigation, route }) {
   }, [zones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
-  // Called after the user dismisses the modal to advance the zone.
   async function completeCheckpoint(cp, zone) {
     markVisited(cp.id);
     if (partyId) await visitCheckpoint(partyId, cp.id).catch(() => {});
@@ -145,6 +147,18 @@ export default function MapPage({ navigation, route }) {
       setTargetCp(null);
     }
   }
+  completeCheckpointRef.current = completeCheckpoint;
+
+  // Complete any checkpoint that was deferred while the camera was open.
+  useFocusEffect(
+    useCallback(() => {
+      const pending = pendingCpRef.current;
+      if (pending) {
+        pendingCpRef.current = null;
+        completeCheckpointRef.current(pending.cp, pending.zone);
+      }
+    }, [])
+  );
 
   function handleVisit() {
     if (!targetCp || !activeZone) return;
@@ -242,7 +256,7 @@ export default function MapPage({ navigation, route }) {
         onTakePhoto={() => {
           const { cp, zone } = elementModal;
           setElementModal(null);
-          completeCheckpoint(cp, zone);
+          pendingCpRef.current = { cp, zone };
           navigation.navigate('Camera');
         }}
       />

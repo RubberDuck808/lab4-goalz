@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
-import BottomNavBar from '../components/BottomNavBar';
 
 const PLACEHOLDER_IMAGE = 'https://imgs.search.brave.com/hRkvl3LnUzM9OaDvHhso94cLNguVIeXnscwD_ck_6hA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tYXJr/ZXRwbGFjZS5jYW52/YS5jb20vTUFEQ0FL/MXNGS3cvMS90aHVt/Ym5haWxfbGFyZ2Ut/MS9jYW52YS1iZWVj/aC10cmVlLU1BRENB/SzFzRkt3LmpwZw';
 
@@ -17,7 +16,7 @@ export default function UserPhoto({ navigation, route }) {
   }
 
   function handleRetry() {
-    navigation.navigate('Camera');
+    navigation.goBack();
   }
 
   return (
@@ -43,11 +42,6 @@ export default function UserPhoto({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <BottomNavBar
-        onNavigateHome={() => navigation.navigate('Home')}
-        onNavigateToProfile={() => navigation.navigate('Profile')}
-        onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
-      />
     </SafeAreaView>
   );
 }
