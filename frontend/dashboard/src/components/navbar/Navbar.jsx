@@ -44,7 +44,7 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
                 Sustainability
               </h2>
               <h3 className="font text-[10px] italic text-light-green">
-                Alboretum dashboard
+                Arboretum dashboard
               </h3>
             </div>
           </div>
