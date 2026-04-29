@@ -33,7 +33,9 @@ namespace Goalz.Data.Repositories
         public async Task<IEnumerable<User>> SearchByUsernameAsync(string query, string excludeUsername, int limit = 10)
         {
             return await _context.Users
-                .Where(u => u.Username != excludeUsername && u.Username.ToLower().Contains(query.ToLower()))
+                .Where(u => u.Role == Role.Player
+                         && u.Username != excludeUsername
+                         && u.Username.ToLower().Contains(query.ToLower()))
                 .Take(limit)
                 .ToListAsync();
         }
@@ -67,6 +69,7 @@ namespace Goalz.Data.Repositories
         public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(int limit = 50)
         {
             var scores = await _context.Users
+                .Where(u => u.Role == Role.Player)
                 .Select(u => new
                 {
                     Username = u.Username,

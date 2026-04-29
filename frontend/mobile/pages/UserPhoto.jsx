@@ -44,8 +44,9 @@ export default function UserPhoto({ navigation, route }) {
       </View>
 
       <BottomNavBar
-        onNavigateHome={() => navigation.popTo('Home')}
+        onNavigateHome={() => navigation.navigate('Home')}
         onNavigateToProfile={() => navigation.navigate('Profile')}
+        onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
       />
     </SafeAreaView>
   );

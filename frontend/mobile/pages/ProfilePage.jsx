@@ -78,9 +78,9 @@ export default function ProfilePage({ navigation, route }) {
         <Image source={require('../assets/UserAvatar_1.png')} style={styles.avatar} resizeMode="contain" />
       </View>
 
-      <View style={styles.btnRow}>
-        {isOther ? (
-          incomingRequest ? (
+      {isOther && (
+        <View style={styles.btnRow}>
+          {incomingRequest ? (
             <View style={styles.actionRow}>
               <GameButtons variant="accept" size="half" onPress={handleAccept} style={styles.actionBtn}>✓</GameButtons>
               <GameButtons variant="decline" size="half" onPress={handleDeny} style={styles.actionBtn}>✕</GameButtons>
@@ -89,12 +89,10 @@ export default function ProfilePage({ navigation, route }) {
             <GameButtons variant="decline" size="half" onPress={handleRemoveFriend}>Remove Friend</GameButtons>
           ) : (
             <View style={{ width: 156 }} />
-          )
-        ) : (
-          <GameButtons variant="task" size="half" onPress={() => navigation.navigate('EditProfile')}>Edit Profile</GameButtons>
-        )}
-        <View style={{ width: 156 }} />
-      </View>
+          )}
+          <View style={{ width: 156 }} />
+        </View>
+      )}
 
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>Statistics</Text>
@@ -111,6 +109,7 @@ export default function ProfilePage({ navigation, route }) {
       </View>
 
       <BottomNavBar
+        activeScreen="profile"
         onNavigateHome={() => navigation.navigate('Home')}
         onNavigateToProfile={() => navigation.navigate('Profile', { username: undefined, incomingRequest: false })}
         onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}

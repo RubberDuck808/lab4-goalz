@@ -65,6 +65,7 @@ export default function LeaderboardPage({ navigation }) {
       )}
 
       <BottomNavBar
+        activeScreen="leaderboard"
         onNavigateHome={() => navigation.navigate('Home')}
         onNavigateToProfile={() => navigation.navigate('Profile', { username: undefined, incomingRequest: false })}
         onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}

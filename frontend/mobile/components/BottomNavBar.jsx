@@ -5,26 +5,33 @@ import NavigationIcon from '../assets/Navigation.svg';
 import UserIcon from '../assets/User.svg';
 
 const NAV_ITEMS = [
-  { Icon: AwardIcon,      alt: 'Goals',   onPressKey: 'leaderboard', width: 22, height: 22 },
-  { Icon: NavigationIcon, alt: 'Explore', onPressKey: 'home',        width: 22, height: 22 },
-  { Icon: UserIcon,       alt: 'Profile', onPressKey: 'profile',     width: 22, height: 25 },
+  { Icon: AwardIcon,      alt: 'Goals',   screenKey: 'leaderboard', width: 22, height: 22 },
+  { Icon: NavigationIcon, alt: 'Explore', screenKey: 'home',        width: 22, height: 22 },
+  { Icon: UserIcon,       alt: 'Profile', screenKey: 'profile',     width: 22, height: 25 },
 ];
 
-export default function BottomNavBar({ onNavigateHome, onNavigateToProfile, onNavigateToLeaderboard }) {
-  const handlers = { home: onNavigateHome, profile: onNavigateToProfile, leaderboard: onNavigateToLeaderboard };
+export default function BottomNavBar({ onNavigateHome, onNavigateToProfile, onNavigateToLeaderboard, activeScreen }) {
+  const handlers = {
+    home: onNavigateHome,
+    profile: onNavigateToProfile,
+    leaderboard: onNavigateToLeaderboard,
+  };
 
   return (
     <View style={styles.container}>
-      {NAV_ITEMS.map(({ Icon, alt, onPressKey, width, height }) => (
-        <TouchableOpacity
-          key={alt}
-          onPress={onPressKey ? handlers[onPressKey] : null}
-          style={styles.btn}
-          activeOpacity={0.75}
-        >
-          <Icon width={width} height={height} />
-        </TouchableOpacity>
-      ))}
+      {NAV_ITEMS.map(({ Icon, alt, screenKey, width, height }) => {
+        const isActive = activeScreen === screenKey;
+        return (
+          <TouchableOpacity
+            key={alt}
+            onPress={handlers[screenKey]}
+            style={[styles.btn, isActive ? styles.btnActive : styles.btnInactive]}
+            activeOpacity={0.75}
+          >
+            <Icon width={width} height={height} />
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -46,14 +53,17 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DDF4FF',
     borderRadius: 9,
+  },
+  btnActive: {
+    backgroundColor: '#DDF4FF',
     borderWidth: 2,
     borderColor: '#63C9F9',
     borderBottomWidth: 5,
     borderBottomColor: '#3aaedc',
   },
-  icon: {
-    fontSize: 20,
+  btnInactive: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
 });
