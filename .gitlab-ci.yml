@@ -140,7 +140,7 @@ backend:deploy:
     - main
     - dev
     - feature/deployment
-    - fix/dashboard-cors-env-config
+    - feature/mobile-profile-leaderboard-accessibility
 
 
 # ------------------------
@@ -178,4 +178,4 @@ dashboard:deploy:
   only:
     - main
     - dev
-    - fix/dashboard-cors-env-config
+    - feature/mobile-profile-leaderboard-accessibility

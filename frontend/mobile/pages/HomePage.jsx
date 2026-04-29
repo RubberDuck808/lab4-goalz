@@ -20,8 +20,10 @@ export default function HomePage({ navigation }) {
         </View>
       </View>
       <BottomNavBar
+        activeScreen="home"
         onNavigateHome={() => navigation.navigate('Home')}
         onNavigateToProfile={() => navigation.navigate('Profile')}
+        onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
       />
     </SafeAreaView>
   );

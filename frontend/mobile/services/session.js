@@ -49,3 +49,9 @@ export async function clearUser() {
     storage.deleteItemAsync(TOKEN_KEY),
   ]);
 }
+
+export async function updateStoredUser(patch) {
+  const existing = await getUser();
+  const updated = { ...existing, ...patch };
+  await storage.setItemAsync(USER_KEY, JSON.stringify(updated));
+}

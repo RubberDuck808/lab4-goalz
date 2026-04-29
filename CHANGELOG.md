@@ -2,7 +2,9 @@
 
 ## Table of Contents
 
-1. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
+1. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
+2. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
+2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 3. [#48 Element types fetched from API](#48-element-types-fetched-from-api--2026-04-28)
 4. [#48 ImageUploadScreen — element type dropdown + species form + API](#48-imageuploadscreen-element-type-dropdown--species-form--api--2026-04-27)
@@ -20,6 +22,57 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## Mobile: Party UX improvements, sensor modal, camera checkpoint — 2026-04-29
+
+### Changed
+- `GameSetupPage` party name field now uses the shared `AppTextInput` component instead of a raw `TextInput`
+- Party buttons (Start, End Party, Leave Party) now have explicit `alignItems: 'center'` wrappers so they are centred regardless of parent flex layout
+- `PartyOwnerPage` End Party button now triggers the same confirmation dialog as the header back button
+- `ElementModal` updated to show "Photo Checkpoint" prompt with a "Take Photo" primary action and "Dismiss" link instead of just a close button
+
+### Added
+- **Back-press confirmation in party screens**: pressing hardware back or the header back button in `PartyOwnerPage` shows an Alert "Cancel Party?" (owner) and in `PartyLobbyPage` shows "Leave Party?" — navigating away only on confirmation; hardware back intercepted via `useFocusEffect` + `BackHandler`
+- **`SensorModal`** (`pages/map/SensorModal.jsx`) — inline `Modal` overlay on the map that shows "Sensor Detected!" prompt, loads sensor readings on demand, and displays temp/humidity/light cards; replaces the `navigation.navigate('SensorData')` call so the map stays visible in the background
+- **Backend auto-reduce group size**: `PartyService.StartGame` reduces `GroupSize` to `members.count` if fewer players joined than configured (falls back to `null`/Explorer for fewer than 2 players), preventing mis-assigned roles when a party is undersized
+
+### Rationale
+- Sensor data as a modal keeps the player oriented on the map — navigating away to a blank page breaks spatial context
+- Confirmation on back-press prevents accidental party abandonment
+- Group-size auto-reduce ensures every player always has a valid Scout/Trailblazer/Explorer role even with low attendance
+
+> Issue closed after 0 min
+
+---
+
+## Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility — 2026-04-29 00:00
+
+### Fixed
+- `BottomNavBar` called `navigation.popTo()` which does not exist in React Navigation v6 — replaced with `navigation.navigate()` to prevent runtime crashes
+- `ProfilePage` showed `—` for own username because it read only the `viewedUsername` route param — now falls back to `user?.username` from session
+
+### Added
+- **`UserRow` component** (`components/UserRow.jsx`) — shared row for displaying a user with optional rank, score, badge, and tap handler; replaces inline user rows in `FriendsTab`, `PartyOwnerPage`, and `PartyLobbyPage`
+- **`LeaderboardPage`** (`pages/LeaderboardPage.jsx`) — ranked list of users by total game points; highlights the current user; wired to the Award icon in `BottomNavBar`
+- **`EditProfilePage`** (`pages/EditProfilePage.jsx`) — form to update username and email, plus a separate section to change password with current-password verification; wired to the "Edit Profile" button on `ProfilePage`
+- **`AccessibilityContext`** (`context/AccessibilityContext.jsx`) — persisted font-scale (Default / Large / Extra Large) and color-mode (None / High Contrast) settings; wraps the entire app
+- **`SettingsPage`** expanded with font-size selector and high-contrast toggle above the existing logout button
+- **Backend** `PUT /api/game/users/profile` — updates username and/or email (validates uniqueness, JWT-required)
+- **Backend** `POST /api/game/users/change-password` — verifies current password, applies new hash (JWT-required)
+- **Backend** `GET /api/game/leaderboard` — returns top-50 users ranked by sum of `ReceivedPoints` across all `PartyGroupAnswers` (public)
+- `PartyGroupAnswers` DbSet registered in `AppDbContext` for EF navigation in the leaderboard query
+- `updateStoredUser()` added to `session.js` to patch the local user cache after profile edits
+- API functions `updateProfile()`, `changePassword()`, `getLeaderboard()` added to `api.js`
+
+### Rationale
+- `navigate()` is the correct React Navigation v6 API for going to a named screen; `popTo()` does not exist
+- A shared `UserRow` component eliminates duplicated layout code across friends, party, and leaderboard views
+- Leaderboard aggregates points through `User → PartyMember → PartyGroup → PartyGroupAnswer` — no new schema changes needed
+- `AccessibilityProvider` wraps the outermost shell so font-scale and color-mode are available to every screen
+
+> Issue closed after 0 min
 
 ---
 
