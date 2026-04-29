@@ -1,0 +1,1 @@
+/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/4

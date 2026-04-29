@@ -33,12 +33,12 @@ export default function CameraPage({ navigation, route }) {
         <View style={[styles.vLine, { left: '66.6%' }]} />
       </View>
 
-      {/* Top bar */}
+      {/* Top bar
       <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {/* Sensor tag */}
       <View style={[styles.sensorTag, { top: topBarHeight + 8 }]}>
@@ -93,24 +93,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
 
-  // top bar
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#0d0d0d',
-    justifyContent: 'flex-end',
-  },
-  backBtn: {
-    paddingHorizontal: 17,
-    paddingBottom: 14,
-  },
-  backText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  // // top bar
+  // topBar: {
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  //   right: 0,
+  //   backgroundColor: '#0d0d0d',
+  //   justifyContent: 'flex-end',
+  // },
+  // backBtn: {
+  //   paddingHorizontal: 17,
+  //   paddingBottom: 14,
+  // },
+  // backText: {
+  //   color: '#fff',
+  //   fontSize: 14,
+  //   fontWeight: '500',
+  // },
 
   // sensor tag
   sensorTag: {

@@ -1,0 +1,1 @@
+dRW/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Domain/Goalz.Domain.csprojòCSharp13

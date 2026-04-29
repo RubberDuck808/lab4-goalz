@@ -25,7 +25,6 @@ import GameSetupPage from './pages/GameSetupPage';
 import CameraPage from './pages/Camera';
 import ImageUploadScreenPage from './pages/ImageUploadScreen';
 import UserPhoto from './pages/UserPhoto';
-import GameSetupPage from './pages/GameSetupPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,7 +33,7 @@ export default function App() {
     <GameProvider>
       <SafeAreaProvider>
         <NavigationContainer ref={navigationRef}>
-          <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none' }}>
+          <Stack.Navigator initialRouteName="Camera" screenOptions={{ headerShown: false, animation: 'none' }}>
             <Stack.Screen name="Login"       component={Login} />
             <Stack.Screen name="SignUp"      component={SignUp} />
             <Stack.Screen name="Home"        component={HomePage} />
