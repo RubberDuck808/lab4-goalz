@@ -2,6 +2,9 @@
 
 ## Table of Contents
 
+1. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
+2. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
+2. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
 1. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
 2. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
 3. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
@@ -28,6 +31,29 @@
 
 ---
 
+## Dashboard: Rename nav items — 2026-04-29 14:10
+
+### Changed
+- Nav item "Overview" → "Arboretum Map Overview" (Navbar.jsx, Overview.jsx initial state + switch case)
+- Nav item "Arboretum Map" → "Game Map" (Navbar.jsx, Overview.jsx switch case)
+- Page title in DashboardOverview: "Alboretum Overview" → "Arboretum Map Overview"
+
+### Rationale
+- Label updates to better reflect the content shown in each section
+
+> Issue closed after 0 min
+
+---
+
+## Dashboard: Log Out button in navbar — 2026-04-29 14:00
+
+### Added
+- Log Out button pinned to the bottom-left of the dashboard sidebar (`Navbar.jsx`)
+- Clicking it calls `authService.logout()` (clears `token` and `user` from localStorage) then redirects to `/` via `useNavigate`
+
+### Rationale
+- `authService.logout()` already existed but had no UI trigger; adding it to the navbar is the most accessible location since the nav is always visible
+- Used `absolute bottom-0` positioning inside the `relative` nav so the button stays at the bottom regardless of content height
 ## Game setup: boundary-aware sliders & closest zone start — 2026-04-30
 
 ### Changed

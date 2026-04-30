@@ -119,13 +119,13 @@ export default function Map({
     }
 
     if (pickedCoords) {
-      pickedMarkerRef.current = L.circleMarker([pickedCoords.lat, pickedCoords.lng], {
-        radius: 10,
-        fillColor: '#33A661',
-        color: '#ffffff',
-        weight: 3,
-        fillOpacity: 0.9,
-      }).addTo(map)
+      const pinIcon = L.divIcon({
+        html: `<i class="fa-solid fa-location-dot" style="font-size:32px;color:#ff5722;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.4));"></i>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      })
+      pickedMarkerRef.current = L.marker([pickedCoords.lat, pickedCoords.lng], { icon: pinIcon }).addTo(map)
     }
   }, [pickedCoords])
 
