@@ -17,6 +17,7 @@ import {
   pickCpForZone,
   nearestLocked,
   checkpointColor,
+  zoneCentroid,
 } from './map/mapHelpers';
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
@@ -24,6 +25,8 @@ import ElementModal from './map/ElementModal';
 import SensorModal from './map/SensorModal';
 
 export default function MapPage({ navigation, route }) {
+  // Track whether we've already navigated away so the completion fires only once.
+  const completedRef = React.useRef(false);
   const fromGame = route?.params?.fromGame ?? false;
   const mapRef   = useRef(null);
 
@@ -147,10 +150,34 @@ export default function MapPage({ navigation, route }) {
   useEffect(() => {
     if (!fromGame || initRef.current || !zones.length || !checkpoints.length) return;
     initRef.current = true;
-    const zone = zones[Math.floor(Math.random() * zones.length)];
-    setActiveZone(zone);
-    setTargetCp(pickCpForZone(zone, checkpoints, role));
-    flyToZone(zone);
+
+    async function init() {
+      // Try to find the zone whose centroid is nearest to the user. Fall back to
+      // the first zone if location is unavailable or times out.
+      let startZone = zones[0];
+      try {
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }).catch(() => null);
+
+        if (loc) {
+          const user = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          let minDist = Infinity;
+          for (const z of zones) {
+            const centroid = zoneCentroid(z);
+            if (!centroid) continue;
+            const dist = haversineMeters(user, centroid);
+            if (dist < minDist) { minDist = dist; startZone = z; }
+          }
+        }
+      } catch { /* keep fallback */ }
+
+      setActiveZone(startZone);
+      setTargetCp(pickCpForZone(startZone, checkpoints, role));
+      flyToZone(startZone);
+    }
+
+    init();
   }, [zones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
@@ -169,9 +196,11 @@ export default function MapPage({ navigation, route }) {
       setTargetCp(pickCpForZone(next, checkpoints, role));
       flyToZone(next);
     } else {
-      showFlash('All zones complete! 🏆');
-      setActiveZone(null);
-      setTargetCp(null);
+      // All zones done — navigate to the completion screen once.
+      if (!completedRef.current) {
+        completedRef.current = true;
+        setTimeout(() => navigation.navigate('AllCheckpointsComplete'), 600);
+      }
     }
   }
   completeCheckpointRef.current = completeCheckpoint;

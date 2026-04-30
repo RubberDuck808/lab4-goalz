@@ -80,6 +80,16 @@ export async function getGameState(partyId) {
   return { success: false, error: 'Could not fetch game state.' };
 }
 
+export async function getCheckpoints() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/dashboard/checkpoints`);
+    if (response.ok) return { success: true, data: await response.json() };
+    return { success: false, data: [] };
+  } catch {
+    return { success: false, data: [] };
+  }
+}
+
 export async function visitCheckpoint(partyId, checkpointId) {
   const response = await apiFetch(`${BASE_URL}/api/game/party/${partyId}/visit`, {
     method: 'POST',

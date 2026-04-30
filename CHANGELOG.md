@@ -2,7 +2,10 @@
 
 ## Table of Contents
 
-1. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
+1. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
+2. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
+3. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
+3. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
 2. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
 2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
@@ -22,6 +25,108 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+---
+
+## Game setup: boundary-aware sliders & closest zone start — 2026-04-30
+
+### Changed
+- `GameSetupPage`: fetches checkpoints alongside zones and boundaries on mount.
+  Computes `maxCpPerZone` as the minimum checkpoint count across all zones in the
+  selected boundary (the bottleneck zone sets the ceiling). The
+  "Checkpoints per zone" slider and stepper now use this dynamic max instead of
+  the hardcoded `10`. A hint label appears when the boundary caps the value.
+- `GameSetupPage`: `zoneCount` and `cpPerZone` are both clamped via `useEffect`
+  whenever the derived ceilings shrink — switching to a boundary with fewer
+  zones or checkpoints automatically reduces the values rather than leaving them
+  in an invalid state.
+- `MapPage`: initial zone is now the one whose centroid is closest to the
+  player's current GPS position. `Location.getCurrentPositionAsync` (Balanced
+  accuracy) is called once when zones and checkpoints first load. If the
+  permission is denied or the call fails, the first zone in the list is used as
+  a fallback.
+
+### Added
+- `partyApi.js`: `getCheckpoints()` — fetches `/api/dashboard/checkpoints`
+  (public endpoint) for use in the setup page.
+
+### Rationale
+- Hardcoding `max={10}` for checkpoints-per-zone lets staff configure values
+  that can never be satisfied (e.g. a zone with only 2 checkpoints, configured
+  for 5). Deriving the max from real data prevents silent misconfigurations.
+- Starting on a random zone forces players to travel to it unnecessarily.
+  Closest-zone start reduces the gap between the role reveal and the first
+  checkpoint interaction.
+
+> Issue closed after 0 min
+
+---
+
+## Fix: Dashboard map — zones filtered by boundary — 2026-04-30
+
+### Fixed
+- `ArboretumMap.jsx` — "Zones" list under a selected boundary now filters by
+  `z.boundaryId === selectedZone.id` instead of showing every non-boundary zone
+  in the database. Count badge, empty-state message, and the zone buttons all
+  respect the boundary association correctly.
+- `ArboretumMap.jsx` — `handleSaveEdit` now includes `boundaryId` in the
+  `updateZone` payload. Previously, editing a zone's name or color sent
+  `boundaryId: null`, which caused `ZoneService.UpdateAsync` to silently clear
+  `zone.BoundaryId` in the database — breaking the boundary link on every edit.
+
+### Rationale
+- The `zones` state array holds all zones from all boundaries. The panel filter
+  was using `!z._isBoundary` (type check only) rather than combining it with an
+  id equality check, so it always showed the full set. The backend `ZoneDto`
+  already included `BoundaryId` — nothing needed changing server-side, only the
+  client-side predicate.
+- `UpdateZoneDto.BoundaryId` is nullable and defaults to `null`. The service
+  unconditionally assigns it (`zone.BoundaryId = dto.BoundaryId`), so omitting
+  it from the PUT body is destructive. The fix adds `boundaryId:
+  selectedZone.boundaryId` to preserve the existing link.
+
+> Issue closed after 0 min
+
+---
+
+## Fix: Party role assignment & game completion — 2026-04-30
+
+### Changed
+- `GameContext`: polling now uses a `usernameRef` so the role lookup always reads
+  the latest username even when the interval closure was created before
+  `username` resolved from SecureStore. Dependency array simplified to
+  `[partyId]` only — no longer restarts the interval on every username change.
+- `GameContext`: exposes `triggerPoll()` so pages can request an immediate state
+  refresh without waiting for the 3-second interval.
+- `PartyOwnerPage`: calls `triggerPoll()` immediately after `startGame` so the
+  host's role is in context before navigation fires.
+- `YourRolePage`: calls `triggerPoll()` on mount if `role` is still null
+  (non-host players who land on the page before the interval fires); shows an
+  `ActivityIndicator` alongside the "WAITING FOR ROLE..." message.
+- `MapPage`: when all zones are completed, navigates to the new
+  `AllCheckpointsComplete` screen instead of silently resetting state. Uses a
+  ref guard so the navigation fires exactly once.
+- `App.js`: registers `AllCheckpointsComplete` in the navigator.
+
+### Added
+- `AllCheckpointsCompletePage`: shown when every zone checkpoint has been
+  visited. Displays a trophy, congratulations copy, and a "Finish Game" button
+  that resets game context and navigates home.
+
+### Rationale
+- **Role race condition**: the old `useEffect([partyId, username])` restarted
+  the poll on every username change, but the closure inside `setInterval` still
+  captured the snapshot at effect-start time. When `username` was null at that
+  moment (async SecureStore not yet resolved), `role` was never extracted and
+  the page was stuck on "WAITING FOR ROLE…" indefinitely. A `useRef` mirrors the
+  latest username without triggering effect restarts, fixing the stale-closure
+  problem. `triggerPoll` was added as a lightweight escape hatch for the
+  remaining window between navigation and the next interval tick.
+- **Game completion**: there was no end state — finishing all checkpoints only
+  showed a brief flash toast. The new screen gives clear feedback and a clean
+  exit path.
+
+> Issue closed after 0 min
 
 ---
 
