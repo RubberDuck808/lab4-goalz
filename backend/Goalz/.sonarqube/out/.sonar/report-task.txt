@@ -1,0 +1,7 @@
+organization=goalz-loggin
+projectKey=goalz-loggin_goalz-backend
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.86323
+dashboardUrl=https://sonarcloud.io/dashboard?id=goalz-loggin_goalz-backend
+ceTaskId=AZ3YezSOtgBc3ISxfjvU
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ3YezSOtgBc3ISxfjvU
