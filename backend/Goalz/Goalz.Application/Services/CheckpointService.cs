@@ -28,13 +28,13 @@ public class CheckpointService : ICheckpointService
     {
         var checkpoints = (await _checkpointRepository.GetAllAsync()).ToList();
 
-        var elementRefIds = checkpoints.Where(c => c.Type == "element").Select(c => c.ReferenceId).ToList();
+        var elementRefIds = checkpoints.Where(c => c.Type == "element").Select(c => c.ReferenceId).ToHashSet();
         var sensorRefIds  = checkpoints.Where(c => c.Type == "sensor").Select(c => c.ReferenceId).ToList();
 
         var elementsById = (await _elementRepository.GetByIdsAsync(elementRefIds)).ToDictionary(e => e.Id);
         var sensorsById  = (await _sensorRepository.GetByIdsAsync(sensorRefIds)).ToDictionary(s => s.Id);
 
-        return checkpoints.Select(cp =>
+        var checkpointDtos = checkpoints.Select(cp =>
         {
             var dto = new CheckpointDto
             {
@@ -58,7 +58,26 @@ public class CheckpointService : ICheckpointService
             }
 
             return dto;
-        });
+        }).ToList();
+
+        // Include elements that have no checkpoint row so they appear on the map
+        var allElements = await _elementRepository.GetAllAsync();
+        var orphanDtos = allElements
+            .Where(e => !elementRefIds.Contains(e.Id))
+            .Select(e => new CheckpointDto
+            {
+                Id            = 0,
+                Type          = "element",
+                ReferenceId   = e.Id,
+                ZoneId        = null,
+                Latitude      = e.Geom.Y,
+                Longitude     = e.Geom.X,
+                ElementTypeId = e.ElementTypeId,
+                IsGreen       = e.IsGreen,
+                Name          = e.ElementName,
+            });
+
+        return checkpointDtos.Concat(orphanDtos);
     }
 
     public async Task CreateForElementAsync(long elementId, Point location)

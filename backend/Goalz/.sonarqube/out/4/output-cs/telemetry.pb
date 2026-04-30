@@ -1,0 +1,1 @@
+^RQ/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.API/Goalz.API.csprojòCSharp13

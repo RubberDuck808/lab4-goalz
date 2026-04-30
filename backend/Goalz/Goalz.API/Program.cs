@@ -23,12 +23,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         o => o.UseNetTopologySuite())
     .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+var allowedOrigins = (builder.Configuration["AllowedOrigins"]
+    ?? "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:8081")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

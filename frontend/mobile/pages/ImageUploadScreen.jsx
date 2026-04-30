@@ -147,8 +147,9 @@ export default function ImageUploadScreenPage({ navigation, route }) {
       </ScrollView>
 
       <BottomNavBar
-        onNavigateHome={() => navigation.popTo('Home')}
+        onNavigateHome={() => navigation.navigate('Home')}
         onNavigateToProfile={() => navigation.navigate('Profile')}
+        onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
       />
     </SafeAreaView>
   );

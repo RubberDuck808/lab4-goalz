@@ -1,0 +1,8 @@
+﻿/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/DatasetServiceTest.cs
+/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/MSTestSettings.cs
+/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/OverviewServiceTest.cs
+/Users/carmensimon/.nuget/packages/microsoft.net.test.sdk/17.12.0/build/netcoreapp3.1/Microsoft.NET.Test.Sdk.Program.cs
+/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/TestFiles/Goalz_dummy_set.csv
+/Users/carmensimon/.nuget/packages/mstest.testadapter/3.6.4/build/net8.0/Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.dll
+/Users/carmensimon/.nuget/packages/mstest.testadapter/3.6.4/build/net8.0/Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.dll
+/Users/carmensimon/.nuget/packages/mstest.testadapter/3.6.4/build/net8.0/Microsoft.TestPlatform.AdapterUtilities.dll

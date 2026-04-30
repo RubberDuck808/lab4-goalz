@@ -133,9 +133,13 @@ namespace Goalz.Core.Services
             var members = await _partyRepository.GetPartyMembersWithUsersAsync(partyId);
             var shuffled = members.OrderBy(_ => Guid.NewGuid()).ToList();
 
+            // Auto-reduce GroupSize if fewer players than configured
+            if (party.GroupSize.HasValue && shuffled.Count < party.GroupSize.Value)
+                party.GroupSize = shuffled.Count < 2 ? null : shuffled.Count;
+
             if (party.GroupSize == null)
             {
-                // No groups — everyone plays solo with both tasks
+                // No groups — everyone plays as Explorer with both task types
                 foreach (var m in shuffled)
                     m.Role = "Explorer";
             }

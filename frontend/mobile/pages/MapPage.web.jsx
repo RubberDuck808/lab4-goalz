@@ -9,8 +9,8 @@ export default function MapPage({ navigation }) {
       <PageHeader title="Map" onBack={() => navigation.goBack()} />
       <View style={styles.center}>
         <Text style={styles.icon}>🗺️</Text>
-        <Text style={styles.text}>Map is not available in the web preview.</Text>
-        <Text style={styles.sub}>Use the Expo Go app on your phone to see the full map.</Text>
+        <Text style={styles.title}>Map unavailable on web</Text>
+        <Text style={styles.sub}>Use the mobile app to access the map.</Text>
       </View>
     </SafeAreaView>
   );
@@ -18,8 +18,8 @@ export default function MapPage({ navigation }) {
 
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: '#fff' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  icon:   { fontSize: 48, marginBottom: 16 },
-  text:   { fontSize: 16, fontWeight: 'bold', color: '#3f3f46', textAlign: 'center', marginBottom: 8 },
-  sub:    { fontSize: 13, color: '#71717a', textAlign: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 32 },
+  icon:   { fontSize: 48 },
+  title:  { fontSize: 18, fontWeight: '700', color: '#27272a', textAlign: 'center' },
+  sub:    { fontSize: 14, color: '#71717a', textAlign: 'center' },
 });

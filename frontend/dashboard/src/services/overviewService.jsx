@@ -17,7 +17,6 @@ export const overviewService = {
                     throw new Error("You do not have permission to access this resource.");
                 throw new Error('Failed to fetch overview data');
             }
-
             return await response.json();
         } catch (error) {
             console.error(error);

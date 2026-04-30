@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { authService } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import Loading from '../components/Loading/Loading';
 
 export default function Login() {
@@ -9,6 +9,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  if (authService.getToken()) return <Navigate to='/overview' replace />;
 
   const handleLogin = async () => {
     if (email === '' || password === '') {
@@ -35,7 +37,7 @@ export default function Login() {
       }
         <div className='hidden md:block w-1/2 bg-primary-green p-[100px]'>
           <div className='w-[72px] h-[72px] rounded-full bg-secondary-green flex items-center justify-center mb-5'>
-            <i class="fa-solid fa-leaf text-white text-3xl"></i>
+            <i className="fa-solid fa-leaf text-white text-3xl"></i>
           </div>
           <div>
             <h1 className='font text-4xl font-bold text-white'>Arboretum</h1>

@@ -35,5 +35,21 @@ namespace Goalz.Api.Services
             );
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public string Generate(string username, string role, string name)
+        {
+            var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                claims:
+                [
+                    new Claim(JwtRegisteredClaimNames.Sub, username),
+                    new Claim("role", role),
+                    new Claim(JwtRegisteredClaimNames.Name, name),
+                ],
+                expires: DateTime.UtcNow.AddDays(30),
+                signingCredentials: creds
+            );
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 }

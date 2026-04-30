@@ -12,4 +12,5 @@ public interface IElementRepository
     Task<ElementType> CreateElementTypeAsync(string name);
     Task<List<ElementType>> GetAllElementTypesAsync();
     Task<IEnumerable<Element>> GetByIdsAsync(IEnumerable<long> ids);
+    Task<IEnumerable<Element>> GetAllAsync();
 }

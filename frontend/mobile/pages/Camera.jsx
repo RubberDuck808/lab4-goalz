@@ -1,15 +1,30 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useCallback } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { usePhotoGallery } from '../src/hooks/usePhotoGallery';
 
 export default function CameraPage({ navigation, route }) {
-  const insets = useSafeAreaInsets();
-  const temp     = route?.params?.temp     ?? 18.4;
-  const humidity = route?.params?.humidity ?? 62;
-  const aqi      = route?.params?.aqi      ?? 32;
+  const { takePhoto } = usePhotoGallery();
 
-  const topBarHeight = insets.top + 63;
-  const bottomBarHeight = insets.bottom + 100;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      async function launch() {
+        const uri = await takePhoto();
+        if (!active) return;
+        if (uri) {
+          navigation.navigate('UserPhoto', {
+            imageUri: uri,
+            gps: route?.params?.gps ?? null,
+          });
+        } else {
+          navigation.goBack();
+        }
+      }
+      launch();
+      return () => { active = false; };
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -23,12 +38,12 @@ export default function CameraPage({ navigation, route }) {
         <View style={[styles.vLine, { left: '66.6%' }]} />
       </View>
 
-      {/* Top bar */}
+      {/* Top bar
       <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {/* Sensor tag */}
       <View style={[styles.sensorTag, { top: topBarHeight + 8 }]}>
@@ -48,10 +63,7 @@ export default function CameraPage({ navigation, route }) {
         <TouchableOpacity
           style={styles.shutterOuter}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('UserPhoto', {
-            imageUri: route?.params?.imageUri ?? null,
-            gps: route?.params?.gps ?? null,
-          })}
+          onPress={handleShutter}
         >
           <View style={styles.shutterInner} />
         </TouchableOpacity>
@@ -86,24 +98,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
 
-  // top bar
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#0d0d0d',
-    justifyContent: 'flex-end',
-  },
-  backBtn: {
-    paddingHorizontal: 17,
-    paddingBottom: 14,
-  },
-  backText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  // // top bar
+  // topBar: {
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  //   right: 0,
+  //   backgroundColor: '#0d0d0d',
+  //   justifyContent: 'flex-end',
+  // },
+  // backBtn: {
+  //   paddingHorizontal: 17,
+  //   paddingBottom: 14,
+  // },
+  // backText: {
+  //   color: '#fff',
+  //   fontSize: 14,
+  //   fontWeight: '500',
+  // },
 
   // sensor tag
   sensorTag: {
