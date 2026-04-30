@@ -83,7 +83,7 @@ export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved })
     };
 
     return (
-        <div className='h-full w-[500px] bg-white rounded-lg shadow flex flex-col overflow-hidden'>
+        <div className='h-full bg-white rounded-lg shadow flex flex-col overflow-hidden'>
             <ToastContainer position="top-right" autoClose={3000} />
             <div className='w-full h-[40px] bg-white flex overflow-hidden rounded-tl-lg rounded-tr-lg'>
                 <div

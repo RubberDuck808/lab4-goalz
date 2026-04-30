@@ -76,7 +76,7 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
             </div>
             <div className='flex-col gap-3 flex-1'>
               <div className='mt-2'>
-                <p className='font text-sm text-gray-500'>Longitude</p>
+                <p className='font text-sm text-gray-500'>Latitude</p>
                 <input
                   type="text"
                   placeholder='-79.3832'
@@ -86,7 +86,7 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
                 />
               </div>
               <div className='mt-2'>
-                <p className='font text-sm text-gray-500'>Latitude</p>
+                <p className='font text-sm text-gray-500'>Longitude</p>
                 <input
                   type="text"
                   value={formData.latitude}
