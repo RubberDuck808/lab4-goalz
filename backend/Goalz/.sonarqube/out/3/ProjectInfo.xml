@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
+  <ProjectName>Goalz.Test</ProjectName>
+  <ProjectLanguage>C#</ProjectLanguage>
+  <ProjectType>Test</ProjectType>
+  <ProjectGuid>15fb64d5-f4ad-4d79-b784-f20f35ef10b7</ProjectGuid>
+  <FullPath>/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Test/Goalz.Test.csproj</FullPath>
+  <IsExcluded>false</IsExcluded>
+  <AnalysisResultFiles>
+    <AnalysisResultFile Id="FilesToAnalyze" Location="/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/conf/3/FilesToAnalyze.txt" />
+  </AnalysisResultFiles>
+  <AnalysisSettings>
+    <Property Name="sonar.cs.roslyn.reportFilePaths">/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/3/Issues.json</Property>
+    <Property Name="sonar.cs.analyzer.projectOutPaths">/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/3</Property>
+    <Property Name="sonar.cs.scanner.telemetry">/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/.sonarqube/out/3/Telemetry.json</Property>
+  </AnalysisSettings>
+  <Configuration>Debug</Configuration>
+  <Platform>AnyCPU</Platform>
+  <TargetFramework>net9.0</TargetFramework>
+</ProjectInfo>

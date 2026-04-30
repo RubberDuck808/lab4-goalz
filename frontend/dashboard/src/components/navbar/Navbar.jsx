@@ -67,7 +67,7 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
 
         <div className="w-full flex flex-col flex-1">
           <Navitem
-            name="Arboretum Overview"
+            name="Arboretum Dashboard"
             icon="fa-chart-line"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}

@@ -26,7 +26,7 @@ export default function PartyModePage({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <PageHeader title="Party Mode" onBack={() => navigation.goBack()} />
+      <PageHeader title="Party Mode" onBack={() => navigation.navigate('Home')} />
       <View style={styles.form}>
         {error && <Text style={styles.errorText}>{error}</Text>}
         <TextInput placeholder="Party code" value={code} onChangeText={setCode} />
