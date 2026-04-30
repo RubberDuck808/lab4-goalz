@@ -14,7 +14,7 @@ export default function DashboardNavBar({title}) {
           >
             Export <i className='fa-solid fa-arrow-up-from-bracket'></i>
           </button>
-          <div className='flex gap-3'>
+          <div className='hidden gap-3 md:flex'>
             <select name="" id="" className='w-[128px] h-10 border border-gray-300 rounded-lg bg-white px-3 text-sm cursor-pointer'>
               <option value="">Filter</option>
             </select>

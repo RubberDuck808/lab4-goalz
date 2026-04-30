@@ -28,11 +28,11 @@ export default function Overview() {
 
 
   return (
-    <main className='h-full w-full flex flex'>
+    <main className='h-full w-full flex'>
       <div className='h-full'>
         <Navbar selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
       </div>
-      <div className='w-full h-full overflow-y-auto'>
+      <div className='w-full h-full overflow-y-auto flex-1'>
         {renderContent()}
       </div>
     </main>
