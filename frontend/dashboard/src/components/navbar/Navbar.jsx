@@ -59,13 +59,13 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
 
         <div className="w-full flex flex-col">
           <Navitem
-            name="Overview"
+            name="Arboretum Dashboard"
             icon="fa-chart-line"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />
           <Navitem
-            name="Arboretum Map"
+            name="Game Map"
             icon="fa-map"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}

@@ -79,6 +79,7 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
                 <p className='font text-sm text-gray-500'>Longitude</p>
                 <input
                   type="text"
+                  placeholder='-79.3832'
                   value={formData.longitude}
                   onChange={(e) => setFormData({...formData, longitude: e.target.value})}
                   className='w-full h-6 border border-gray-300 rounded px-2 text-sm'
@@ -89,13 +90,16 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
                 <input
                   type="text"
                   value={formData.latitude}
+                  placeholder='43.6532'
                   onChange={(e) => setFormData({...formData, latitude: e.target.value})}
                   className='w-full h-6 border border-gray-300 rounded px-2 text-sm'
                 />
               </div>
             </div>
         </div>
-
+        <i className="text-gray-500 text-center px-3 text-sm">
+            Click on the map to automatically fill the latitude and longitude fields.
+        </i>
         <div className='flex items-center justify-evenly pb-4 px-4 gap-3'>
             <button
               onClick={onSubmit}
