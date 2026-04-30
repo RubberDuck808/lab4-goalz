@@ -1,26 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import { useGameContext } from '../context/GameContext';
 
 export default function YourRolePage({ navigation, route }) {
   const singlePlayer = route?.params?.singlePlayer ?? false;
-  const { role, setRole, gameConfig } = useGameContext();
+  const { role, setRole, gameConfig, triggerPoll } = useGameContext();
   const [selectedRole, setSelectedRole] = useState(null);
+
+  // If we land here without a role yet (non-host race condition), request an
+  // immediate poll so the role arrives as fast as possible.
+  useEffect(() => {
+    if (!singlePlayer && !role) {
+      triggerPoll();
+    }
+  }, [singlePlayer, role, triggerPoll]);
 
   // Party mode: wait for role from context before showing the card
   const partyRole = singlePlayer ? null : role;
   const singlePlayerRoles = gameConfig?.groupSize == null ? ['Explorer'] : ['Scout', 'Trailblazer'];
   const roles = singlePlayer ? singlePlayerRoles : (partyRole ? [partyRole] : null);
 
-  const isRevealed = singlePlayer ? selectedRole !== null : selectedRole !== null;
+  const isRevealed = selectedRole !== null;
 
   if (!singlePlayer && !partyRole) {
     return (
       <SafeAreaView style={styles.safe}>
         <PageHeader title="Your Role" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
+          <ActivityIndicator size="large" color="#1CB0F6" style={{ marginBottom: 16 }} />
           <Text style={styles.tapLabel}>{'WAITING FOR\nROLE...'}</Text>
         </View>
       </SafeAreaView>

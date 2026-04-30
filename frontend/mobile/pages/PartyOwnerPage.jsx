@@ -9,7 +9,7 @@ import { useGameContext } from '../context/GameContext';
 import { startGame } from '../services/api/partyApi';
 
 export default function PartyOwnerPage({ navigation }) {
-  const { partyId, partyCode, partyStatus, members, resetGame } = useGameContext();
+  const { partyId, partyCode, partyStatus, members, resetGame, triggerPoll } = useGameContext();
 
   useEffect(() => {
     if (partyStatus === 'InGame') {
@@ -39,7 +39,10 @@ export default function PartyOwnerPage({ navigation }) {
   );
 
   async function handleStart() {
-    if (partyId) await startGame(partyId);
+    if (!partyId) return;
+    await startGame(partyId);
+    // Immediately refresh game state so the role is in context before navigation.
+    triggerPoll();
   }
 
   return (

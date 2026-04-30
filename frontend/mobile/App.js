@@ -28,6 +28,7 @@ import CameraPage from './pages/Camera';
 import ImageUploadScreenPage from './pages/ImageUploadScreen';
 import UserPhoto from './pages/UserPhoto';
 import LeaderboardPage from './pages/LeaderboardPage';
+import AllCheckpointsCompletePage from './pages/AllCheckpointsCompletePage';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,7 +60,8 @@ export default function App() {
               <Stack.Screen name="Camera"        component={CameraPage} />
               <Stack.Screen name="ImageUpload"   component={ImageUploadScreenPage} />
               <Stack.Screen name="UserPhoto"     component={UserPhoto} />
-              <Stack.Screen name="Leaderboard"   component={LeaderboardPage} />
+              <Stack.Screen name="Leaderboard"          component={LeaderboardPage} />
+              <Stack.Screen name="AllCheckpointsComplete" component={AllCheckpointsCompletePage} />
             </Stack.Navigator>
           </NavigationContainer>
         </SafeAreaProvider>

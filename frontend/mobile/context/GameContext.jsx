@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { getGameState } from '../services/api';
 import { getUser } from '../services/session';
 
@@ -15,30 +15,50 @@ export function GameProvider({ children }) {
   const [username, setUsername] = useState(null);
   const [gameConfig, setGameConfigState] = useState(null);
 
+  // Keep a ref so the poll closure always sees the latest username without
+  // needing to restart the interval every time username changes.
+  const usernameRef = useRef(username);
+  useEffect(() => { usernameRef.current = username; }, [username]);
+
   useEffect(() => {
     getUser().then(u => { if (u) setUsername(u.username); });
   }, []);
 
+  // Expose a stable poll trigger so pages can request an immediate refresh
+  // (e.g. right after the host calls startGame).
+  const pollRef = useRef(null);
+  const triggerPoll = useCallback(() => { pollRef.current?.(); }, []);
+
   useEffect(() => {
     if (!partyId) return;
+
     async function poll() {
       const res = await getGameState(partyId);
-      if (res.success && res.data) {
-        setPartyStatus(res.data.status);
-        setMembersState(res.data.members.map(m => m.username));
-        if (username) {
-          const myRole = res.data.members.find(m => m.username === username)?.role;
-          if (myRole) setRoleState(myRole);
-        }
-        setVisited(new Set(res.data.visitedCheckpointIds || []));
-        const { groupSize, boundaryId, zoneCount, checkpointsPerZone } = res.data;
-        setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone });
+      if (!res.success || !res.data) return;
+
+      const { members: serverMembers, status, visitedCheckpointIds: visited,
+              groupSize, boundaryId, zoneCount, checkpointsPerZone } = res.data;
+
+      setPartyStatus(status);
+      setMembersState(serverMembers.map(m => m.username));
+
+      // Use the ref so we always have the latest username even if the effect
+      // closure captured an earlier (possibly null) snapshot.
+      const currentUsername = usernameRef.current;
+      if (currentUsername) {
+        const myRole = serverMembers.find(m => m.username === currentUsername)?.role;
+        if (myRole) setRoleState(myRole);
       }
+
+      setVisited(new Set(visited || []));
+      setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone });
     }
+
+    pollRef.current = poll;
     poll();
     const t = setInterval(poll, 3000);
-    return () => clearInterval(t);
-  }, [partyId, username]);
+    return () => { clearInterval(t); pollRef.current = null; };
+  }, [partyId]);
 
   const setParty = useCallback((id, code, name, initial = []) => {
     setPartyId(id); setPartyCode(code); setPartyName(name); setMembersState(initial);
@@ -57,6 +77,7 @@ export function GameProvider({ children }) {
     <GameContext.Provider value={{
       partyId, partyCode, partyName, partyStatus, members, role, visitedCheckpointIds,
       gameConfig, setParty, setMembers, setRole, setGameConfig, markVisited, resetGame,
+      triggerPoll,
     }}>
       {children}
     </GameContext.Provider>
