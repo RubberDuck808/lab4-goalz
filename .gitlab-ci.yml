@@ -139,9 +139,7 @@ backend:deploy:
   only:
     - main
     - dev
-    - feature/deployment
-    - feature/mobile-profile-leaderboard-accessibility
-    - fix/party-role-assignment-and-game-completion
+    - feature/mobile-supabase-photo-upload
 
 
 # ------------------------
@@ -179,5 +177,4 @@ dashboard:deploy:
   only:
     - main
     - dev
-    - feature/mobile-profile-leaderboard-accessibility
-    - fix/party-role-assignment-and-game-completion
+    - feature/mobile-supabase-photo-upload
