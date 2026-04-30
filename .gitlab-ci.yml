@@ -1,5 +1,4 @@
 stages:
-  - install
   - build
   - test
   - sonarqube
@@ -12,20 +11,6 @@ variables:
   GCP_REGION: "europe-west1"
 
 # ------------------------
-# FRONTEND INSTALL
-# ------------------------
-frontend:install:
-  stage: install
-  image: node:$NODE_VERSION
-  script:
-    - echo "Installing frontend/dashboard"
-    - cd frontend/dashboard
-    - npm ci
-  cache:
-    paths:
-      - frontend/dashboard/node_modules/
-
-# ------------------------
 # FRONTEND BUILD
 # ------------------------
 frontend:build:
@@ -36,8 +21,6 @@ frontend:build:
     - cd frontend/dashboard
     - npm ci
     - npm run build
-  dependencies:
-    - frontend:install
 
 # ------------------------
 # BACKEND BUILD
@@ -54,7 +37,7 @@ backend:build:
     - dotnet build --no-restore --configuration Release
 
 # ------------------------
-# BACKEND TEST (WITH COVERAGE)
+# BACKEND TEST WITH COVERAGE
 # ------------------------
 backend:test:
   stage: test
@@ -67,6 +50,7 @@ backend:test:
     - echo "Running tests with coverage"
     - dotnet test Goalz.Test/Goalz.Test.csproj --no-restore --configuration Release --collect:"XPlat Code Coverage"
   artifacts:
+    when: always
     paths:
       - backend/Goalz/**/TestResults/
 
@@ -82,7 +66,6 @@ sonarqube:analysis:
   dependencies:
     - backend:test
   script:
-    # Install Sonar scanner for .NET
     - dotnet tool install --global dotnet-sonarscanner
     - export PATH="$PATH:/root/.dotnet/tools"
 
@@ -109,8 +92,6 @@ sonarqube:analysis:
 backend:deploy:
   stage: deploy
   image: google/cloud-sdk:alpine
-  dependencies:
-    - backend:build
   before_script:
     - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_KEY
     - gcloud config set project $GCP_PROJECT
@@ -119,23 +100,33 @@ backend:deploy:
     - cd backend/Goalz
     - BUILD_ID=$(gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT . --async --format='value(id)')
     - echo "Build submitted $BUILD_ID — polling for completion"
+
     - |
       while true; do
         STATUS=$(gcloud builds describe $BUILD_ID --project $GCP_PROJECT --format='value(status)')
         echo "Status: $STATUS"
-        if [ "$STATUS" = "SUCCESS" ]; then break; fi
-        if [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "CANCELLED" ] || [ "$STATUS" = "TIMEOUT" ]; then echo "Build failed"; exit 1; fi
+
+        if [ "$STATUS" = "SUCCESS" ]; then
+          break
+        fi
+
+        if [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "CANCELLED" ] || [ "$STATUS" = "TIMEOUT" ]; then
+          echo "Build failed"
+          exit 1
+        fi
+
         sleep 10
       done
 
     - echo "Deploying backend to Cloud Run"
-    - gcloud run deploy goalz-api
-        --image gcr.io/$GCP_PROJECT/goalz-api
-        --region $GCP_REGION
-        --allow-unauthenticated
-        --port 8080
-        --project $GCP_PROJECT
-        --update-env-vars "^|^ConnectionStrings__DefaultConnection=$DB_CONNECTION_STRING|^Jwt__Secret=$JWT_SECRET|^AllowedOrigins=http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081,https://goalz-dashboard-237169763190.europe-west1.run.app,https://www.loggin-dashboard.com"
+    - >
+      gcloud run deploy goalz-api
+      --image gcr.io/$GCP_PROJECT/goalz-api
+      --region $GCP_REGION
+      --allow-unauthenticated
+      --port 8080
+      --project $GCP_PROJECT
+      --update-env-vars "^|^ConnectionStrings__DefaultConnection=$DB_CONNECTION_STRING|^Jwt__Secret=$JWT_SECRET|^AllowedOrigins=http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081,https://goalz-dashboard-237169763190.europe-west1.run.app,https://www.loggin-dashboard.com"
   only:
     - main
     - dev
@@ -143,15 +134,12 @@ backend:deploy:
     - feature/mobile-profile-leaderboard-accessibility
     - fix/party-role-assignment-and-game-completion
 
-
 # ------------------------
 # DASHBOARD DEPLOY
 # ------------------------
 dashboard:deploy:
   stage: deploy
   image: google/cloud-sdk:alpine
-  dependencies:
-    - frontend:build
   before_script:
     - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_KEY
     - gcloud config set project $GCP_PROJECT
@@ -160,22 +148,32 @@ dashboard:deploy:
     - cd frontend/dashboard
     - BUILD_ID=$(gcloud builds submit --config cloudbuild.yaml --project $GCP_PROJECT . --async --format='value(id)')
     - echo "Build submitted $BUILD_ID — polling for completion"
+
     - |
       while true; do
         STATUS=$(gcloud builds describe $BUILD_ID --project $GCP_PROJECT --format='value(status)')
         echo "Status: $STATUS"
-        if [ "$STATUS" = "SUCCESS" ]; then break; fi
-        if [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "CANCELLED" ] || [ "$STATUS" = "TIMEOUT" ]; then echo "Build failed"; exit 1; fi
+
+        if [ "$STATUS" = "SUCCESS" ]; then
+          break
+        fi
+
+        if [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "CANCELLED" ] || [ "$STATUS" = "TIMEOUT" ]; then
+          echo "Build failed"
+          exit 1
+        fi
+
         sleep 10
       done
 
     - echo "Deploying dashboard to Cloud Run"
-    - gcloud run deploy goalz-dashboard
-        --image gcr.io/$GCP_PROJECT/goalz-dashboard
-        --region $GCP_REGION
-        --allow-unauthenticated
-        --port 8080
-        --project $GCP_PROJECT
+    - >
+      gcloud run deploy goalz-dashboard
+      --image gcr.io/$GCP_PROJECT/goalz-dashboard
+      --region $GCP_REGION
+      --allow-unauthenticated
+      --port 8080
+      --project $GCP_PROJECT
   only:
     - main
     - dev
