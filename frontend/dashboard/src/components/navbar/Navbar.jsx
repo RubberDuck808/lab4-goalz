@@ -15,8 +15,8 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             </div>
         </div>
         <div className='w-full flex flex-col align-center'>
-            <Navitem name="Overview" icon="fa-chart-line" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
-            <Navitem name="Arboretum Map" icon="fa-map" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
+            <Navitem name="Arboretum Dashboard" icon="fa-chart-line" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
+            <Navitem name="Game Map" icon="fa-map" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Navitem name="Reports" icon="fa-file-export" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Navitem name="Import dataset" icon="fa-upload" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
             <Navitem name="Settings" icon="fa-cog" selectedItem={selectedItem} setSelectedItem={setSelectedItem} />

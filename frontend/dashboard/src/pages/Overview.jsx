@@ -11,9 +11,9 @@ export default function Overview() {
 
   const renderContent = () => {
     switch (selectedItem) {
-      case "Overview":
+      case "Arboretum Dashboard":
         return <DashboardOverview setSelectedItem={setSelectedItem} />;
-      case "Arboretum Map":
+      case "Game Map":
         return <ArboretumMap />;
       case "Reports":
         return <Reports />;

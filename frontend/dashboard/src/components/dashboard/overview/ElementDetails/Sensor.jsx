@@ -14,7 +14,7 @@ export default function Sensor({ formData, setFormData, onSubmit, onCancel, load
             </div>
             <div className='flex gap-3'>
                 <div className='flex-1'>
-                    <p className='font text-sm text-gray-500'>Longitude</p>
+                    <p className='font text-sm text-gray-500'>Latitude</p>
                     <input
                         type="text"
                         value={formData.longitude}
@@ -23,7 +23,7 @@ export default function Sensor({ formData, setFormData, onSubmit, onCancel, load
                     />
                 </div>
                 <div className='flex-1'>
-                    <p className='font text-sm text-gray-500'>Latitude</p>
+                    <p className='font text-sm text-gray-500'>Longitude</p>
                     <input
                         type="text"
                         value={formData.latitude}
@@ -33,6 +33,9 @@ export default function Sensor({ formData, setFormData, onSubmit, onCancel, load
                 </div>
             </div>
         </div>
+        <i className="text-gray-500 text-center px-3 text-sm">
+            Click on the map to automatically fill the latitude and longitude fields.
+        </i>
         <div className='flex items-center justify-evenly pb-4 px-4 gap-3 mt-4'>
             <button
                 onClick={onSubmit}
