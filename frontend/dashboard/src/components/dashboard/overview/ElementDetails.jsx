@@ -110,7 +110,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
 
     if (!element) {
         return (
-            <div className='h-full w-[500px] bg-white rounded-lg shadow flex items-center justify-center'>
+            <div className='h-full bg-white rounded-lg shadow flex items-center justify-center'>
                 <p className='text-gray-500'>Select an element to see details.</p>
             </div>
         );
@@ -119,7 +119,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
     const displayImage = previewImage || element.imageUrl;
 
     return (
-        <div className='h-full w-[500px] bg-white rounded-lg shadow flex flex-col overflow-hidden'>
+        <div className='h-full bg-white rounded-lg shadow flex flex-col overflow-hidden'>
             <div className='grow-1 w-full overflow-auto flex flex-col'>
                 {/* Image area — clickable in edit mode */}
                 <input type='file' ref={fileInputRef} onChange={handleFileChange} accept='image/*' className='hidden' />
@@ -201,20 +201,6 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
 
                     <div className='flex-col gap-3 grow-1'>
                         <div className='mt-2'>
-                            <p className='font text-sm text-gray-500'>Longitude</p>
-                            {openEditModal ? (
-                                <input
-                                    type='text'
-                                    value={editedElement?.geom?.coordinates?.[0] ?? ''}
-                                    onChange={(e) => handleCoordinateChange(0, e.target.value)}
-                                    className='w-full rounded border border-gray-300 p-1 text-sm'
-                                />
-                            ) : (
-                                <p>{element.geom?.coordinates?.[0] ?? 'N/A'}</p>
-                            )}
-                        </div>
-
-                        <div className='mt-2'>
                             <p className='font text-sm text-gray-500'>Latitude</p>
                             {openEditModal ? (
                                 <input
@@ -225,6 +211,19 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
                                 />
                             ) : (
                                 <p>{element.geom?.coordinates?.[1] ?? 'N/A'}</p>
+                            )}
+                        </div>
+                        <div className='mt-2'>
+                            <p className='font text-sm text-gray-500'>Longitude</p>
+                            {openEditModal ? (
+                                <input
+                                    type='text'
+                                    value={editedElement?.geom?.coordinates?.[0] ?? ''}
+                                    onChange={(e) => handleCoordinateChange(0, e.target.value)}
+                                    className='w-full rounded border border-gray-300 p-1 text-sm'
+                                />
+                            ) : (
+                                <p>{element.geom?.coordinates?.[0] ?? 'N/A'}</p>
                             )}
                         </div>
                     </div>
