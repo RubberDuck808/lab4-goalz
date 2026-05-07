@@ -2,7 +2,8 @@
 
 ## Table of Contents
 
-1. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
+1. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
+2. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
 2. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
 3. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
 4. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
@@ -26,6 +27,18 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## Docs: End-user guide and deployment guide — 2026-05-03
+
+### Added
+- `docs/user-guide.md` — end-user guide covering both player (Loggin mobile app, all 8 game phases, scoring, badges, leaderboard) and staff (dashboard login, zone management, layer toggles) audiences
+- `docs/deployment-guide.md` — deployment guide covering local Docker setup, environment variable reference, database migrations, and production GCP Cloud Run deployment
+
+### Rationale
+- No human-facing documentation existed; operators and new players had to piece together setup from README, agent_docs, and PROJECT_DETAILS.md
+- Centralising this in `docs/` keeps it alongside existing ADRs and the game flow spec
+
+> Issue closed after 0 min
 
 ---
 
