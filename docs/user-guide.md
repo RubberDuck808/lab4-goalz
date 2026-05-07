@@ -297,6 +297,7 @@ The Reports page generates downloadable reports on landscape elements, sensor re
 
 ---
 
+
 ### Settings Page — User Management (Admin only)
 
 The Settings page is only accessible to **Admin** accounts. Staff accounts see an access restriction message.

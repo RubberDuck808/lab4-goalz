@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { checkpointColor } from './mapHelpers';
 
-export default function MapHud({ targetCp, remainingCount }) {
+export default function MapHud({ targetCp, remainingCount, zoneCpsLeft }) {
   return (
     <View style={styles.hud}>
       {targetCp ? (
@@ -14,6 +14,7 @@ export default function MapHud({ targetCp, remainingCount }) {
             </Text>
             <Text style={styles.hudTargetLabel}>
               {targetCp.type === 'sensor' ? 'Sensor' : 'Element'}
+              {zoneCpsLeft > 1 ? `  ·  ${zoneCpsLeft} in zone` : ''}
             </Text>
           </View>
         </View>

@@ -146,3 +146,11 @@ postman/
 # =========================
 
 CLAUDE.md
+
+# =========================
+
+# SonarQube analysis
+
+# =========================
+
+backend/Goalz/.sonarqube/

@@ -2,13 +2,14 @@
 
 ## Table of Contents
 
-1. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
-2. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
-2. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
-1. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
-2. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
-3. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
-3. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
+1. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
+2. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
+3. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
+4. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
+5. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
+6. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
+7. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
+8. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
 2. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
 2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
@@ -28,6 +29,41 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## Docs: End-user guide and deployment guide — 2026-05-03
+
+### Added
+- `docs/user-guide.md` — end-user guide covering both player (Loggin mobile app, all 8 game phases, scoring, badges, leaderboard) and staff (dashboard login, zone management, layer toggles) audiences
+- `docs/deployment-guide.md` — deployment guide covering local Docker setup, environment variable reference, database migrations, and production GCP Cloud Run deployment
+
+### Rationale
+- No human-facing documentation existed; operators and new players had to piece together setup from README, agent_docs, and PROJECT_DETAILS.md
+- Centralising this in `docs/` keeps it alongside existing ADRs and the game flow spec
+
+> Issue closed after 0 min
+
+---
+
+## Mobile: Supabase photo upload + SonarQube gitignore — 2026-04-30
+
+### Added
+- `frontend/mobile/services/supabase.js` — uploads captured photos to the private Supabase Storage bucket `Photo` via the REST API; generates a 1-year signed URL after upload and returns it as the accessible `imageUrl`
+- `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` added to `.env.example`
+- Success `Alert` shown after photo upload completes ("Photo uploaded!")
+- In-button step label ("Uploading photo…" / "Saving element…") shown while submitting
+
+### Changed
+- `ImageUploadScreen.jsx` now uploads to Supabase first, then passes the signed URL to `submitElement` instead of the local file URI
+
+### Added
+- `backend/Goalz/.sonarqube/` added to `.gitignore`
+
+### Rationale
+- Local file URIs (`file:///...`) stored in the database are inaccessible to other users or clients — a signed URL from Supabase Storage provides authenticated, shareable access
+- Signed URLs with a 1-year expiry avoid the overhead of re-generating URLs on every view while keeping the bucket private
+- Direct fetch/FormData is used instead of the Supabase JS SDK to avoid adding a new package dependency
+
+> Issue closed after 0 min
 
 ---
 
@@ -54,6 +90,11 @@
 ### Rationale
 - `authService.logout()` already existed but had no UI trigger; adding it to the navbar is the most accessible location since the nav is always visible
 - Used `absolute bottom-0` positioning inside the `relative` nav so the button stays at the bottom regardless of content height
+
+> Issue closed after 0 min
+
+---
+
 ## Game setup: boundary-aware sliders & closest zone start — 2026-04-30
 
 ### Changed

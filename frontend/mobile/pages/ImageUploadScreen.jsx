@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator,
+  StyleSheet, ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
 import { submitElement, getElementTypes } from '../services/api';
+import { uploadPhotoToSupabase } from '../services/supabase';
 
 const PLACEHOLDER_IMAGE = 'https://imgs.search.brave.com/hRkvl3LnUzM9OaDvHhso94cLNguVIeXnscwD_ck_6hA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tYXJr/ZXRwbGFjZS5jYW52/YS5jb20vTUFEQ0FL/MXNGS3cvMS90aHVt/Ym5haWxfbGFyZ2Ut/MS9jYW52YS1iZWVj/aC10cmVlLU1BRENB/SzFzRkt3LmpwZw';
 
@@ -25,6 +26,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
   const [elementType, setElementType] = useState('');
   const [species, setSpecies]     = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [uploadStep, setUploadStep] = useState('');
   const [error, setError]         = useState('');
 
   useEffect(() => {
@@ -38,13 +40,21 @@ export default function ImageUploadScreenPage({ navigation, route }) {
     setSubmitting(true);
     setError('');
     try {
+      setUploadStep('Uploading photo…');
+      const publicUrl = await uploadPhotoToSupabase(imageUri);
+
+      Alert.alert('Photo uploaded!', 'Your photo has been saved successfully.', [
+        { text: 'OK', style: 'default' },
+      ]);
+
+      setUploadStep('Saving element…');
       const { latitude, longitude } = parseGps(gps);
       const result = await submitElement({
         elementName: species.trim(),
         elementType,
         latitude,
         longitude,
-        imageUrl: imageUri,
+        imageUrl: publicUrl,
         isGreen: true,
       });
       if (!result.success) {
@@ -52,10 +62,11 @@ export default function ImageUploadScreenPage({ navigation, route }) {
         return;
       }
       navigation.popTo('Map');
-    } catch {
-      setError('Could not reach the server. Check your connection.');
+    } catch (err) {
+      setError(err?.message ?? 'Could not reach the server. Check your connection.');
     } finally {
       setSubmitting(false);
+      setUploadStep('');
     }
   }
 
@@ -140,7 +151,12 @@ export default function ImageUploadScreenPage({ navigation, route }) {
           disabled={!canUpload || submitting}
         >
           {submitting
-            ? <ActivityIndicator color="#fff" />
+            ? (
+              <View style={styles.submittingRow}>
+                <ActivityIndicator color="#fff" />
+                {!!uploadStep && <Text style={styles.uploadStepText}>{uploadStep}</Text>}
+              </View>
+            )
             : <Text style={styles.uploadText}>UPLOAD</Text>
           }
         </TouchableOpacity>
@@ -270,4 +286,6 @@ const styles = StyleSheet.create({
   },
   uploadBtnDisabled: { backgroundColor: '#a0d8f5' },
   uploadText: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
+  submittingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  uploadStepText: { color: '#fff', fontSize: 13 },
 });
