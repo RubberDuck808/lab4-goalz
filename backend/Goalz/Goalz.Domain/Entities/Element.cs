@@ -11,4 +11,7 @@ public class Element
     public Point Geom { get; set; } = null!;
     public string? ImageUrl { get; set; }
     public bool IsGreen { get; set; }
+    public bool IsApproved { get; set; }
+    public string? SubmittedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

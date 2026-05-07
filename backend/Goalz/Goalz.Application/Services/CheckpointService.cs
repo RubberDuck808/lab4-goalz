@@ -61,7 +61,7 @@ public class CheckpointService : ICheckpointService
         }).ToList();
 
         // Include elements that have no checkpoint row so they appear on the map
-        var allElements = await _elementRepository.GetAllAsync();
+        var allElements = await _elementRepository.GetAllApprovedAsync();
         var orphanDtos = allElements
             .Where(e => !elementRefIds.Contains(e.Id))
             .Select(e => new CheckpointDto

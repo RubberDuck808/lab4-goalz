@@ -30,6 +30,10 @@ public class ElementController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateElementRequest request)
     {
+        var username = User.Identity?.Name;
+        if (username == null) return Unauthorized();
+        request.IsApproved  = false;
+        request.SubmittedBy = username;
         var element = await _elementService.CreateAsync(request);
         return CreatedAtAction(nameof(Create), new { id = element.Id }, element);
     }

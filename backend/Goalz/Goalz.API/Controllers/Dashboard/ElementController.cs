@@ -27,8 +27,28 @@ public class ElementController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateElementRequest request)
     {
+        request.IsApproved  = true;
+        request.SubmittedBy = null;
         var element = await _elementService.CreateAsync(request);
         return CreatedAtAction(nameof(Create), new { id = element.Id }, element);
+    }
+
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPending()
+        => Ok(await _elementService.GetPendingAsync());
+
+    [HttpPut("{id}/approve")]
+    public async Task<IActionResult> Approve(long id)
+    {
+        var (success, error) = await _elementService.ApproveAsync(id);
+        return success ? NoContent() : error == "not_found" ? NotFound() : BadRequest();
+    }
+
+    [HttpPut("{id}/reject")]
+    public async Task<IActionResult> Reject(long id)
+    {
+        var (success, error) = await _elementService.RejectAsync(id);
+        return success ? NoContent() : error == "not_found" ? NotFound() : BadRequest();
     }
 
     [HttpPut("{id}")]

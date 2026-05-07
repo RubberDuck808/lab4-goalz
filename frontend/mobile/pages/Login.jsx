@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
@@ -32,6 +33,7 @@ export default function Login({ navigation }) {
           return;
         }
         navigation.replace('Home');
+        ImagePicker.requestCameraPermissionsAsync();
       } else {
         setError(result.error);
       }

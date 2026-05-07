@@ -8,6 +8,7 @@ export default function CameraPage({ navigation, route }) {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState(null);
 
   const temp     = route?.params?.temp     ?? 18.4;
   const humidity = route?.params?.humidity ?? 62;
@@ -19,12 +20,15 @@ export default function CameraPage({ navigation, route }) {
   async function handleShutter() {
     if (!cameraRef.current || capturing) return;
     setCapturing(true);
+    setCaptureError(null);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 1 });
       navigation.navigate('UserPhoto', {
         imageUri: photo.uri,
         gps: route?.params?.gps ?? null,
       });
+    } catch {
+      setCaptureError('Could not capture photo. Please try again.');
     } finally {
       setCapturing(false);
     }
@@ -65,12 +69,12 @@ export default function CameraPage({ navigation, route }) {
         <View style={[styles.vLine, { left: '66.6%' }]} />
       </CameraView>
 
-      {/* Top bar
+      {/* Top bar */}
       <View style={[styles.topBar, { height: topBarHeight, paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-      </View> */}
+      </View>
 
       {/* Sensor tag */}
       <View style={[styles.sensorTag, { top: topBarHeight + 8 }]}>
@@ -84,6 +88,13 @@ export default function CameraPage({ navigation, route }) {
           {`Temp ${temp.toFixed(1)}°C  ·  Humidity ${humidity}%  ·  AQI ${aqi}`}
         </Text>
       </View>
+
+      {/* Capture error message */}
+      {captureError && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{captureError}</Text>
+        </View>
+      )}
 
       {/* Bottom bar with shutter */}
       <View style={[styles.bottomBar, { height: bottomBarHeight, paddingBottom: insets.bottom }]}>
@@ -119,14 +130,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
 
-  // topBar: {
-  //   position: 'absolute',
-  //   top: 0, left: 0, right: 0,
-  //   backgroundColor: '#0d0d0d',
-  //   justifyContent: 'flex-end',
-  // },
-  // backBtn:  { paddingHorizontal: 17, paddingBottom: 14 },
-  // backText: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  topBar: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    backgroundColor: '#0d0d0d',
+    justifyContent: 'flex-end',
+  },
+  backBtn:  { paddingHorizontal: 17, paddingBottom: 14 },
+  backText: { color: '#fff', fontSize: 14, fontWeight: '500' },
 
   sensorTag: {
     position: 'absolute',
@@ -154,6 +165,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 17,
   },
   dataText: { color: '#b2e5bf', fontSize: 11 },
+
+  errorBanner: {
+    position: 'absolute',
+    left: 16, right: 16,
+    bottom: 120,
+    backgroundColor: 'rgba(239,68,68,0.9)',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  errorText: { color: '#fff', fontSize: 13, fontWeight: '500' },
 
   bottomBar: {
     position: 'absolute',

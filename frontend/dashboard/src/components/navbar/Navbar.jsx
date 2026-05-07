@@ -94,6 +94,12 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             setSelectedItem={handleSelect}
           />
           <Navitem
+            name="Pending Elements"
+            icon="fa-clock"
+            selectedItem={selectedItem}
+            setSelectedItem={handleSelect}
+          />
+          <Navitem
             name="Settings"
             icon="fa-cog"
             selectedItem={selectedItem}

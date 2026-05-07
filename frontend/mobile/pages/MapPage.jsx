@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
@@ -21,11 +20,9 @@ import {
 } from './map/mapHelpers';
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
-import ElementModal from './map/ElementModal';
 import SensorModal from './map/SensorModal';
 
 export default function MapPage({ navigation, route }) {
-  // Track whether we've already navigated away so the completion fires only once.
   const completedRef = React.useRef(false);
   const fromGame = route?.params?.fromGame ?? false;
   const mapRef   = useRef(null);
@@ -37,18 +34,15 @@ export default function MapPage({ navigation, route }) {
   const [activeZone,       setActiveZone]       = useState(null);
   const [completedZoneIds, setCompletedZoneIds] = useState(new Set());
   const [targetCp,         setTargetCp]         = useState(null);
-  const [pendingZoneCps,   setPendingZoneCps]   = useState([]); // remaining checkpoints in active zone
+  const [pendingZoneCps,   setPendingZoneCps]   = useState([]);
   const [nearTarget,       setNearTarget]        = useState(false);
   const [flashMsg,         setFlashMsg]         = useState(null);
   const flashAnim = useRef(new Animated.Value(0)).current;
 
-  const [mapReady,      setMapReady]      = useState(false);
-  const [elementModal,  setElementModal]  = useState(null); // { cp, zone } | null
-  const [sensorModal,   setSensorModal]   = useState(null); // { cp, zone, sensorId, sensorName } | null
+  const [mapReady,    setMapReady]    = useState(false);
+  const [sensorModal, setSensorModal] = useState(null);
 
   const initRef = useRef(false);
-  const pendingCpRef = useRef(null);       // checkpoint to complete when map regains focus
-  const completeCheckpointRef = useRef(null); // always points to latest completeCheckpoint
   const { partyId, markVisited, role } = useGameContext();
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -153,8 +147,6 @@ export default function MapPage({ navigation, route }) {
     initRef.current = true;
 
     async function init() {
-      // Try to find the zone whose centroid is nearest to the user. Fall back to
-      // the first zone if location is unavailable or times out.
       let startZone = zones[0];
       try {
         const loc = await Location.getCurrentPositionAsync({
@@ -189,7 +181,6 @@ export default function MapPage({ navigation, route }) {
     if (partyId) await visitCheckpoint(partyId, cp.id).catch(() => {});
     setNearTarget(false);
 
-    // More checkpoints left in this zone — advance to the next one.
     if (pendingZoneCps.length > 0) {
       const [next, ...rest] = pendingZoneCps;
       setTargetCp(next);
@@ -198,7 +189,6 @@ export default function MapPage({ navigation, route }) {
       return;
     }
 
-    // All checkpoints in this zone done — mark zone complete and move on.
     const newDone = new Set(completedZoneIds).add(zone.id);
     setCompletedZoneIds(newDone);
 
@@ -217,18 +207,6 @@ export default function MapPage({ navigation, route }) {
       }
     }
   }
-  completeCheckpointRef.current = completeCheckpoint;
-
-  // Complete any checkpoint that was deferred while the camera was open.
-  useFocusEffect(
-    useCallback(() => {
-      const pending = pendingCpRef.current;
-      if (pending) {
-        pendingCpRef.current = null;
-        completeCheckpointRef.current(pending.cp, pending.zone);
-      }
-    }, [])
-  );
 
   function handleVisit() {
     if (!targetCp || !activeZone) return;
@@ -236,7 +214,7 @@ export default function MapPage({ navigation, route }) {
     if (targetCp.type === 'sensor') {
       setSensorModal({ cp: targetCp, zone: activeZone, sensorId: targetCp.referenceId, sensorName: targetCp.name });
     } else {
-      setElementModal({ cp: targetCp, zone: activeZone });
+      completeCheckpoint(targetCp, activeZone);
     }
   }
 
@@ -269,6 +247,24 @@ export default function MapPage({ navigation, route }) {
           <Animated.View style={[styles.flash, { opacity: flashAnim, transform: [{ scale: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }]}>
             <Text style={styles.flashText}>{flashMsg}</Text>
           </Animated.View>
+        )}
+
+        {fromGame && (role === 'Trailblazer' || role === 'Explorer') && (
+          <View style={styles.floatingCameraWrap} pointerEvents="box-none">
+            <TouchableOpacity
+              style={styles.floatingCameraBtn}
+              activeOpacity={0.85}
+              onPress={async () => {
+                const loc = await Location.getCurrentPositionAsync({
+                  accuracy: Location.Accuracy.High,
+                }).catch(() => null);
+                const gps = loc ? `${loc.coords.latitude},${loc.coords.longitude}` : null;
+                navigation.navigate('Camera', { gps });
+              }}
+            >
+              <Text style={styles.floatingCameraIcon}>📷</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <MapView
@@ -320,20 +316,6 @@ export default function MapPage({ navigation, route }) {
         </MapView>
       </View>
 
-      <ElementModal
-        visible={!!elementModal}
-        onClose={() => {
-          const { cp, zone } = elementModal;
-          setElementModal(null);
-          completeCheckpoint(cp, zone);
-        }}
-        onTakePhoto={() => {
-          const { cp, zone } = elementModal;
-          setElementModal(null);
-          pendingCpRef.current = { cp, zone };
-          navigation.navigate('Camera');
-        }}
-      />
       <SensorModal
         visible={!!sensorModal}
         sensorId={sensorModal?.sensorId}
@@ -373,4 +355,12 @@ const styles = StyleSheet.create({
     width: 16, height: 16, borderRadius: 8, borderWidth: 2.5, borderColor: 'white',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 3, elevation: 3,
   },
+
+  floatingCameraWrap: { position: 'absolute', bottom: 20, right: 20, zIndex: 15 },
+  floatingCameraBtn: {
+    width: 56, height: 56, borderRadius: 28, backgroundColor: '#29e87b',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, elevation: 8,
+  },
+  floatingCameraIcon: { fontSize: 26 },
 });

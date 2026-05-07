@@ -9,7 +9,7 @@ import BottomNavBar from '../components/BottomNavBar';
 import { submitElement, getElementTypes } from '../services/api';
 import { uploadPhotoToSupabase } from '../services/supabase';
 
-const PLACEHOLDER_IMAGE = 'https://imgs.search.brave.com/hRkvl3LnUzM9OaDvHhso94cLNguVIeXnscwD_ck_6hA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tYXJr/ZXRwbGFjZS5jYW52/YS5jb20vTUFEQ0FL/MXNGS3cvMS90aHVt/Ym5haWxfbGFyZ2Ut/MS9jYW52YS1iZWVj/aC10cmVlLU1BRENB/SzFzRkt3LmpwZw';
+const PLACEHOLDER_IMAGE = require('../assets/icon.png');
 
 function parseGps(gpsStr) {
   const match = gpsStr?.match(/([-\d.]+),\s*([-\d.]+)/);
@@ -18,7 +18,8 @@ function parseGps(gpsStr) {
 }
 
 export default function ImageUploadScreenPage({ navigation, route }) {
-  const imageUri = route?.params?.imageUri ?? PLACEHOLDER_IMAGE;
+  const imageUri = route?.params?.imageUri ?? null;
+  const imageSource = imageUri ? { uri: imageUri } : PLACEHOLDER_IMAGE;
   const gps      = route?.params?.gps      ?? null;
 
   const [elementTypes, setElementTypes] = useState([]);
@@ -41,11 +42,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
     setError('');
     try {
       setUploadStep('Uploading photo…');
-      const publicUrl = await uploadPhotoToSupabase(imageUri);
-
-      Alert.alert('Photo uploaded!', 'Your photo has been saved successfully.', [
-        { text: 'OK', style: 'default' },
-      ]);
+      const publicUrl = await uploadPhotoToSupabase(imageUri ?? '');
 
       setUploadStep('Saving element…');
       const { latitude, longitude } = parseGps(gps);
@@ -61,7 +58,10 @@ export default function ImageUploadScreenPage({ navigation, route }) {
         setError(result.error ?? 'Upload failed. Please try again.');
         return;
       }
-      navigation.popTo('Map');
+      Alert.alert('Element added!', 'Your photo and element have been saved.', [
+        { text: 'OK', style: 'default' },
+      ]);
+      navigation.navigate('Map');
     } catch (err) {
       setError(err?.message ?? 'Could not reach the server. Check your connection.');
     } finally {
@@ -81,7 +81,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
       >
         {/* Image preview */}
         <View style={styles.imageWrap}>
-          <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+          <Image source={imageSource} style={styles.image} resizeMode="cover" />
         </View>
 
         {gps && <Text style={styles.gps}>{gps}</Text>}

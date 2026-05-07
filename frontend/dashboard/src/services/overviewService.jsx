@@ -106,4 +106,20 @@ export const overviewService = {
         );
         if (!response?.ok) throw new Error('Failed to delete sensor');
     },
+
+    getPendingElements: async () => {
+        const res = await APICall("GET", "/elements/pending", null, localStorage.getItem("jwtToken") ?? "");
+        if (!res?.ok) throw new Error('Failed to fetch pending elements');
+        return res.json();
+    },
+
+    approveElement: async (id) => {
+        const res = await APICall("PUT", `/elements/${id}/approve`, null, localStorage.getItem("jwtToken") ?? "");
+        if (!res?.ok) throw new Error('Failed to approve element');
+    },
+
+    rejectElement: async (id) => {
+        const res = await APICall("PUT", `/elements/${id}/reject`, null, localStorage.getItem("jwtToken") ?? "");
+        if (!res?.ok) throw new Error('Failed to reject element');
+    },
 }
