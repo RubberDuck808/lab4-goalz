@@ -10,11 +10,10 @@ export default function DashboardNavBar({title}) {
         <div className='flex flex-row-reverse items-center justify-between gap-3'>
           <button 
             className='hidden md:block w-[128px] h-10 bg-secondary-green text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer'
-            onClick={() => setSelectedItem("Reports")}
           >
             Export <i className='fa-solid fa-arrow-up-from-bracket'></i>
           </button>
-          <div className='flex gap-3'>
+          <div className='hidden gap-3 md:flex'>
             <select name="" id="" className='w-[128px] h-10 border border-gray-300 rounded-lg bg-white px-3 text-sm cursor-pointer'>
               <option value="">Filter</option>
             </select>

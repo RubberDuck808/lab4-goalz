@@ -266,6 +266,38 @@ The dashboard can import zone shapes from OpenStreetMap for the Humber Arboretum
 
 ---
 
+### Import Dataset Page
+
+The Import Dataset page lets staff load sensor and landscape data into the database from a CSV file.
+
+#### Importing Data
+1. Click **Download Template** to get the expected CSV format.
+2. Fill in your data following the template structure (semicolon-delimited).
+3. Click the upload area and select your `.csv` file.
+4. A preview table appears showing the parsed rows — review for any errors before committing.
+5. Click **Import** to store the data in the database. A confirmation toast appears on success.
+
+> Only `.csv` files are accepted. The first row of the CSV is treated as the header.
+
+---
+
+### Reports Page
+
+The Reports page generates downloadable reports on landscape elements, sensor readings, and analysis metrics for a given date range.
+
+#### Generating a Report
+1. Set the **From** and **To** dates (defaults to the last 30 days).
+2. Select what to include using the checkboxes:
+   - **Landscape elements** — Trees, Bushes, Water, Species
+   - **Sensor data** — Sensor Data, Light, Temperature, Humidity
+   - **Analysis** — Green vs non-green, Native vs non-native, Biodiversity, Net zero-goal indicator
+   - **Visualizations** — Line chart, Bar chart, Pie chart, Arboretum map
+3. Choose the output format: **CSV**, **PDF**, or **Plain text**.
+4. Click **Generate Report**. The file downloads automatically.
+
+---
+
+
 ### Settings Page — User Management (Admin only)
 
 The Settings page is only accessible to **Admin** accounts. Staff accounts see an access restriction message.

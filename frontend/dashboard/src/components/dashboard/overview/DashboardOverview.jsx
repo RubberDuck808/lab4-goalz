@@ -108,7 +108,7 @@
         const elementTypesData = useMemo(() => {
             const counts = {};
             elements.forEach((e) => {
-                const label = ELEMENT_TYPE_LABELS[e.elementType] ?? `Type ${e.elementType}`;
+                const label = e.elementType?.name ?? `Type ${e.elementTypeId}`;
                 counts[label] = (counts[label] || 0) + 1;
             });
             return Object.entries(counts).map(([name, value]) => ({ name, value }));
@@ -126,7 +126,7 @@
         ];
 
         const canopyData = useMemo(() => {
-            const trees = elements.filter((e) => e.elementType === TREE_TYPE_ID).length;
+            const trees = elements.filter((e) => e.elementType?.id === TREE_TYPE_ID).length;
             return [
                 { name: "Canopy", value: trees },
                 { name: "Other", value: elements.length - trees },
@@ -134,7 +134,7 @@
         }, [elements]);
 
         const canopyPercent = elements.length
-            ? Math.round((elements.filter((e) => e.elementType === TREE_TYPE_ID).length / elements.length) * 100)
+            ? Math.round((elements.filter((e) => e.elementType?.id === TREE_TYPE_ID).length / elements.length) * 100)
             : 0;
 
         const sidePanel = isModalOpen ? 'add' : selectedElement ? 'element' : selectedSensor ? 'sensor' : null;
@@ -143,7 +143,7 @@
   <div className="flex flex-col min-h-screen h-full relative overflow-hidden">
     {isLoading && <Loading />}
 
-    <DashboardNavBar title="Alboretum Overview" />
+    <DashboardNavBar title="Arboretum Overview" />
 
     <div className="p-4 md:p-5 flex flex-col gap-5 flex-1 overflow-y-auto">
       <div className="w-full flex flex-col lg:flex-row items-stretch gap-3">

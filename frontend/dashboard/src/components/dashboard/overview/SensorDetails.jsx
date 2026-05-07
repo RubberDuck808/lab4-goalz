@@ -66,7 +66,7 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
 
     if (!sensor) {
         return (
-            <div className='h-full w-[500px] bg-white rounded-lg shadow flex items-center justify-center'>
+            <div className='h-full bg-white rounded-lg shadow flex items-center justify-center'>
                 <p className='text-gray-500'>Select a sensor to see details.</p>
             </div>
         );
@@ -75,7 +75,7 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
     const coords = sensor.geo?.coordinates ?? [];
 
     return (
-        <div className='h-full w-[500px] bg-white rounded-lg shadow flex flex-col overflow-hidden'>
+        <div className='h-full bg-white rounded-lg shadow flex flex-col overflow-hidden'>
             <div className='w-full h-[40px] bg-[#6366f1] flex items-center px-4'>
                 <i className='fa-solid fa-wifi text-white mr-2 text-sm' />
                 <p className='font text-white text-sm font-bold'>Sensor Details</p>
@@ -97,19 +97,6 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
 
                 <div className='flex gap-4'>
                     <div className='flex-1'>
-                        <p className='font text-sm text-gray-500'>Longitude</p>
-                        {openEditModal ? (
-                            <input
-                                type='text'
-                                value={editedSensor?.editLongitude ?? ''}
-                                onChange={(e) => setEditedSensor((p) => ({ ...p, editLongitude: e.target.value }))}
-                                className='w-full rounded border border-gray-300 p-1 text-sm'
-                            />
-                        ) : (
-                            <p className='font text-sm'>{coords[0] ?? 'N/A'}</p>
-                        )}
-                    </div>
-                    <div className='flex-1'>
                         <p className='font text-sm text-gray-500'>Latitude</p>
                         {openEditModal ? (
                             <input
@@ -120,6 +107,19 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
                             />
                         ) : (
                             <p className='font text-sm'>{coords[1] ?? 'N/A'}</p>
+                        )}
+                    </div>
+                    <div className='flex-1'>
+                        <p className='font text-sm text-gray-500'>Longitude</p>
+                        {openEditModal ? (
+                            <input
+                                type='text'
+                                value={editedSensor?.editLongitude ?? ''}
+                                onChange={(e) => setEditedSensor((p) => ({ ...p, editLongitude: e.target.value }))}
+                                className='w-full rounded border border-gray-300 p-1 text-sm'
+                            />
+                        ) : (
+                            <p className='font text-sm'>{coords[0] ?? 'N/A'}</p>
                         )}
                     </div>
                 </div>

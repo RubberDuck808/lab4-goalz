@@ -4,10 +4,12 @@
 
 1. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
 2. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
-2. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
-3. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
-4. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
-5. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
+3. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
+4. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
+5. [Game setup: boundary-aware sliders & closest zone start](#game-setup-boundary-aware-sliders--closest-zone-start--2026-04-30)
+6. [Fix: Dashboard map — zones filtered by boundary](#fix-dashboard-map--zones-filtered-by-boundary--2026-04-30)
+7. [Fix: Party role assignment & game completion](#fix-party-role-assignment--game-completion--2026-04-30)
+8. [Mobile: Party UX improvements, sensor modal, camera checkpoint](#mobile-party-ux-improvements-sensor-modal-camera-checkpoint--2026-04-29)
 2. [Mobile: Profile, Navigation, Leaderboard, Edit Profile, Settings Accessibility](#mobile-profile-navigation-leaderboard-edit-profile-settings-accessibility--2026-04-29)
 2. [Security: Remove hardcoded secrets from appsettings.json](#security-remove-hardcoded-secrets-from-appsettingsjson--2026-04-28)
 2. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
@@ -42,7 +44,6 @@
 
 ---
 
-<<<<<<< Updated upstream
 ## Mobile: Supabase photo upload + SonarQube gitignore — 2026-04-30
 
 ### Added
@@ -61,6 +62,34 @@
 - Local file URIs (`file:///...`) stored in the database are inaccessible to other users or clients — a signed URL from Supabase Storage provides authenticated, shareable access
 - Signed URLs with a 1-year expiry avoid the overhead of re-generating URLs on every view while keeping the bucket private
 - Direct fetch/FormData is used instead of the Supabase JS SDK to avoid adding a new package dependency
+
+> Issue closed after 0 min
+
+---
+
+## Dashboard: Rename nav items — 2026-04-29 14:10
+
+### Changed
+- Nav item "Overview" → "Arboretum Map Overview" (Navbar.jsx, Overview.jsx initial state + switch case)
+- Nav item "Arboretum Map" → "Game Map" (Navbar.jsx, Overview.jsx switch case)
+- Page title in DashboardOverview: "Alboretum Overview" → "Arboretum Map Overview"
+
+### Rationale
+- Label updates to better reflect the content shown in each section
+
+> Issue closed after 0 min
+
+---
+
+## Dashboard: Log Out button in navbar — 2026-04-29 14:00
+
+### Added
+- Log Out button pinned to the bottom-left of the dashboard sidebar (`Navbar.jsx`)
+- Clicking it calls `authService.logout()` (clears `token` and `user` from localStorage) then redirects to `/` via `useNavigate`
+
+### Rationale
+- `authService.logout()` already existed but had no UI trigger; adding it to the navbar is the most accessible location since the nav is always visible
+- Used `absolute bottom-0` positioning inside the `relative` nav so the button stays at the bottom regardless of content height
 
 > Issue closed after 0 min
 
@@ -163,26 +192,6 @@
 - **Game completion**: there was no end state — finishing all checkpoints only
   showed a brief flash toast. The new screen gives clear feedback and a clean
   exit path.
-=======
-## Mobile: Supabase photo upload + SonarQube gitignore — 2026-04-30
-
-### Added
-- `frontend/mobile/services/supabase.js` — uploads captured photos to Supabase Storage bucket `Photo` via the REST API; returns the public URL used as `imageUrl` when submitting an element
-- `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` added to `.env.example`
-- Success `Alert` shown after photo upload completes ("Photo uploaded!")
-- In-button step label ("Uploading photo…" / "Saving element…") shown while submitting
-
-### Changed
-- `ImageUploadScreen.jsx` now uploads to Supabase first, then passes the public URL to `submitElement` instead of the local file URI
-
-### Added
-- `backend/Goalz/.sonarqube/` added to `.gitignore`
-
-### Rationale
-- Photos need to be stored in a persistent, publicly accessible location; Supabase Storage (same project as the database) avoids introducing a separate service
-- Local file URIs (`file:///...`) stored in the database are inaccessible to other users or clients, so a public CDN URL is required
-- The direct fetch/FormData approach is used instead of the Supabase JS SDK to avoid adding a new package dependency
->>>>>>> Stashed changes
 
 > Issue closed after 0 min
 
