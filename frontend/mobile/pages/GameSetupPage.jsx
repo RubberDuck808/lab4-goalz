@@ -8,8 +8,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import AppTextInput from '../components/TextInput';
+import * as Location from 'expo-location';
 import { createParty, getZones, getBoundaries, getCheckpoints } from '../services/api/partyApi';
 import { useGameContext } from '../context/GameContext';
+import { boundaryDistanceMeters } from './map/mapHelpers';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental)
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -125,23 +127,46 @@ export default function GameSetupPage({ navigation, route }) {
   const [checkpoints, setCheckpoints]       = useState([]);
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState('');
+  const [userLocation, setUserLocation]     = useState(null);
+  const [locationLoading, setLocationLoading] = useState(true);
 
   const { setParty, setGameConfig } = useGameContext();
 
   useEffect(() => {
-    getBoundaries().then((res) => {
-      if (res.success) {
-        setBoundaries(res.data);
-        if (res.data.length > 0) setBoundaryId(res.data[0].id);
-      }
-    });
-    getZones().then((res) => {
-      if (res.success) setZones(res.data);
-    });
-    getCheckpoints().then((res) => {
-      if (res.success) setCheckpoints(res.data);
-    });
+    getBoundaries().then((res) => { if (res.success) setBoundaries(res.data); });
+    getZones().then((res) => { if (res.success) setZones(res.data); });
+    getCheckpoints().then((res) => { if (res.success) setCheckpoints(res.data); });
   }, []);
+
+  useEffect(() => {
+    Location.requestForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (status !== 'granted') { setLocationLoading(false); return; }
+        return Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      })
+      .then(loc => {
+        if (loc) setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      })
+      .catch(() => {})
+      .finally(() => setLocationLoading(false));
+  }, []);
+
+  // Boundaries within 1 km of the user. Falls back to all if location unavailable.
+  const nearbyBoundaries = useMemo(() => {
+    if (!userLocation) return boundaries;
+    const nearby = boundaries.filter(b => boundaryDistanceMeters(b, userLocation) <= 1000);
+    return nearby.length > 0 ? nearby : boundaries;
+  }, [boundaries, userLocation]);
+
+  // Auto-select nearest boundary once location + boundaries are ready.
+  useEffect(() => {
+    if (!userLocation || !nearbyBoundaries.length) return;
+    const nearest = nearbyBoundaries.reduce((best, b) => {
+      const d = boundaryDistanceMeters(b, userLocation);
+      return d < boundaryDistanceMeters(best, userLocation) ? b : best;
+    }, nearbyBoundaries[0]);
+    setBoundaryId(nearest.id);
+  }, [nearbyBoundaries, userLocation]);
 
   // Zones belonging to the selected boundary.
   const zonesInBoundary = useMemo(
@@ -260,22 +285,29 @@ export default function GameSetupPage({ navigation, route }) {
 
         {/* Boundary */}
         <Section title="Play Area (Boundary)">
-          {boundaries.length === 0 ? (
-            <Text style={styles.hint}>No boundaries found.</Text>
+          {locationLoading ? (
+            <ActivityIndicator size="small" color="#1CB0F6" style={{ alignSelf: 'flex-start' }} />
+          ) : nearbyBoundaries.length === 0 ? (
+            <Text style={styles.hint}>No play areas found near your location.</Text>
           ) : (
-            <View style={styles.chipRow}>
-              {boundaries.map((b) => (
-                <TouchableOpacity
-                  key={b.id}
-                  style={[styles.chip, boundaryId === b.id && styles.chipActive]}
-                  onPress={() => setBoundaryId(b.id)}
-                >
-                  <Text style={[styles.chipText, boundaryId === b.id && styles.chipTextActive]}>
-                    {b.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <>
+              <View style={styles.chipRow}>
+                {nearbyBoundaries.map((b) => (
+                  <TouchableOpacity
+                    key={b.id}
+                    style={[styles.chip, boundaryId === b.id && styles.chipActive]}
+                    onPress={() => setBoundaryId(b.id)}
+                  >
+                    <Text style={[styles.chipText, boundaryId === b.id && styles.chipTextActive]}>
+                      {b.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {userLocation && (
+                <Text style={styles.hint}>Showing areas within 1 km of your location.</Text>
+              )}
+            </>
           )}
         </Section>
 

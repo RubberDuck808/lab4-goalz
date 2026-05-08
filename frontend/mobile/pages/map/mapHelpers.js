@@ -74,6 +74,27 @@ export function generatePhotoSpot(zone) {
   };
 }
 
+// Minimum distance in metres from `user` to a boundary polygon.
+// Returns 0 if the user is inside the bounding box (i.e. probably inside the boundary).
+export function boundaryDistanceMeters(boundary, user) {
+  const geom = safeParseGeometry(boundary?.boundary);
+  if (!geom) return Infinity;
+  const rings = extractRings(geom);
+  if (!rings.length || !rings[0].length) return Infinity;
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  for (const ring of rings) {
+    for (const [lng, lat] of ring) {
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    }
+  }
+  const clampedLat = Math.max(minLat, Math.min(maxLat, user.latitude));
+  const clampedLng = Math.max(minLng, Math.min(maxLng, user.longitude));
+  return haversineMeters(user, { latitude: clampedLat, longitude: clampedLng });
+}
+
 export function nearestLocked(fromZone, allZones, doneIds) {
   const locked = allZones.filter(z => !doneIds.has(z.id) && z.id !== fromZone.id);
   if (!locked.length) return null;

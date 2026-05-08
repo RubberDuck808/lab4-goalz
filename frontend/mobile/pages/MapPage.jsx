@@ -23,6 +23,7 @@ import {
   nearestLocked,
   checkpointColor,
   zoneCentroid,
+  boundaryDistanceMeters,
 } from './map/mapHelpers';
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
@@ -51,6 +52,7 @@ export default function MapPage({ navigation, route }) {
   const initRef = useRef(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [leaveModal, setLeaveModal] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
   const { partyId, markVisited, role, gameConfig } = useGameContext();
 
   // Reset camera lock when map regains focus (user returned from Camera screen)
@@ -85,9 +87,17 @@ export default function MapPage({ navigation, route }) {
     }, 400);
   }
 
-  // ── Location permission ─────────────────────────────────────────────────────
+  // ── Location permission + initial position ──────────────────────────────────
   useEffect(() => {
-    Location.requestForegroundPermissionsAsync().catch(() => {});
+    Location.requestForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (status !== 'granted') return;
+        return Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      })
+      .then(loc => {
+        if (loc) setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      })
+      .catch(() => {});
   }, []);
 
   // ── Location watcher ────────────────────────────────────────────────────────
@@ -170,17 +180,26 @@ export default function MapPage({ navigation, route }) {
       });
   }, [mapReady, zones, boundaries, fromGame]);
 
-  // ── Zones scoped to the active game boundary + zoneCount cap ───────────────
-  // `zones` from the API contains every zone across all boundaries. During a
-  // game we only care about the boundary the player is playing in, further
-  // capped by the party's zoneCount setting (null = all zones in boundary).
+  // ── Zones visible on map ────────────────────────────────────────────────────
+  // Game mode: scoped to the active boundary + zoneCount cap.
+  // Browse mode: only zones belonging to boundaries within 1 km of the user
+  //              (falls back to all zones if location not yet available).
   const gameZones = React.useMemo(() => {
-    if (!fromGame) return zones;
+    if (!fromGame) {
+      if (!userLocation || !boundaries.length) return zones;
+      const nearbyBoundaryIds = new Set(
+        boundaries
+          .filter(b => boundaryDistanceMeters(b, userLocation) <= 1000)
+          .map(b => b.id)
+      );
+      if (!nearbyBoundaryIds.size) return zones;
+      return zones.filter(z => nearbyBoundaryIds.has(z.boundaryId));
+    }
     const bid = gameConfig?.boundaryId;
     const scoped = bid ? zones.filter(z => z.boundaryId === bid) : zones;
     const cap = gameConfig?.zoneCount;
     return cap ? scoped.slice(0, cap) : scoped;
-  }, [fromGame, zones, gameConfig]);
+  }, [fromGame, zones, boundaries, gameConfig, userLocation]);
 
   // ── Photo-spot fallback ─────────────────────────────────────────────────────
   // Returns real checkpoints for the zone, or a synthetic photo spot when
@@ -300,18 +319,31 @@ export default function MapPage({ navigation, route }) {
           />
         )}
 
-        {fromGame && nearTarget && targetCp && (
-          <View style={styles.visitOverlay}>
-            <TouchableOpacity style={[styles.visitBtn, targetCp.type === 'photo' && styles.visitBtnPhoto]} onPress={handleVisit} activeOpacity={0.85}>
-              <Text style={styles.visitBtnLabel}>
-                {targetCp.type === 'photo' ? 'PHOTO SPOT REACHED' : 'CHECKPOINT REACHED'}
-              </Text>
-              <Text style={styles.visitBtnSub}>
-                {targetCp.type === 'photo' ? 'Tap to take a photo' : 'Tap to collect'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {fromGame && targetCp && (() => {
+          const activeColor = targetCp.type === 'sensor' ? '#6366f1' : targetCp.type === 'photo' ? '#FF9600' : '#1CB0F6';
+          const activeBorder = targetCp.type === 'sensor' ? '#4338ca' : targetCp.type === 'photo' ? '#c87600' : '#0E8BC0';
+          return (
+            <View style={styles.actionBtnWrap} pointerEvents="box-none">
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  nearTarget
+                    ? { backgroundColor: activeColor, borderBottomColor: activeBorder }
+                    : styles.actionBtnInactive,
+                ]}
+                onPress={nearTarget ? handleVisit : undefined}
+                activeOpacity={nearTarget ? 0.85 : 1}
+                disabled={!nearTarget}
+              >
+                <Ionicons
+                  name={targetCp.type === 'sensor' ? 'radio' : 'camera'}
+                  size={26}
+                  color={nearTarget ? '#fff' : '#a1a1aa'}
+                />
+              </TouchableOpacity>
+            </View>
+          );
+        })()}
 
         {flashMsg && (
           <Animated.View style={[styles.flash, { opacity: flashAnim, transform: [{ scale: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }]}>
@@ -441,18 +473,17 @@ const styles = StyleSheet.create({
   mapWrap: { flex: 1 },
   map:     { flex: 1 },
 
-  visitOverlay: { position: 'absolute', bottom: 36, left: 24, right: 24, zIndex: 10, alignItems: 'center' },
-  visitBtn: {
-    backgroundColor: '#29e87b', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 40,
-    alignItems: 'center',
-    shadowColor: '#29e87b', shadowOpacity: 0.55, shadowRadius: 16, elevation: 8,
+  actionBtnWrap: { position: 'absolute', bottom: 20, left: 0, right: 0, zIndex: 15, alignItems: 'center' },
+  actionBtn: {
+    width: 69, height: 47, borderRadius: 12,
+    borderBottomWidth: 4,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 6,
   },
-  visitBtnPhoto: {
-    backgroundColor: '#FF9600',
-    shadowColor: '#FF9600',
+  actionBtnInactive: {
+    backgroundColor: '#d4d4d8',
+    borderBottomColor: '#a1a1aa',
   },
-  visitBtnLabel: { color: '#0a1a0f', fontSize: 14, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
-  visitBtnSub:   { color: 'rgba(10,26,15,0.6)', fontSize: 12, fontWeight: '600', marginTop: 2 },
 
   flash: {
     position: 'absolute', top: '40%', left: 40, right: 40, zIndex: 20,
@@ -471,7 +502,7 @@ const styles = StyleSheet.create({
     shadowColor: '#FF9600', shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
   },
 
-  floatingCameraWrap: { position: 'absolute', bottom: 20, right: 20, zIndex: 15 },
+  floatingCameraWrap: { position: 'absolute', bottom: 80, right: 20, zIndex: 15 },
   floatingCameraBtn: {
     width: 69, height: 47, borderRadius: 12,
     backgroundColor: '#1CB0F6',
