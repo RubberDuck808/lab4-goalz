@@ -15,21 +15,6 @@ export const supabase = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? ''
   },
 });
 
-function getMimeType(uri) {
-  const ext = uri.split('.').pop()?.toLowerCase();
-  if (ext === 'heic' || ext === 'heif') return 'image/heic';
-  if (ext === 'png') return 'image/png';
-  return 'image/jpeg';
-}
-
-function getExtension(uri) {
-  const ext = uri.split('.').pop()?.toLowerCase();
-  if (ext === 'heic') return 'heic';
-  if (ext === 'heif') return 'heif';
-  if (ext === 'png') return 'png';
-  return 'jpg';
-}
-
 function randomSuffix() {
   return Math.random().toString(36).slice(2, 9);
 }
@@ -38,15 +23,14 @@ export async function uploadPhotoToSupabase(imageUri) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.');
   }
-  const mimeType = getMimeType(imageUri);
-  const ext      = getExtension(imageUri);
-  const filename = `photo-${Date.now()}-${randomSuffix()}.${ext}`;
+  // usePhotoGallery always converts to JPEG before calling this function
+  const filename = `photo-${Date.now()}-${randomSuffix()}.jpg`;
 
   const bytes = new File(imageUri).bytes();
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(filename, bytes, { contentType: mimeType, upsert: true });
+    .upload(filename, bytes, { contentType: 'image/jpeg', upsert: true });
 
   if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 

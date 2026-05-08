@@ -1,5 +1,6 @@
 import { Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 type TakePhotoResult =
   | { kind: 'success'; uri: string }
@@ -34,7 +35,15 @@ export function usePhotoGallery() {
     });
 
     if (result.canceled) return { kind: 'cancelled' };
-    return { kind: 'success', uri: result.assets[0].uri };
+
+    // Convert to JPEG regardless of capture format (iOS captures HEIC by default
+    // which browsers cannot display — this guarantees a browser-compatible file).
+    const compressed = await ImageManipulator.manipulateAsync(
+      result.assets[0].uri,
+      [],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+    );
+    return { kind: 'success', uri: compressed.uri };
   };
 
   return { takePhoto };
