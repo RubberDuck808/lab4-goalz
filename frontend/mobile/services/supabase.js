@@ -5,7 +5,6 @@ import { File } from 'expo-file-system/next';
 const SUPABASE_URL      = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 const BUCKET = 'Photo';
-const SIGNED_URL_EXPIRES_IN = 31536000; // 1 year
 
 export const supabase = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? '', {
   auth: {
@@ -51,11 +50,6 @@ export async function uploadPhotoToSupabase(imageUri) {
 
   if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-  const { data, error: signError } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(filename, SIGNED_URL_EXPIRES_IN);
-
-  if (signError) throw new Error(`Signed URL failed: ${signError.message}`);
-
-  return data.signedUrl;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+  return data.publicUrl;
 }
