@@ -154,3 +154,12 @@ CLAUDE.md
 # =========================
 
 backend/Goalz/.sonarqube/
+
+# =========================
+
+# Supabase local dev
+
+# =========================
+
+supabase/.branches/
+supabase/.temp/
