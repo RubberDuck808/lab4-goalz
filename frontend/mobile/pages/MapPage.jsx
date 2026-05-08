@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
+import ConfirmModal from '../components/ConfirmModal';
 import { useGameContext } from '../context/GameContext';
 import { visitCheckpoint } from '../services/api/partyApi';
 import {
@@ -49,6 +50,7 @@ export default function MapPage({ navigation, route }) {
 
   const initRef = useRef(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [leaveModal, setLeaveModal] = useState(false);
   const { partyId, markVisited, role, gameConfig } = useGameContext();
 
   // Reset camera lock when map regains focus (user returned from Camera screen)
@@ -277,9 +279,17 @@ export default function MapPage({ navigation, route }) {
   const totalZones     = gameZones.length;
   const remainingCount = totalZones - completedZoneIds.size;
 
+  function handleLeaveGame() {
+    setLeaveModal(true);
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
-      <PageHeader title="Map" onBack={() => navigation.goBack()} />
+      <PageHeader
+        title="Map"
+        onBack={fromGame ? handleLeaveGame : () => navigation.goBack()}
+        variant={fromGame ? 'cancel' : 'back'}
+      />
 
       <View style={styles.mapWrap}>
         {fromGame && totalZones > 0 && (
@@ -404,6 +414,23 @@ export default function MapPage({ navigation, route }) {
           setSensorModal(null);
           completeCheckpoint(cp, zone);
         }}
+      />
+
+      <ConfirmModal
+        visible={leaveModal}
+        title={partyId ? 'Leave Party?' : 'Leave Game?'}
+        message={partyId ? 'You will leave the current party session.' : 'Your progress will be lost.'}
+        buttons={[
+          { text: 'Stay', style: 'cancel', onPress: () => setLeaveModal(false) },
+          {
+            text: partyId ? 'Leave Party' : 'Leave Game',
+            style: 'destructive',
+            onPress: () => {
+              setLeaveModal(false);
+              navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+            },
+          },
+        ]}
       />
     </SafeAreaView>
   );

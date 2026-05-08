@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator, Alert,
+  StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
+import ConfirmModal from '../components/ConfirmModal';
 import BottomNavBar from '../components/BottomNavBar';
 import { submitElement, getElementTypes } from '../services/api';
 import { uploadPhotoToSupabase } from '../services/supabase';
@@ -30,6 +31,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
   const [submitting, setSubmitting] = useState(false);
   const [uploadStep, setUploadStep] = useState('');
   const [error, setError]         = useState('');
+  const [successModal, setSuccessModal] = useState(false);
 
   useEffect(() => {
     getElementTypes().then(setElementTypes);
@@ -66,10 +68,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
         setError(result.error ?? 'Upload failed. Please try again.');
         return;
       }
-      Alert.alert('Element added!', 'Your photo and element have been saved.', [
-        { text: 'OK', style: 'default' },
-      ]);
-      navigation.navigate('Map');
+      setSuccessModal(true);
     } catch (err) {
       setError(err?.message ?? 'Could not reach the server. Check your connection.');
     } finally {
@@ -174,6 +173,19 @@ export default function ImageUploadScreenPage({ navigation, route }) {
         onNavigateHome={() => navigation.navigate('Home')}
         onNavigateToProfile={() => navigation.navigate('Profile')}
         onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
+      />
+
+      <ConfirmModal
+        visible={successModal}
+        title="Element Added!"
+        message="Your photo and element have been saved."
+        buttons={[
+          {
+            text: 'OK',
+            style: 'default',
+            onPress: () => { setSuccessModal(false); navigation.navigate('Map'); },
+          },
+        ]}
       />
     </SafeAreaView>
   );
