@@ -1,5 +1,6 @@
 stages:
   - deploy
+  - mobile
 
 variables:
   NODE_VERSION: "20"
@@ -93,6 +94,23 @@ dashboard:deploy:
       --allow-unauthenticated
       --port 8080
       --project $GCP_PROJECT
+  only:
+    - main
+    - dev
+    - feature/pending-element-submission
+
+# ------------------------
+# MOBILE EAS UPDATE
+# ------------------------
+mobile:eas-update:
+  stage: mobile
+  image: node:$NODE_VERSION
+  before_script:
+    - npm install -g eas-cli
+    - cd frontend/mobile
+    - npm ci
+  script:
+    - eas update --branch $CI_COMMIT_REF_NAME --message "$CI_COMMIT_TITLE" --non-interactive
   only:
     - main
     - dev
