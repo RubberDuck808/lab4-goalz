@@ -49,8 +49,9 @@ namespace Goalz.Api.Controllers.Game
         [HttpPost("{id}/start")]
         public async Task<IActionResult> StartGame(long id)
         {
-            var found = await _partyService.StartGame(id);
-            if (!found) return NotFound("Party not found");
+            var result = await _partyService.StartGame(id);
+            if (!result.Success)
+                return result.Error == "Party not found" ? NotFound(result.Error) : BadRequest(result.Error);
             return Ok();
         }
 

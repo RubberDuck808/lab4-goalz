@@ -3,6 +3,7 @@ import {
   View, Text, Image, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
@@ -20,8 +21,8 @@ function parseGps(gpsStr) {
 export default function ImageUploadScreenPage({ navigation, route }) {
   const imageUri = route?.params?.imageUri ?? null;
   const imageSource = imageUri ? { uri: imageUri } : PLACEHOLDER_IMAGE;
-  const gps      = route?.params?.gps      ?? null;
 
+  const [gps, setGps] = useState(route?.params?.gps ?? null);
   const [elementTypes, setElementTypes] = useState([]);
   const [typeOpen, setTypeOpen]   = useState(false);
   const [elementType, setElementType] = useState('');
@@ -32,6 +33,13 @@ export default function ImageUploadScreenPage({ navigation, route }) {
 
   useEffect(() => {
     getElementTypes().then(setElementTypes);
+  }, []);
+
+  useEffect(() => {
+    if (gps) return;
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+      .then(loc => setGps(`${loc.coords.latitude},${loc.coords.longitude}`))
+      .catch(() => {});
   }, []);
 
   const canUpload = !!imageUri && !!elementType && species.trim().length > 0;

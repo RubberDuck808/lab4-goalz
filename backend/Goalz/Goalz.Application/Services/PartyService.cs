@@ -28,6 +28,9 @@ namespace Goalz.Core.Services
                 BoundaryId = request.BoundaryId,
                 ZoneCount = request.ZoneCount,
                 CheckpointsPerZone = request.CheckpointsPerZone,
+                AllowedRoles = request.AllowedRoles.Count > 0
+                    ? string.Join(',', request.AllowedRoles)
+                    : "Scout,Trailblazer,Explorer",
             };
 
             var createdParty = await _partyRepository.CreateAsync(party);
@@ -123,10 +126,13 @@ namespace Goalz.Core.Services
             };
         }
 
-        public async Task<bool> StartGame(long partyId)
+        public async Task<StartGameResult> StartGame(long partyId)
         {
             var party = await _partyRepository.GetPartyById(partyId);
-            if (party == null) return false;
+            if (party == null) return StartGameResult.Fail("Party not found");
+
+            var allowedRoles = party.GetAllowedRolesList();
+            if (allowedRoles.Count == 0) return StartGameResult.Fail("No roles configured.");
 
             party.Status = "InGame";
 
@@ -139,19 +145,20 @@ namespace Goalz.Core.Services
 
             if (party.GroupSize == null)
             {
-                // No groups — everyone plays as Explorer with both task types
+                // No groups — Explorer if allowed, otherwise first allowed role
+                var soloRole = allowedRoles.Contains("Explorer") ? "Explorer" : allowedRoles[0];
                 foreach (var m in shuffled)
-                    m.Role = "Explorer";
+                    m.Role = soloRole;
             }
             else
             {
-                // Alternate Scout/Trailblazer within each group of GroupSize
+                // Cycle through allowed roles — Scout+Trailblazer reproduces original alternation
                 for (int i = 0; i < shuffled.Count; i++)
-                    shuffled[i].Role = i % 2 == 0 ? "Scout" : "Trailblazer";
+                    shuffled[i].Role = allowedRoles[i % allowedRoles.Count];
             }
 
             await _partyRepository.SaveChangesAsync();
-            return true;
+            return StartGameResult.Ok();
         }
 
         public async Task<GameStateResponse?> GetGameState(long partyId)
@@ -175,6 +182,7 @@ namespace Goalz.Core.Services
                 BoundaryId = party.BoundaryId,
                 ZoneCount = party.ZoneCount,
                 CheckpointsPerZone = party.CheckpointsPerZone,
+                AllowedRoles = party.GetAllowedRolesList(),
             };
         }
 

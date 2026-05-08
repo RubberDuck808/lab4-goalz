@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -43,7 +45,15 @@ export default function MapPage({ navigation, route }) {
   const [sensorModal, setSensorModal] = useState(null);
 
   const initRef = useRef(false);
-  const { partyId, markVisited, role } = useGameContext();
+  const [cameraActive, setCameraActive] = useState(false);
+  const { partyId, markVisited, role, gameConfig } = useGameContext();
+
+  // Reset camera lock when map regains focus (user returned from Camera screen)
+  useFocusEffect(
+    useCallback(() => {
+      setCameraActive(false);
+    }, [])
+  );
 
   // ── Flash helper ────────────────────────────────────────────────────────────
   function showFlash(msg) {
@@ -117,9 +127,9 @@ export default function MapPage({ navigation, route }) {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Fit map to loaded boundaries ───────────────────────────────────────────
+  // ── Fit map to loaded boundaries (non-game only — game flies to nearest zone) ─
   useEffect(() => {
-    if (!mapReady) return;
+    if (!mapReady || fromGame) return;
     let allCoords = boundaries.flatMap(b => {
       const geom = safeParseGeometry(b.boundary);
       if (!geom) return [];
@@ -133,21 +143,46 @@ export default function MapPage({ navigation, route }) {
       });
     }
     if (!allCoords.length) return;
-    setTimeout(() => {
-      mapRef.current?.fitToCoordinates(allCoords, {
-        edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
-        animated: true,
+    // Try to include the user's position so the map centres on them
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      .then(loc => {
+        const userCoord = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+        setTimeout(() => {
+          mapRef.current?.fitToCoordinates([...allCoords, userCoord], {
+            edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
+            animated: true,
+          });
+        }, 200);
+      })
+      .catch(() => {
+        setTimeout(() => {
+          mapRef.current?.fitToCoordinates(allCoords, {
+            edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
+            animated: true,
+          });
+        }, 200);
       });
-    }, 200);
-  }, [mapReady, zones, boundaries]);
+  }, [mapReady, zones, boundaries, fromGame]);
+
+  // ── Zones scoped to the active game boundary + zoneCount cap ───────────────
+  // `zones` from the API contains every zone across all boundaries. During a
+  // game we only care about the boundary the player is playing in, further
+  // capped by the party's zoneCount setting (null = all zones in boundary).
+  const gameZones = React.useMemo(() => {
+    if (!fromGame) return zones;
+    const bid = gameConfig?.boundaryId;
+    const scoped = bid ? zones.filter(z => z.boundaryId === bid) : zones;
+    const cap = gameConfig?.zoneCount;
+    return cap ? scoped.slice(0, cap) : scoped;
+  }, [fromGame, zones, gameConfig]);
 
   // ── Initial zone assignment ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!fromGame || initRef.current || !zones.length || !checkpoints.length) return;
+    if (!fromGame || initRef.current || !gameZones.length || !checkpoints.length) return;
     initRef.current = true;
 
     async function init() {
-      let startZone = zones[0];
+      let startZone = gameZones[0];
       try {
         const loc = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
@@ -156,7 +191,7 @@ export default function MapPage({ navigation, route }) {
         if (loc) {
           const user = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
           let minDist = Infinity;
-          for (const z of zones) {
+          for (const z of gameZones) {
             const centroid = zoneCentroid(z);
             if (!centroid) continue;
             const dist = haversineMeters(user, centroid);
@@ -173,7 +208,7 @@ export default function MapPage({ navigation, route }) {
     }
 
     init();
-  }, [zones, checkpoints, fromGame, role]);
+  }, [gameZones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
   async function completeCheckpoint(cp, zone) {
@@ -192,7 +227,7 @@ export default function MapPage({ navigation, route }) {
     const newDone = new Set(completedZoneIds).add(zone.id);
     setCompletedZoneIds(newDone);
 
-    const nextZone = nearestLocked(zone, zones, newDone);
+    const nextZone = nearestLocked(zone, gameZones, newDone);
     if (nextZone) {
       showFlash('Zone Complete! 🎉');
       const nextCps = getCpsForZone(nextZone, checkpoints, role);
@@ -218,7 +253,7 @@ export default function MapPage({ navigation, route }) {
     }
   }
 
-  const totalZones     = zones.length;
+  const totalZones     = gameZones.length;
   const remainingCount = totalZones - completedZoneIds.size;
 
   return (
@@ -252,17 +287,18 @@ export default function MapPage({ navigation, route }) {
         {fromGame && (role === 'Trailblazer' || role === 'Explorer') && (
           <View style={styles.floatingCameraWrap} pointerEvents="box-none">
             <TouchableOpacity
-              style={styles.floatingCameraBtn}
+              style={[styles.floatingCameraBtn, cameraActive && styles.floatingCameraBtnDisabled]}
               activeOpacity={0.85}
-              onPress={async () => {
-                const loc = await Location.getCurrentPositionAsync({
-                  accuracy: Location.Accuracy.High,
-                }).catch(() => null);
-                const gps = loc ? `${loc.coords.latitude},${loc.coords.longitude}` : null;
-                navigation.navigate('Camera', { gps });
+              disabled={cameraActive}
+              onPress={() => {
+                setCameraActive(true);
+                navigation.navigate('Camera', { gps: null });
               }}
             >
-              <Text style={styles.floatingCameraIcon}>📷</Text>
+              {cameraActive
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Ionicons name="camera" size={24} color="#fff" />
+              }
             </TouchableOpacity>
           </View>
         )}
@@ -291,7 +327,7 @@ export default function MapPage({ navigation, route }) {
           )}
 
           <ZoneLayer
-            zones={zones}
+            zones={fromGame ? gameZones : zones}
             completedZoneIds={completedZoneIds}
             activeZone={activeZone}
             fromGame={fromGame}
@@ -358,9 +394,14 @@ const styles = StyleSheet.create({
 
   floatingCameraWrap: { position: 'absolute', bottom: 20, right: 20, zIndex: 15 },
   floatingCameraBtn: {
-    width: 56, height: 56, borderRadius: 28, backgroundColor: '#29e87b',
+    width: 69, height: 47, borderRadius: 12,
+    backgroundColor: '#1CB0F6',
+    borderBottomWidth: 4, borderBottomColor: '#1899D6',
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, elevation: 8,
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 6,
   },
-  floatingCameraIcon: { fontSize: 26 },
+  floatingCameraBtnDisabled: {
+    backgroundColor: '#8dd5f5',
+    borderBottomColor: '#6bbde0',
+  },
 });

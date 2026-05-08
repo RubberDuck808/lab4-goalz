@@ -14,6 +14,12 @@ public class Party
     public long? BoundaryId { get; set; }         // which boundary to play in
     public int? ZoneCount { get; set; }          // how many sub-zones to include
     public int? CheckpointsPerZone { get; set; } // max checkpoints per zone
+    public string AllowedRoles { get; set; } = "Scout,Trailblazer,Explorer";
+
+    public List<string> GetAllowedRolesList() =>
+        string.IsNullOrWhiteSpace(AllowedRoles)
+            ? []
+            : [.. AllowedRoles.Split(',', StringSplitOptions.RemoveEmptyEntries)];
 
     public Quiz? Quiz { get; set; }
     public ICollection<PartyGroup> PartyGroups { get; set; } = [];

@@ -37,7 +37,7 @@ export function GameProvider({ children }) {
       if (!res.success || !res.data) return;
 
       const { members: serverMembers, status, visitedCheckpointIds: visited,
-              groupSize, boundaryId, zoneCount, checkpointsPerZone } = res.data;
+              groupSize, boundaryId, zoneCount, checkpointsPerZone, allowedRoles } = res.data;
 
       setPartyStatus(status);
       setMembersState(serverMembers.map(m => m.username));
@@ -51,7 +51,8 @@ export function GameProvider({ children }) {
       }
 
       setVisited(new Set(visited || []));
-      setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone });
+      setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone,
+                           allowedRoles: allowedRoles ?? [] });
     }
 
     pollRef.current = poll;

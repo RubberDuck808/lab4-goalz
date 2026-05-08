@@ -111,12 +111,15 @@ function Section({ title, children }) {
 export default function GameSetupPage({ navigation, route }) {
   const singlePlayer = route?.params?.singlePlayer ?? false;
 
+  const ALL_ROLES = ['Scout', 'Trailblazer', 'Explorer'];
+
   const [partyName, setPartyName]           = useState('');
   const [useGroups, setUseGroups]           = useState(true);
   const [groupSize, setGroupSize]           = useState(4);
   const [boundaryId, setBoundaryId]         = useState(null);
   const [zoneCount, setZoneCount]           = useState(3);
   const [cpPerZone, setCpPerZone]           = useState(2);
+  const [allowedRoles, setAllowedRoles]     = useState(new Set(ALL_ROLES));
   const [boundaries, setBoundaries]         = useState([]);
   const [zones, setZones]                   = useState([]);
   const [checkpoints, setCheckpoints]       = useState([]);
@@ -149,15 +152,42 @@ export default function GameSetupPage({ navigation, route }) {
   // Max zones slider = how many zones the boundary actually has.
   const maxZones = Math.max(1, zonesInBoundary.length);
 
-  // Max checkpoints per zone = the smallest checkpoint count across all zones
-  // in this boundary (every zone must be able to satisfy the configured value).
-  const maxCpPerZone = useMemo(() => {
-    if (!zonesInBoundary.length || !checkpoints.length) return 10;
-    const counts = zonesInBoundary
-      .map(z => checkpoints.filter(cp => cp.zoneId === z.id).length)
-      .filter(c => c > 0);
-    return counts.length ? Math.min(...counts) : 10;
+  // Per-role minimum checkpoint count across all zones in the selected boundary.
+  const roleMaxCps = useMemo(() => {
+    const result = {};
+    ALL_ROLES.forEach(role => {
+      if (!zonesInBoundary.length || !checkpoints.length) { result[role] = 10; return; }
+      const counts = zonesInBoundary.map(z => {
+        const zCps = checkpoints.filter(cp => cp.zoneId === z.id);
+        if (role === 'Scout')       return zCps.filter(cp => cp.type === 'sensor').length;
+        if (role === 'Trailblazer') return zCps.filter(cp => cp.type !== 'sensor').length;
+        return zCps.length;
+      }).filter(c => c > 0);
+      result[role] = counts.length ? Math.min(...counts) : 0;
+    });
+    return result;
   }, [zonesInBoundary, checkpoints]);
+
+  // Overall max = the most-constrained allowed role. Ensures every role can satisfy the value.
+  const maxCpPerZone = useMemo(() => {
+    const selected = ALL_ROLES.filter(r => allowedRoles.has(r));
+    if (!selected.length) return 1;
+    return Math.max(1, Math.min(...selected.map(r => roleMaxCps[r] ?? 10)));
+  }, [allowedRoles, roleMaxCps]);
+
+  // Roles that are allowed but have 0 available checkpoints in some zone.
+  const roleWarnings = useMemo(
+    () => ALL_ROLES.filter(r => allowedRoles.has(r) && roleMaxCps[r] === 0),
+    [allowedRoles, roleMaxCps],
+  );
+
+  function toggleRole(r) {
+    setAllowedRoles(prev => {
+      const next = new Set(prev);
+      next.has(r) ? next.delete(r) : next.add(r);
+      return next;
+    });
+  }
 
   // Clamp zoneCount and cpPerZone whenever their ceilings shrink (e.g. boundary
   // switched to one that has fewer zones or checkpoints than the current values).
@@ -179,6 +209,10 @@ export default function GameSetupPage({ navigation, route }) {
       setError('Party name is required.');
       return;
     }
+    if (allowedRoles.size === 0) {
+      setError('At least one role must be selected.');
+      return;
+    }
     setError('');
     setLoading(true);
 
@@ -187,6 +221,7 @@ export default function GameSetupPage({ navigation, route }) {
       boundaryId,
       zoneCount: singlePlayer ? null : zoneCount,
       checkpointsPerZone: cpPerZone,
+      allowedRoles: [...allowedRoles],
     };
 
     if (singlePlayer) {
@@ -264,7 +299,31 @@ export default function GameSetupPage({ navigation, route }) {
           <Stepper min={1} max={maxCpPerZone} value={cpPerZone} onChange={setCpPerZone} />
           {maxCpPerZone < 10 && (
             <Text style={styles.hint}>
-              Max <Text style={styles.hintBold}>{maxCpPerZone}</Text> — limited by the fewest checkpoints in any zone of this boundary.
+              Max <Text style={styles.hintBold}>{maxCpPerZone}</Text>
+              {allowedRoles.size < 3
+                ? ' — limited by the most-constrained allowed role.'
+                : ' — limited by the fewest checkpoints in any zone of this boundary.'}
+            </Text>
+          )}
+        </Section>
+
+        {/* Allowed Roles */}
+        <Section title="Allowed Roles">
+          <View style={styles.chipRow}>
+            {ALL_ROLES.map(r => (
+              <TouchableOpacity
+                key={r}
+                style={[styles.chip, allowedRoles.has(r) && styles.chipActive]}
+                onPress={() => toggleRole(r)}
+              >
+                <Text style={[styles.chipText, allowedRoles.has(r) && styles.chipTextActive]}>{r}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {roleWarnings.length > 0 && (
+            <Text style={styles.warning}>
+              {roleWarnings.join(' & ')} {roleWarnings.length === 1 ? 'has' : 'have'} 0 checkpoints
+              in at least one zone — players with {roleWarnings.length === 1 ? 'this role' : 'these roles'} would have nothing to visit.
             </Text>
           )}
         </Section>
@@ -368,5 +427,6 @@ const styles = StyleSheet.create({
 
   hint:     { fontSize: 14, color: '#71717a', marginBottom: 8 },
   hintBold: { fontWeight: 'bold', color: '#27272a' },
+  warning:  { fontSize: 13, color: '#B45309', marginTop: 6 },
   error:    { color: '#ef4444', fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });
