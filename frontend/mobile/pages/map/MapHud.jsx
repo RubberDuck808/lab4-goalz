@@ -12,9 +12,9 @@ export default function MapHud({ targetCp, remainingCount, zoneCpsLeft }) {
             <Text style={styles.hudTargetName} numberOfLines={1}>
               {targetCp.name || targetCp.type}
             </Text>
-            <Text style={styles.hudTargetLabel}>
-              {targetCp.type === 'sensor' ? 'Sensor' : 'Element'}
-              {zoneCpsLeft > 1 ? `  ·  ${zoneCpsLeft} in zone` : ''}
+            <Text style={[styles.hudTargetLabel, targetCp.type === 'photo' && styles.hudTargetLabelPhoto]}>
+              {targetCp.type === 'sensor' ? 'Sensor' : targetCp.type === 'photo' ? 'Take a photo here' : 'Element'}
+              {targetCp.type !== 'photo' && zoneCpsLeft > 1 ? `  ·  ${zoneCpsLeft} in zone` : ''}
             </Text>
           </View>
         </View>
@@ -43,7 +43,8 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 3, elevation: 2,
   },
   hudTargetName: { fontSize: 14, fontWeight: '700', color: '#27272a', maxWidth: 160 },
-  hudTargetLabel:{ fontSize: 10, fontWeight: '600', color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
+  hudTargetLabel:      { fontSize: 10, fontWeight: '600', color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
+  hudTargetLabelPhoto: { color: '#FF9600' },
   hudRight:      { alignItems: 'flex-end' },
   hudCount:      { color: '#29e87b', fontSize: 22, fontWeight: '900', lineHeight: 24 },
   hudLabel:      { color: '#71717a', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },

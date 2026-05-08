@@ -6,6 +6,9 @@ export const ARBORETUM_REGION = {
 };
 
 export const VISIT_RADIUS_METERS = 30;
+// Photo spot: trigger radius for "arrived" detection and visible area on the map
+export const PHOTO_VISIT_RADIUS_METERS  = 20;
+export const PHOTO_AREA_DISPLAY_METERS  = 3;
 
 export function haversineMeters(a, b) {
   const R = 6371000;
@@ -54,6 +57,21 @@ export function getCpsForZone(zone, allCps, role) {
     if (role === 'Trailblazer') return cp.type !== 'sensor';
     return true;
   });
+}
+
+// Generates a virtual photo-spot checkpoint at the zone centroid.
+// Used when a zone has no real checkpoints for Trailblazer/Explorer.
+export function generatePhotoSpot(zone) {
+  const centroid = zoneCentroid(zone);
+  if (!centroid) return null;
+  return {
+    id: `photo-spot-${zone.id}`,
+    type: 'photo',
+    zoneId: zone.id,
+    latitude: centroid.latitude,
+    longitude: centroid.longitude,
+    name: 'Photo Spot',
+  };
 }
 
 export function nearestLocked(fromZone, allZones, doneIds) {

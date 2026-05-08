@@ -3,7 +3,7 @@ import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpaci
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
 import { useGameContext } from '../context/GameContext';
@@ -11,11 +11,14 @@ import { visitCheckpoint } from '../services/api/partyApi';
 import {
   ARBORETUM_REGION,
   VISIT_RADIUS_METERS,
+  PHOTO_VISIT_RADIUS_METERS,
+  PHOTO_AREA_DISPLAY_METERS,
   haversineMeters,
   safeParseGeometry,
   extractRings,
   coordsToLatLng,
   getCpsForZone,
+  generatePhotoSpot,
   nearestLocked,
   checkpointColor,
   zoneCentroid,
@@ -97,7 +100,8 @@ export default function MapPage({ navigation, route }) {
         ({ coords }) => {
           setTargetCp(prev => {
             if (!prev) return prev;
-            setNearTarget(haversineMeters(coords, { latitude: prev.latitude, longitude: prev.longitude }) <= VISIT_RADIUS_METERS);
+            const radius = prev.type === 'photo' ? PHOTO_VISIT_RADIUS_METERS : VISIT_RADIUS_METERS;
+            setNearTarget(haversineMeters(coords, { latitude: prev.latitude, longitude: prev.longitude }) <= radius);
             return prev;
           });
         },
@@ -176,6 +180,18 @@ export default function MapPage({ navigation, route }) {
     return cap ? scoped.slice(0, cap) : scoped;
   }, [fromGame, zones, gameConfig]);
 
+  // ── Photo-spot fallback ─────────────────────────────────────────────────────
+  // Returns real checkpoints for the zone, or a synthetic photo spot when
+  // Trailblazer/Explorer has no element checkpoints to visit there.
+  function getTargetCpsForZone(zone) {
+    const cps = getCpsForZone(zone, checkpoints, role);
+    if (cps.length === 0 && (role === 'Trailblazer' || role === 'Explorer')) {
+      const spot = generatePhotoSpot(zone);
+      return spot ? [spot] : [];
+    }
+    return cps;
+  }
+
   // ── Initial zone assignment ─────────────────────────────────────────────────
   useEffect(() => {
     if (!fromGame || initRef.current || !gameZones.length || !checkpoints.length) return;
@@ -200,7 +216,7 @@ export default function MapPage({ navigation, route }) {
         }
       } catch { /* keep fallback */ }
 
-      const startCps = getCpsForZone(startZone, checkpoints, role);
+      const startCps = getTargetCpsForZone(startZone);
       setActiveZone(startZone);
       setTargetCp(startCps[0] ?? null);
       setPendingZoneCps(startCps.slice(1));
@@ -230,7 +246,7 @@ export default function MapPage({ navigation, route }) {
     const nextZone = nearestLocked(zone, gameZones, newDone);
     if (nextZone) {
       showFlash('Zone Complete! 🎉');
-      const nextCps = getCpsForZone(nextZone, checkpoints, role);
+      const nextCps = getTargetCpsForZone(nextZone);
       setActiveZone(nextZone);
       setTargetCp(nextCps[0] ?? null);
       setPendingZoneCps(nextCps.slice(1));
@@ -243,11 +259,16 @@ export default function MapPage({ navigation, route }) {
     }
   }
 
-  function handleVisit() {
+  async function handleVisit() {
     if (!targetCp || !activeZone) return;
     setNearTarget(false);
     if (targetCp.type === 'sensor') {
       setSensorModal({ cp: targetCp, zone: activeZone, sensorId: targetCp.referenceId, sensorName: targetCp.name });
+    } else if (targetCp.type === 'photo') {
+      // Complete the zone progress immediately (arrived at spot), then open camera
+      await completeCheckpoint(targetCp, activeZone);
+      setCameraActive(true);
+      navigation.navigate('Camera', { gps: null });
     } else {
       completeCheckpoint(targetCp, activeZone);
     }
@@ -271,9 +292,13 @@ export default function MapPage({ navigation, route }) {
 
         {fromGame && nearTarget && targetCp && (
           <View style={styles.visitOverlay}>
-            <TouchableOpacity style={styles.visitBtn} onPress={handleVisit} activeOpacity={0.85}>
-              <Text style={styles.visitBtnLabel}>CHECKPOINT REACHED</Text>
-              <Text style={styles.visitBtnSub}>Tap to collect</Text>
+            <TouchableOpacity style={[styles.visitBtn, targetCp.type === 'photo' && styles.visitBtnPhoto]} onPress={handleVisit} activeOpacity={0.85}>
+              <Text style={styles.visitBtnLabel}>
+                {targetCp.type === 'photo' ? 'PHOTO SPOT REACHED' : 'CHECKPOINT REACHED'}
+              </Text>
+              <Text style={styles.visitBtnSub}>
+                {targetCp.type === 'photo' ? 'Tap to take a photo' : 'Tap to collect'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -333,13 +358,31 @@ export default function MapPage({ navigation, route }) {
             fromGame={fromGame}
           />
 
-          {fromGame && targetCp?.latitude != null && (
+          {fromGame && targetCp?.latitude != null && targetCp.type !== 'photo' && (
             <Marker
               coordinate={{ latitude: targetCp.latitude, longitude: targetCp.longitude }}
               anchor={{ x: 0.5, y: 0.5 }}
             >
               <View style={[styles.cpDot, { backgroundColor: checkpointColor(targetCp) }]} />
             </Marker>
+          )}
+
+          {fromGame && targetCp?.type === 'photo' && targetCp.latitude != null && (
+            <>
+              <Circle
+                center={{ latitude: targetCp.latitude, longitude: targetCp.longitude }}
+                radius={PHOTO_AREA_DISPLAY_METERS}
+                strokeColor="rgba(255,150,0,0.9)"
+                fillColor="rgba(255,150,0,0.25)"
+                strokeWidth={2}
+              />
+              <Marker
+                coordinate={{ latitude: targetCp.latitude, longitude: targetCp.longitude }}
+                anchor={{ x: 0.5, y: 0.5 }}
+              >
+                <View style={styles.photoSpotDot} />
+              </Marker>
+            </>
           )}
 
           {!fromGame && checkpoints.map((cp, i) =>
@@ -377,6 +420,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#29e87b', shadowOpacity: 0.55, shadowRadius: 16, elevation: 8,
   },
+  visitBtnPhoto: {
+    backgroundColor: '#FF9600',
+    shadowColor: '#FF9600',
+  },
   visitBtnLabel: { color: '#0a1a0f', fontSize: 14, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
   visitBtnSub:   { color: 'rgba(10,26,15,0.6)', fontSize: 12, fontWeight: '600', marginTop: 2 },
 
@@ -390,6 +437,11 @@ const styles = StyleSheet.create({
   cpDot: {
     width: 16, height: 16, borderRadius: 8, borderWidth: 2.5, borderColor: 'white',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 3, elevation: 3,
+  },
+  photoSpotDot: {
+    width: 20, height: 20, borderRadius: 10, borderWidth: 3, borderColor: '#FF9600',
+    backgroundColor: 'rgba(255,150,0,0.3)',
+    shadowColor: '#FF9600', shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
   },
 
   floatingCameraWrap: { position: 'absolute', bottom: 20, right: 20, zIndex: 15 },
