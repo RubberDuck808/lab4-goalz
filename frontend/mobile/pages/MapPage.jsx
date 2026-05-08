@@ -192,7 +192,6 @@ export default function MapPage({ navigation, route }) {
           .filter(b => boundaryDistanceMeters(b, userLocation) <= 1000)
           .map(b => b.id)
       );
-      if (!nearbyBoundaryIds.size) return zones;
       return zones.filter(z => nearbyBoundaryIds.has(z.boundaryId));
     }
     const bid = gameConfig?.boundaryId;

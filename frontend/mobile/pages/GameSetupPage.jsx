@@ -151,11 +151,10 @@ export default function GameSetupPage({ navigation, route }) {
       .finally(() => setLocationLoading(false));
   }, []);
 
-  // Boundaries within 1 km of the user. Falls back to all if location unavailable.
+  // Boundaries within 1 km of the user. Only falls back to all when location is unavailable.
   const nearbyBoundaries = useMemo(() => {
     if (!userLocation) return boundaries;
-    const nearby = boundaries.filter(b => boundaryDistanceMeters(b, userLocation) <= 1000);
-    return nearby.length > 0 ? nearby : boundaries;
+    return boundaries.filter(b => boundaryDistanceMeters(b, userLocation) <= 1000);
   }, [boundaries, userLocation]);
 
   // Auto-select nearest boundary once location + boundaries are ready.
@@ -288,26 +287,25 @@ export default function GameSetupPage({ navigation, route }) {
           {locationLoading ? (
             <ActivityIndicator size="small" color="#1CB0F6" style={{ alignSelf: 'flex-start' }} />
           ) : nearbyBoundaries.length === 0 ? (
-            <Text style={styles.hint}>No play areas found near your location.</Text>
+            <Text style={styles.hint}>
+              {userLocation
+                ? 'No play areas within 1 km of your location. Move closer to a play area to start a game.'
+                : 'No play areas found.'}
+            </Text>
           ) : (
-            <>
-              <View style={styles.chipRow}>
-                {nearbyBoundaries.map((b) => (
-                  <TouchableOpacity
-                    key={b.id}
-                    style={[styles.chip, boundaryId === b.id && styles.chipActive]}
-                    onPress={() => setBoundaryId(b.id)}
-                  >
-                    <Text style={[styles.chipText, boundaryId === b.id && styles.chipTextActive]}>
-                      {b.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {userLocation && (
-                <Text style={styles.hint}>Showing areas within 1 km of your location.</Text>
-              )}
-            </>
+            <View style={styles.chipRow}>
+              {nearbyBoundaries.map((b) => (
+                <TouchableOpacity
+                  key={b.id}
+                  style={[styles.chip, boundaryId === b.id && styles.chipActive]}
+                  onPress={() => setBoundaryId(b.id)}
+                >
+                  <Text style={[styles.chipText, boundaryId === b.id && styles.chipTextActive]}>
+                    {b.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
         </Section>
 
