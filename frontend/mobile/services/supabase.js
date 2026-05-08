@@ -57,7 +57,7 @@ export async function uploadPhotoToSupabase(imageUri) {
   // Read as base64 via expo-file-system — more reliable than fetch().blob() for
   // local file:// URIs on iOS/Android, especially for large HEIC/JPEG files.
   const base64 = await FileSystem.readAsStringAsync(imageUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
   const arrayBuffer = base64ToArrayBuffer(base64);
 
