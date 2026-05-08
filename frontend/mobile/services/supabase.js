@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 const SUPABASE_URL      = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
@@ -25,12 +26,16 @@ export async function uploadPhotoToSupabase(imageUri) {
   // usePhotoGallery always converts to JPEG before calling this function
   const filename = `photo-${Date.now()}-${randomSuffix()}.jpg`;
 
-  // expo-image-manipulator always outputs a small JPEG so fetch().blob() is reliable
-  const blob = await fetch(imageUri).then(r => r.blob());
+  const base64 = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' });
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(filename, blob, { contentType: 'image/jpeg', upsert: true });
+    .upload(filename, bytes, { contentType: 'image/jpeg', upsert: true });
 
   if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
