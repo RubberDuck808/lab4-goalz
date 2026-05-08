@@ -350,24 +350,6 @@ export default function MapPage({ navigation, route }) {
           </Animated.View>
         )}
 
-        {fromGame && (role === 'Trailblazer' || role === 'Explorer') && (
-          <View style={styles.floatingCameraWrap} pointerEvents="box-none">
-            <TouchableOpacity
-              style={[styles.floatingCameraBtn, cameraActive && styles.floatingCameraBtnDisabled]}
-              activeOpacity={0.85}
-              disabled={cameraActive}
-              onPress={() => {
-                setCameraActive(true);
-                navigation.navigate('Camera', { gps: null });
-              }}
-            >
-              {cameraActive
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Ionicons name="camera" size={24} color="#fff" />
-              }
-            </TouchableOpacity>
-          </View>
-        )}
 
         <MapView
           ref={mapRef}
