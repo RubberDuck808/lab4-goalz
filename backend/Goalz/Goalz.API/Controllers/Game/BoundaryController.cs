@@ -18,7 +18,14 @@ public class BoundaryController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var boundaries = await _boundaryService.GetAllAsync();
-        var result = boundaries.Select(b => new { b.Id, b.Name, b.Color });
+        var result = boundaries.Select(b => new
+        {
+            b.Id,
+            b.Name,
+            b.Color,
+            CentroidLatitude  = b.Boundary?.Centroid?.Y,
+            CentroidLongitude = b.Boundary?.Centroid?.X,
+        });
         return Ok(result);
     }
 }
