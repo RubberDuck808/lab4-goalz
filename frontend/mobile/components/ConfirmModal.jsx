@@ -11,7 +11,7 @@ const BUTTON_STYLES = {
     text: '#3f3f46',
   },
   destructive: {
-    bg: '#EA2B2B', border: '#9B1C1C',
+    bg: '#FF4B4B', border: '#90461F',
     text: '#fff',
   },
 };

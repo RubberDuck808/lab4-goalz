@@ -319,8 +319,8 @@ export default function MapPage({ navigation, route }) {
         )}
 
         {fromGame && targetCp && (() => {
-          const activeColor = targetCp.type === 'sensor' ? '#6366f1' : targetCp.type === 'photo' ? '#FF9600' : '#1CB0F6';
-          const activeBorder = targetCp.type === 'sensor' ? '#4338ca' : targetCp.type === 'photo' ? '#c87600' : '#0E8BC0';
+          const activeColor = '#1CB0F6';
+          const activeBorder = '#0E8BC0';
           return (
             <View style={styles.actionBtnWrap} pointerEvents="box-none">
               <TouchableOpacity

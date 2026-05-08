@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
+import GameButtons from '../components/GameButtons';
 import { useGameContext } from '../context/GameContext';
 
 const ROLE_COLORS = {
@@ -63,20 +64,20 @@ export default function YourRolePage({ navigation, route }) {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.tapLabel}>
-          {revealed ? 'YOUR ROLE!' : 'TAP TO\nREVEAL ROLE'}
-        </Text>
+        {!revealed && (
+          <Text style={styles.tapLabel}>TAP TO{'\n'}REVEAL ROLE</Text>
+        )}
 
         {revealed && (
-          <TouchableOpacity
-            style={styles.continueBtn}
+          <GameButtons
+            variant="accept"
             onPress={() => {
               if (singlePlayer) setRole(assignedRole);
               navigation.navigate('Map', { fromGame: true });
             }}
           >
-            <Text style={styles.continueBtnText}>Continue</Text>
-          </TouchableOpacity>
+            Continue
+          </GameButtons>
         )}
       </View>
     </SafeAreaView>
@@ -103,6 +104,4 @@ const styles = StyleSheet.create({
   questionMark: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
   roleText:     { fontSize: 22, fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' },
   tapLabel:     { fontSize: 22, fontWeight: 'bold', color: '#3f3f46', textTransform: 'uppercase', textAlign: 'center', lineHeight: 30 },
-  continueBtn:      { backgroundColor: '#2D7D46', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 48 },
-  continueBtnText:  { color: '#fff', fontSize: 16, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
 });
