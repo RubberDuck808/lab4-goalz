@@ -7,11 +7,7 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 const BUCKET = 'Photo';
 const SIGNED_URL_EXPIRES_IN = 31536000; // 1 year
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.');
-}
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? '', {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,
@@ -40,6 +36,9 @@ function randomSuffix() {
 }
 
 export async function uploadPhotoToSupabase(imageUri) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.');
+  }
   const mimeType = getMimeType(imageUri);
   const ext      = getExtension(imageUri);
   const filename = `photo-${Date.now()}-${randomSuffix()}.${ext}`;
