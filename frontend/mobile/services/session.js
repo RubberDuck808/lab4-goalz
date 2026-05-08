@@ -1,14 +1,6 @@
-import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// expo-secure-store is native-only; fall back to localStorage on web
-const storage = Platform.OS === 'web'
-  ? {
-      setItemAsync:    async (key, val) => { localStorage.setItem(key, val); },
-      getItemAsync:    async (key)      => localStorage.getItem(key) ?? null,
-      deleteItemAsync: async (key)      => { localStorage.removeItem(key); },
-    }
-  : SecureStore;
+const storage = SecureStore;
 
 const USER_KEY  = 'login_user';
 const TOKEN_KEY = 'login_token';

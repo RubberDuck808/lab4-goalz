@@ -1,13 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-const storage = Platform.OS === 'web'
-  ? {
-      setItemAsync: async (key, val) => { localStorage.setItem(key, val); },
-      getItemAsync: async (key) => localStorage.getItem(key) ?? null,
-    }
-  : SecureStore;
+const storage = SecureStore;
 
 const FONT_SCALE_KEY = 'accessibility_font_scale';
 const COLOR_MODE_KEY = 'accessibility_color_mode';
