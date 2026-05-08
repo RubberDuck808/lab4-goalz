@@ -28,8 +28,9 @@ export function usePhotoGallery() {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      quality: 1,
+      quality: 0.7,
       allowsEditing: false,
+      exif: false,
     });
 
     if (result.canceled) return { kind: 'cancelled' };

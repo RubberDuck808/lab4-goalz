@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
-const SUPABASE_URL  = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+const SUPABASE_URL      = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 const BUCKET = 'Photo';
 const SIGNED_URL_EXPIRES_IN = 31536000; // 1 year
@@ -38,18 +39,31 @@ function randomSuffix() {
   return Math.random().toString(36).slice(2, 9);
 }
 
+// Decode a base64 string to ArrayBuffer — works without external deps
+function base64ToArrayBuffer(base64) {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 export async function uploadPhotoToSupabase(imageUri) {
   const mimeType = getMimeType(imageUri);
   const ext      = getExtension(imageUri);
   const filename = `photo-${Date.now()}-${randomSuffix()}.${ext}`;
 
-  // Read the file as a Blob for the Supabase client
-  const response = await fetch(imageUri);
-  const blob     = await response.blob();
+  // Read as base64 via expo-file-system — more reliable than fetch().blob() for
+  // local file:// URIs on iOS/Android, especially for large HEIC/JPEG files.
+  const base64 = await FileSystem.readAsStringAsync(imageUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const arrayBuffer = base64ToArrayBuffer(base64);
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(filename, blob, { contentType: mimeType, upsert: true });
+    .upload(filename, arrayBuffer, { contentType: mimeType, upsert: true });
 
   if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 

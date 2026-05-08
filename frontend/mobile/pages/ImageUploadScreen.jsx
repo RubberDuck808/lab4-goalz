@@ -130,7 +130,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
             value={species}
             onChangeText={setSpecies}
             returnKeyType="done"
-            onSubmitEditing={handleUpload}
+            onSubmitEditing={() => {}}
           />
           <TouchableOpacity
             style={[styles.addBtn, species.trim() && styles.addBtnActive]}
