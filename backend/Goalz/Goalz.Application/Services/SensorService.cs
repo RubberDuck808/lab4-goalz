@@ -49,4 +49,37 @@ public class SensorService : ISensorService
         await _checkpointService.DeleteByReferenceAsync("sensor", id);
         return (true, null);
     }
+
+    public async Task StoreSensorData(SensorDataDTO sensorData)
+    {
+        ValidateSensorData(sensorData);
+
+
+    }
+
+    private void ValidateSensorData(SensorDataDTO sensorData)
+    {
+        var sensor = _repository.GetByIdAsync(sensorData.SensorId);
+
+        if (sensor == null) 
+        { 
+            throw new ArgumentNullException($"Sensor with ID {sensorData.SensorId} not found.");
+        } 
+        else if (sensorData.Temperature < -50 || sensorData.Temperature > 50)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sensorData.Temperature), "Temperature must be between -50 and 150 degrees Celsius.");
+        }
+        else if (sensorData.Humidity < 0 || sensorData.Humidity > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sensorData.Humidity), "Humidity must be between 0 and 100%.");
+        }
+        else if (sensorData.SoilMoisture < 0 || sensorData.SoilMoisture > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sensorData.SoilMoisture), "Soil moisture must be between 0 and 100%.");
+        }
+        else if (sensorData.RawMoisture < 0 || sensorData.RawMoisture > 1023)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sensorData.RawMoisture), "Raw moisture must be between 0 and 1023.");
+        }
+    }
 }
