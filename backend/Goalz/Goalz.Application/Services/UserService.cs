@@ -29,7 +29,8 @@ namespace Goalz.Core.Services
                 Username = user.Username,
                 Name = user.Name,
                 Email = user.Email,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                AvatarId = user.AvatarId,
             };
         }
 
@@ -58,7 +59,8 @@ namespace Goalz.Core.Services
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                AvatarId = user.AvatarId,
             }, null);
         }
 
@@ -81,10 +83,13 @@ namespace Goalz.Core.Services
                 user.Email = request.Email;
             }
 
+            if (request.AvatarId.HasValue && request.AvatarId.Value >= 1 && request.AvatarId.Value <= 7)
+                user.AvatarId = request.AvatarId.Value;
+
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return (new UpdateProfileResponse { Username = user.Username, Email = user.Email }, null);
+            return (new UpdateProfileResponse { Username = user.Username, Email = user.Email, AvatarId = user.AvatarId }, null);
         }
 
         public async Task<string?> ChangePasswordAsync(string username, ChangePasswordRequest request)

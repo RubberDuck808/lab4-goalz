@@ -15,6 +15,7 @@ export async function storeUser(user) {
     name: user?.name ?? user?.Name ?? '',
     email: user?.email ?? user?.Email ?? '',
     createdAt: user?.createdAt ?? user?.CreatedAt ?? null,
+    avatarId: user?.avatarId ?? user?.AvatarId ?? 1,
   };
 
   if (!token) {

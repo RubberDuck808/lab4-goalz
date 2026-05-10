@@ -128,11 +128,11 @@ export async function removeConnection(otherUsername) {
 
 // ── Users ────────────────────────────────────────────────────────────────────
 
-export async function updateProfile(username, email) {
+export async function updateProfile(username, email, avatarId) {
   const response = await apiFetch(`${BASE_URL}/api/game/users/profile`, {
     method: 'PUT',
     headers: await authHeaders(),
-    body: JSON.stringify({ username, email }),
+    body: JSON.stringify({ username, email, avatarId }),
   });
   if (response.ok) return { success: true, data: await response.json() };
   if (response.status === 409) return { success: false, error: await response.text() };

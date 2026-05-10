@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Mobile: Performance & security hardening](#mobile-performance--security-hardening--2026-05-10)
 1. [Feature: Pending element submission & admin approval flow](#feature-pending-element-submission--admin-approval-flow--2026-05-07)
 2. [Mobile: Camera flow — iOS/Android hardening](#mobile-camera-flow--iosandroid-hardening--2026-05-07)
 2. [Mobile: Fix camera task — camera opens and full photo flow works](#mobile-fix-camera-task--2026-05-07)
@@ -33,6 +34,76 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## Mobile + Backend: Player avatars — 2026-05-10 13:00
+
+### Added
+- `User.AvatarId` (int, default 1) — migration `20260510101043_AddUserAvatarId` adds the column; existing rows default to 0, which the client maps to avatar 1.
+- `frontend/mobile/utils/avatars.js` — `AVATAR_MAP` (1–7) and `getAvatar(avatarId)` helper; `avatarId` outside the valid range falls back to avatar 1.
+
+### Changed
+- `GameLoginResponse`, `GameSignUpResponse` — include `AvatarId` so the session is populated on login/signup.
+- `UpdateProfileRequest` — accepts optional `AvatarId` (1–7); values outside range are ignored by the service.
+- `UpdateProfileResponse` — returns updated `AvatarId`.
+- `FriendDto` — includes `AvatarId` from the friend's user record.
+- `LeaderboardEntryDto` — includes `AvatarId`.
+- `UserService` — `UpdateProfileAsync` validates and saves `AvatarId`; `LoginAsync` / `SignUpAsync` populate `AvatarId` in responses.
+- `FriendshipService` — `GetConnectionsAsync` / `GetRequestsAsync` project `AvatarId` into `FriendDto`.
+- `UserRepository.GetLeaderboardAsync` — projects `AvatarId` into `LeaderboardEntryDto`.
+- `session.js` `storeUser()` — persists `avatarId` to SecureStore alongside username/email.
+- `api.js` `updateProfile()` — forwards `avatarId` to the profile endpoint.
+- `UserRow.jsx` — accepts `avatarId` prop; replaces placeholder `<View>` with `<Image source={getAvatar(avatarId)}>`.
+- `FriendsTab.jsx` — passes `avatarId` to `UserRow` and `onViewProfile`.
+- `ProfilePage.jsx` — shows own avatar from session or viewed user's avatar from route param; `openProfile` forwards `avatarId` as nav param.
+- `EditProfilePage.jsx` — loads current `avatarId` from session; renders avatar picker grid (7 options, selected highlighted in blue); saves `avatarId` on profile update.
+- `LeaderboardPage.jsx` — passes `avatarId` to each `UserRow`.
+
+### Rationale
+- Storing an integer ID (not a URL or binary) is the correct pattern for predefined avatar sets — images are bundled in the app binary, no storage or CDN needed.
+- `AvatarId` lives on `User` (not a separate table) because it's a single, always-present profile attribute with no metadata of its own.
+- The `getAvatar` fallback to avatar 1 handles both `null` / `undefined` and the legacy `0` default from the migration, keeping the display safe across all existing and new accounts.
+
+> Issue closed after 45 min
+
+---
+
+## Mobile + Backend: Game map API endpoints — 2026-05-10 13:00
+
+### Added
+- `Goalz.API/Controllers/Game/MapController.cs` — new controller at `/api/game/map` with three read-only endpoints: `GET /api/game/map/zones`, `GET /api/game/map/boundaries`, `GET /api/game/map/checkpoints`. Returns full `ZoneDto` / `BoundaryDto` / `CheckpointDto` (including geometry) using the existing services — no new repositories or migrations.
+
+### Changed
+- `frontend/mobile/pages/MapPage.jsx` — replaced three `/api/dashboard/*` fetch calls with `/api/game/map/*` equivalents. Mobile map rendering no longer depends on the staff dashboard API.
+- `frontend/mobile/services/api/partyApi.js` `getCheckpoints()` — migrated from raw `fetch('/api/dashboard/checkpoints')` to `apiFetch('/api/game/map/checkpoints')` with auth headers; consistent with the rest of the party API.
+
+### Rationale
+- MapPage was borrowing dashboard endpoints (intended for the staff web app) because the game API lacked geometry-bearing responses. The new `/api/game/map/*` endpoints are the correct mobile-facing surface: authenticated players get map data through the game API, staff manage it through the dashboard API.
+- `getCheckpoints()` was the only remaining raw `fetch()` without auth headers or 401 handling in the party API layer.
+
+> Issue closed after 30 min
+
+---
+
+## Mobile: Performance & security hardening — 2026-05-10 13:00
+
+### Changed
+- **P1 — GameContext polling** (`context/GameContext.jsx`): interval now skips ticks when the app is in the background (`AppState.currentState !== 'active'`); immediately re-polls on foreground resume via `AppState.addEventListener`. Eliminates wasted requests while the phone screen is off or another app is in focus.
+- **P4 — FriendsTab staleness** (`components/FriendsTab.jsx`): added a 30-second stale window via `lastFetchedAt` ref — repeated focus events within the window skip the fetch, preventing duplicate API calls on tab-switch.
+- **S4 — MapPage fetch wrapper** (`pages/MapPage.jsx`): replaced three raw `fetch()` calls to `/api/dashboard/*` with `apiFetch()` so 401 responses trigger auto-logout consistently.
+- **S3 — Auth guard** (`App.js`): token check on mount (blank screen while SecureStore reads); `onReady` guard resets navigation to Login if no token present and the current route is not Login/SignUp.
+- **S2 — iOS ATS** (`app.config.js`): replaced `NSAllowsArbitraryLoads: true` with a localhost-only exception — production HTTPS traffic is now enforced on iOS.
+- **S5 — Debug log** (`pages/QuizPage.jsx`): removed unused `onPress={() => console.log('pressed')}` prop.
+- **S6 — Unmount cleanup** (`pages/LeaderboardPage.jsx`, `pages/ProfilePage.jsx`, `pages/EditProfilePage.jsx`): added `cancelled` flag to all three `useEffect` data-fetch blocks to prevent stale state updates after unmount.
+
+### Rationale
+- Polling without AppState check wastes battery and generates unnecessary backend load when the phone is backgrounded.
+- Raw `fetch()` in MapPage silently bypassed the 401 auto-logout path, making it inconsistent with the rest of the codebase and leaving unauthenticated users in a broken state.
+- `NSAllowsArbitraryLoads: true` disables Apple ATS globally — any HTTP connection on public WiFi is open to MITM interception.
+- FriendsTab was re-fetching on every focus event with no debounce; 30 s staleness window eliminates redundant calls during normal navigation.
+
+> Issue closed after 60 min
+
+---
 
 ## Feature: Pending element submission & admin approval flow — 2026-05-07 13:00
 

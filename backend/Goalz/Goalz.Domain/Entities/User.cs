@@ -9,6 +9,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public Role Role { get; set; } = Role.Player;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int AvatarId { get; set; } = 1;
 
     public ICollection<PartyMember> PartyMembers { get; set; } = [];
     public ICollection<Friendship> SentFriendships { get; set; } = [];

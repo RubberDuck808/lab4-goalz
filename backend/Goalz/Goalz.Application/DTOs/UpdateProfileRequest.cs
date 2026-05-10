@@ -4,5 +4,6 @@ namespace Goalz.Core.DTOs
     {
         public string? Username { get; set; }
         public string? Email { get; set; }
+        public int? AvatarId { get; set; }
     }
 }

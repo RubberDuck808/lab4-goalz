@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { getAvatar } from '../utils/avatars';
 
-export default function UserRow({ username, rank, score, badge, onPress }) {
+export default function UserRow({ username, rank, score, badge, onPress, avatarId }) {
   const content = (
     <View style={styles.row}>
       {rank != null && <Text style={styles.rank}>{rank}</Text>}
-      <View style={styles.avatar} />
+      <Image source={getAvatar(avatarId)} style={styles.avatar} />
       <Text style={styles.name}>{username}</Text>
       {score != null && <Text style={styles.score}>{score} pts</Text>}
       {badge != null && <Text style={styles.badge}>{badge}</Text>}
@@ -42,6 +43,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     backgroundColor: '#d4d4d8',
+    overflow: 'hidden',
   },
   name: {
     flex: 1,

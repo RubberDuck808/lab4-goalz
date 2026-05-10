@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import UserIcon from '../assets/User.svg';
@@ -15,13 +15,17 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
   const [connections, setConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const lastFetchedAt = useRef(0);
+  const STALE_MS = 30_000;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!targetUsername) return;
+    if (!force && Date.now() - lastFetchedAt.current < STALE_MS) return;
     setLoading(true);
     const tasks = [getConnections(targetUsername)];
     if (!connectionsOnly) tasks.push(getFriendRequests());
     const [connRes, reqRes] = await Promise.all(tasks);
+    lastFetchedAt.current = Date.now();
     setConnections(connRes.data ?? []);
     setRequests(reqRes?.data ?? []);
     setLoading(false);
@@ -72,9 +76,10 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
               <View style={styles.rowWrap}>
                 <UserRow
                   username={item.username}
+                  avatarId={item.avatarId}
                   onPress={
                     onViewProfile
-                      ? () => onViewProfile(item.username, !isConnections)
+                      ? () => onViewProfile(item.username, !isConnections, item.avatarId)
                       : undefined
                   }
                 />

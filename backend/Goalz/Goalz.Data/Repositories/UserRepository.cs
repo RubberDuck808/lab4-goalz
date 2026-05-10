@@ -73,6 +73,7 @@ namespace Goalz.Data.Repositories
                 .Select(u => new
                 {
                     Username = u.Username,
+                    AvatarId = u.AvatarId,
                     TotalPoints = u.PartyMembers
                         .SelectMany(pm => pm.PartyGroup.PartyGroupAnswers)
                         .Sum(pga => (long?)pga.ReceivedPoints) ?? 0L,
@@ -85,6 +86,7 @@ namespace Goalz.Data.Repositories
             {
                 Rank = i + 1,
                 Username = x.Username,
+                AvatarId = x.AvatarId,
                 TotalPoints = x.TotalPoints,
             });
         }

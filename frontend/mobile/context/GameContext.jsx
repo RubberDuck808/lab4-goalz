@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { getGameState } from '../services/api';
 import { getUser } from '../services/session';
 
@@ -57,8 +58,13 @@ export function GameProvider({ children }) {
 
     pollRef.current = poll;
     poll();
-    const t = setInterval(poll, 3000);
-    return () => { clearInterval(t); pollRef.current = null; };
+    const t = setInterval(() => {
+      if (AppState.currentState === 'active') poll();
+    }, 3000);
+    const appStateSub = AppState.addEventListener('change', state => {
+      if (state === 'active') poll();
+    });
+    return () => { clearInterval(t); pollRef.current = null; appStateSub.remove(); };
   }, [partyId]);
 
   const setParty = useCallback((id, code, name, initial = []) => {

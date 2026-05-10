@@ -75,7 +75,7 @@ export default function QuizPage({ navigation }) {
                 </View>
                 <View className="flex-1 flex-row flex-wrap p-2 mt-6">
                     {
-                        answers && answers.map((answer, index) => <QuizAnswerButton key={index} text={answer.answer} color={colors[index]} onPress={() => console.log('pressed')} selectedAnswer={selectedAnswer} setSelectedAnswer={() => setSelectedAnswer(answer)} />)
+                        answers && answers.map((answer, index) => <QuizAnswerButton key={index} text={answer.answer} color={colors[index]} selectedAnswer={selectedAnswer} setSelectedAnswer={() => setSelectedAnswer(answer)} />)
                     }
                 </View>
                 <GameButtons variant="accept" onPress={handleSubmit}>

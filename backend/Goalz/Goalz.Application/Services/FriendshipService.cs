@@ -25,7 +25,7 @@ namespace Goalz.Core.Services
             return friendships.Select(f =>
             {
                 var friend = f.RequesterId == user.Id ? f.Addressee : f.Requester;
-                return new FriendDto { FriendshipId = f.Id, Username = friend.Username };
+                return new FriendDto { FriendshipId = f.Id, Username = friend.Username, AvatarId = friend.AvatarId };
             });
         }
 
@@ -39,7 +39,8 @@ namespace Goalz.Core.Services
             return friendships.Select(f => new FriendDto
             {
                 FriendshipId = f.Id,
-                Username = f.Requester.Username
+                Username = f.Requester.Username,
+                AvatarId = f.Requester.AvatarId,
             });
         }
 

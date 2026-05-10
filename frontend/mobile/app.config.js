@@ -21,7 +21,12 @@ module.exports = {
         NSBluetoothAlwaysUsageDescription: 'Loggin needs Bluetooth to detect nearby checkpoints.',
         NSBluetoothPeripheralUsageDescription: 'Loggin needs Bluetooth to detect nearby checkpoints.',
         NSAppTransportSecurity: {
-          NSAllowsArbitraryLoads: true,
+          NSExceptionDomains: {
+            localhost: {
+              NSIncludesSubdomains: false,
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true,
+            },
+          },
         },
       },
     },

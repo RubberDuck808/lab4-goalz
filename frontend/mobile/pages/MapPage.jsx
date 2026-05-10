@@ -9,6 +9,7 @@ import PageHeader from '../components/PageHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import { useGameContext } from '../context/GameContext';
 import { visitCheckpoint } from '../services/api/partyApi';
+import { apiFetch } from '../services/api/api';
 import {
   ARBORETUM_REGION,
   VISIT_RADIUS_METERS,
@@ -130,9 +131,9 @@ export default function MapPage({ navigation, route }) {
     (async () => {
       try {
         const [zr, cr, br] = await Promise.all([
-          fetch(`${base}/api/dashboard/zones`),
-          fetch(`${base}/api/dashboard/checkpoints`),
-          fetch(`${base}/api/dashboard/boundaries`),
+          apiFetch(`${base}/api/game/map/zones`),
+          apiFetch(`${base}/api/game/map/checkpoints`),
+          apiFetch(`${base}/api/game/map/boundaries`),
         ]);
         if (cancelled) return;
         if (zr.ok) { const j = await zr.json(); if (!cancelled) setZones(Array.isArray(j) ? j : []); }

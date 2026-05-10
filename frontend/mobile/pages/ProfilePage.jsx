@@ -10,6 +10,7 @@ import GameButtons from '../components/GameButtons';
 import SettingsIcon from '../assets/Settings.svg';
 import { getUser } from '../services/session';
 import { acceptFriendRequest, declineFriendRequest, getConnections, removeConnection } from '../services/api';
+import { getAvatar } from '../utils/avatars';
 
 export default function ProfilePage({ navigation, route }) {
   const [user, setUser] = useState(null);
@@ -21,17 +22,20 @@ export default function ProfilePage({ navigation, route }) {
 
   const viewedUsername = route?.params?.username;
   const incomingRequest = route?.params?.incomingRequest === true;
+  const viewedAvatarId = route?.params?.avatarId ?? 1;
   const isOther = !!viewedUsername && viewedUsername !== user?.username;
 
   useEffect(() => {
     if (!isOther || !user?.username || !viewedUsername) return;
+    let cancelled = false;
     getConnections(user.username).then(res => {
-      setIsFriend((res.data ?? []).some(c => c.username === viewedUsername));
+      if (!cancelled) setIsFriend((res.data ?? []).some(c => c.username === viewedUsername));
     });
+    return () => { cancelled = true; };
   }, [isOther, user?.username, viewedUsername]);
 
-  function openProfile(username, incoming) {
-    navigation.push('Profile', { username, incomingRequest: !!incoming });
+  function openProfile(username, incoming, avatarId) {
+    navigation.push('Profile', { username, incomingRequest: !!incoming, avatarId });
   }
 
   async function handleAccept() {
@@ -75,7 +79,7 @@ export default function ProfilePage({ navigation, route }) {
           </Text>
           <Text style={styles.badges}>Badges 0</Text>
         </View>
-        <Image source={require('../assets/UserAvatar_1.png')} style={styles.avatar} resizeMode="contain" />
+        <Image source={getAvatar(isOther ? viewedAvatarId : user?.avatarId)} style={styles.avatar} resizeMode="contain" />
       </View>
 
       {isOther && (

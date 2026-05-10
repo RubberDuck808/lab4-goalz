@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
 import { getUser, updateStoredUser } from '../services/session';
 import { updateProfile, changePassword } from '../services/api';
+import { getAvatar, AVATAR_COUNT } from '../utils/avatars';
 
 export default function EditProfilePage({ navigation }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [avatarId, setAvatarId] = useState(1);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,12 +23,14 @@ export default function EditProfilePage({ navigation }) {
   const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     getUser().then(user => {
-      if (user) {
-        setUsername(user.username ?? '');
-        setEmail(user.email ?? '');
-      }
+      if (cancelled || !user) return;
+      setUsername(user.username ?? '');
+      setEmail(user.email ?? '');
+      setAvatarId(user.avatarId ?? 1);
     });
+    return () => { cancelled = true; };
   }, []);
 
   async function handleSaveProfile() {
@@ -37,10 +41,10 @@ export default function EditProfilePage({ navigation }) {
       return;
     }
     setSavingProfile(true);
-    const result = await updateProfile(username.trim(), email.trim());
+    const result = await updateProfile(username.trim(), email.trim(), avatarId);
     setSavingProfile(false);
     if (result.success) {
-      await updateStoredUser({ username: result.data.username, email: result.data.email });
+      await updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId });
       setProfileSuccess('Profile updated.');
     } else {
       setProfileError(result.error ?? 'Something went wrong.');
@@ -80,7 +84,21 @@ export default function EditProfilePage({ navigation }) {
       <PageHeader title="Edit Profile" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        <Text style={styles.sectionTitle}>Profile Info</Text>
+        <Text style={styles.sectionTitle}>Avatar</Text>
+        <View style={styles.avatarGrid}>
+          {Array.from({ length: AVATAR_COUNT }, (_, i) => i + 1).map(id => (
+            <TouchableOpacity
+              key={id}
+              onPress={() => setAvatarId(id)}
+              style={[styles.avatarOption, avatarId === id && styles.avatarSelected]}
+              activeOpacity={0.75}
+            >
+              <Image source={getAvatar(id)} style={styles.avatarImage} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Profile Info</Text>
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Username</Text>
           <TextInput
@@ -164,6 +182,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3f3f46',
     marginBottom: -4,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-start',
+  },
+  avatarOption: {
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    padding: 2,
+  },
+  avatarSelected: {
+    borderColor: '#3b82f6',
+  },
+  avatarImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   errorText: { color: '#ef4444', fontSize: 13, alignSelf: 'flex-start' },
   successText: { color: '#16a34a', fontSize: 13, alignSelf: 'flex-start' },

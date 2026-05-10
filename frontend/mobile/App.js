@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { GameProvider } from './context/GameContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from './services/navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getToken } from './services/session';
 
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -33,11 +35,32 @@ import AllCheckpointsCompletePage from './pages/AllCheckpointsCompletePage';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    getToken().then(() => setReady(true));
+  }, []);
+
+  if (!ready) {
+    return <SafeAreaProvider><View style={{ flex: 1, backgroundColor: '#fff' }} /></SafeAreaProvider>;
+  }
+
   return (
     <AccessibilityProvider>
       <GameProvider>
         <SafeAreaProvider>
-          <NavigationContainer ref={navigationRef}>
+          <NavigationContainer
+            ref={navigationRef}
+            onReady={async () => {
+              const token = await getToken();
+              if (!token) {
+                const route = navigationRef.current?.getCurrentRoute()?.name;
+                if (route && route !== 'Login' && route !== 'SignUp') {
+                  navigationRef.current.reset({ index: 0, routes: [{ name: 'Login' }] });
+                }
+              }
+            }}
+          >
             <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none' }}>
               <Stack.Screen name="Login"       component={Login} />
               <Stack.Screen name="SignUp"      component={SignUp} />

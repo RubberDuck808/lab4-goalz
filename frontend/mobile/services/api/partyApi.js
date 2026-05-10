@@ -82,7 +82,9 @@ export async function getGameState(partyId) {
 
 export async function getCheckpoints() {
   try {
-    const response = await fetch(`${BASE_URL}/api/dashboard/checkpoints`);
+    const response = await apiFetch(`${BASE_URL}/api/game/map/checkpoints`, {
+      headers: await authHeaders(),
+    });
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, data: [] };
   } catch {

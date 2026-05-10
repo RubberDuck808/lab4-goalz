@@ -14,8 +14,10 @@ export default function LeaderboardPage({ navigation }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       const [userRes, lbRes] = await Promise.all([getUser(), getLeaderboard()]);
+      if (cancelled) return;
       setCurrentUsername(userRes?.username ?? null);
       if (lbRes.success) {
         setEntries(lbRes.data);
@@ -25,6 +27,7 @@ export default function LeaderboardPage({ navigation }) {
       setLoading(false);
     }
     load();
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -57,6 +60,7 @@ export default function LeaderboardPage({ navigation }) {
                 username={item.username}
                 rank={item.rank}
                 score={item.totalPoints}
+                avatarId={item.avatarId}
               />
             </View>
           )}
