@@ -27,6 +27,8 @@ export default function BottomNavBar({ onNavigateHome, onNavigateToProfile, onNa
             onPress={handlers[screenKey]}
             style={[styles.btn, isActive ? styles.btnActive : styles.btnInactive]}
             activeOpacity={0.75}
+            accessibilityLabel={alt}
+            accessibilityRole="button"
           >
             <Icon width={width} height={height} />
           </TouchableOpacity>

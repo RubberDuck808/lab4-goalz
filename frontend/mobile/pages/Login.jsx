@@ -34,7 +34,7 @@ export default function Login({ navigation }) {
           return;
         }
         navigation.replace('Home');
-        ImagePicker.requestCameraPermissionsAsync();
+        await ImagePicker.requestCameraPermissionsAsync();
       } else {
         setError(result.error);
       }

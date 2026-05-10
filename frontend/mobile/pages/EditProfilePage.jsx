@@ -120,7 +120,7 @@ export default function EditProfilePage({ navigation }) {
           <GameButtons
             variant="task"
             onPress={handleSaveProfile}
-            style={savingProfile ? styles.dimmed : undefined}
+            disabled={savingProfile}
           >
             {savingProfile ? 'Saving...' : 'Save Profile'}
           </GameButtons>
@@ -154,7 +154,7 @@ export default function EditProfilePage({ navigation }) {
           <GameButtons
             variant="accept"
             onPress={handleChangePassword}
-            style={savingPassword ? styles.dimmed : undefined}
+            disabled={savingPassword}
           >
             {savingPassword ? 'Saving...' : 'Change Password'}
           </GameButtons>
@@ -206,5 +206,4 @@ const styles = StyleSheet.create({
   },
   errorText: { color: '#ef4444', fontSize: 13, alignSelf: 'flex-start' },
   successText: { color: '#16a34a', fontSize: 13, alignSelf: 'flex-start' },
-  dimmed: { opacity: 0.6 },
 });

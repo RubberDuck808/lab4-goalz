@@ -16,7 +16,7 @@ export default function UserRow({ username, rank, score, badge, onPress, avatarI
 
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.75}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.75} accessibilityLabel={username} accessibilityRole="button">
         {content}
       </TouchableOpacity>
     );

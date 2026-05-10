@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert, BackHandler } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, BackHandler, Share, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import PageHeader from '../components/PageHeader';
@@ -38,6 +38,12 @@ export default function PartyOwnerPage({ navigation }) {
     }, [confirmCancel])
   );
 
+  async function handleShare() {
+    try {
+      await Share.share({ message: `Join my Goalz party! Code: ${partyCode}` });
+    } catch {}
+  }
+
   async function handleStart() {
     if (!partyId) return;
     await startGame(partyId);
@@ -49,10 +55,10 @@ export default function PartyOwnerPage({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Party" onBack={confirmCancel} />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.codeBox}>
-          <Text style={styles.codeLabel}>Party Code</Text>
+        <TouchableOpacity style={styles.codeBox} onPress={handleShare} activeOpacity={0.75}>
+          <Text style={styles.codeLabel}>Party Code — tap to share</Text>
           <Text style={styles.codeValue}>{partyCode}</Text>
-        </View>
+        </TouchableOpacity>
         <View style={styles.btnCenter}>
           <GameButtons variant="accept" onPress={handleStart}>
             Start

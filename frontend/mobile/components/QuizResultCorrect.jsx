@@ -1,8 +1,8 @@
 import React from 'react'
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import { SafeAreaView, StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { FontAwesome } from '@expo/vector-icons';
 
-export default function QuizResultCorrect({score, streak}) {
+export default function QuizResultCorrect({ score, streak, onContinue }) {
   return (
     <SafeAreaView 
         style={{ flex: 1, backgroundColor: '#58CC02'}}
@@ -38,11 +38,16 @@ export default function QuizResultCorrect({score, streak}) {
                 </View>
             </View>
             <View className="mt-4 w-full py-5 justify-center items-center">
-                <Text 
+                <Text
                     className="text-white text-center text-xl font-bold m-auto"
                     style={{ width: '80%' }}
                 >Tip: Keep your answer streak going, to get more bonus points!</Text>
             </View>
+            {onContinue && (
+                <TouchableOpacity onPress={onContinue} style={styles.continueBtn}>
+                    <Text style={styles.continueBtnText}>CONTINUE</Text>
+                </TouchableOpacity>
+            )}
         </View>
     </SafeAreaView>
   )
@@ -54,5 +59,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 80,
-  }
+  },
+  continueBtn: {
+    backgroundColor: '#5DA700',
+    borderBottomWidth: 4,
+    borderBottomColor: '#3d7300',
+    borderRadius: 13,
+    width: 328,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  continueBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+    letterSpacing: 1,
+  },
 });

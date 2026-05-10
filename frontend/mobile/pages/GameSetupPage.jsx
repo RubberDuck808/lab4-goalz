@@ -259,7 +259,6 @@ export default function GameSetupPage({ navigation, route }) {
       setParty(id, code, name, members ?? []);
       navigation.navigate('PartyOwner');
     }
-    setLoading(false);
   }
 
   return (

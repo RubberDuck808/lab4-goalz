@@ -8,7 +8,7 @@ import GameButtons from '../components/GameButtons';
 import { getSensorData } from '../services/api';
 
 export default function SensorDataPage({ navigation, route }) {
-  const sensorId = route?.params?.sensorId ?? 27;
+  const sensorId = route?.params?.sensorId ?? null;
   const sensorName = route?.params?.sensorName ?? 'Nearby Sensor';
 
   const [modalVisible, setModalVisible] = useState(true);
@@ -17,6 +17,11 @@ export default function SensorDataPage({ navigation, route }) {
   const [error, setError] = useState('');
 
   async function handleCheckSensor() {
+    if (!sensorId) {
+      setModalVisible(false);
+      setError('No sensor ID provided.');
+      return;
+    }
     setModalVisible(false);
     setLoading(true);
     try {

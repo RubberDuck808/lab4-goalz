@@ -15,7 +15,7 @@ const VARIANTS = {
   party:   { bg: '#FFC107', border: '#CC8F00' },
 };
 
-export default function GameButtons({ children, onPress, variant = 'task', size = 'default', style }) {
+export default function GameButtons({ children, onPress, variant = 'task', size = 'default', style, disabled = false }) {
   const s = SIZES[size] || SIZES.default;
   const v = VARIANTS[variant] || VARIANTS.task;
 
@@ -23,6 +23,7 @@ export default function GameButtons({ children, onPress, variant = 'task', size 
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
+      disabled={disabled}
       style={[
         styles.base,
         {
@@ -37,6 +38,7 @@ export default function GameButtons({ children, onPress, variant = 'task', size 
           borderTopWidth: 0,
         },
         style,
+        disabled && styles.disabled,
       ]}
     >
       <AppText style={styles.text}>{children}</AppText>
@@ -49,6 +51,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  disabled: { opacity: 0.5 },
   text: {
     color: '#ffffff',
     fontWeight: 'bold',

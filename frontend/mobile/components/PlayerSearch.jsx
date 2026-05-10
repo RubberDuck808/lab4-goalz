@@ -45,7 +45,9 @@ export default function PlayerSearch({ currentUsername }) {
     setSent(prev => ({ ...prev, [username]: res.success ? 'sent' : 'error' }));
   }
 
-  const showDropdown = query.trim().length >= 2;
+  const trimmed = query.trim();
+  const showHint = trimmed.length > 0 && trimmed.length < 2;
+  const showDropdown = trimmed.length >= 2;
 
   return (
     <View style={styles.wrapper}>
@@ -64,6 +66,10 @@ export default function PlayerSearch({ currentUsername }) {
         {loading && <ActivityIndicator size="small" color="#a1a1aa" />}
       </View>
 
+      {showHint && (
+        <Text style={styles.hintText}>Enter at least 2 characters</Text>
+      )}
+
       {showDropdown && (
         <View style={styles.dropdown}>
           {results.length === 0 && !loading ? (
@@ -80,7 +86,7 @@ export default function PlayerSearch({ currentUsername }) {
                     <TouchableOpacity
                       style={[styles.addBtn, state === 'sent' && styles.addBtnSent]}
                       onPress={() => handleAdd(user.username)}
-                      disabled={!!state}
+                      disabled={state === 'sent' || state === 'sending'}
                     >
                       <Text style={[styles.addBtnText, state === 'sent' && styles.addBtnTextSent]}>
                         {state === 'sent' ? 'Sent' : state === 'error' ? 'Retry' : 'Add'}
@@ -119,6 +125,12 @@ const styles = StyleSheet.create({
     padding: 0,
   },
 
+  hintText: {
+    fontSize: 12,
+    color: '#a1a1aa',
+    marginTop: 4,
+    marginLeft: 4,
+  },
   dropdown: {
     marginTop: 4,
     borderWidth: 1,

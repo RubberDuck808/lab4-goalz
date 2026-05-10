@@ -1,16 +1,16 @@
-import React from 'react'
-import { SafeAreaView } from 'react-native'
-import QuizResultInCorrect from '../components/QuizResultIncorrect'
-import QuizResultCorrect from '../components/QuizResultCorrect'
+import React from 'react';
+import QuizResultIncorrect from '../components/QuizResultIncorrect';
+import QuizResultCorrect from '../components/QuizResultCorrect';
 
-export default function QuizResultPage({ route }) {
-  const { score, total } = route.params;
-  
-  const renderContent = () => {
-    {
-      return score == 0 ? <QuizResultInCorrect /> : <QuizResultCorrect />
-    }
+export default function QuizResultPage({ navigation, route }) {
+  const { score = 0, total = 0 } = route?.params ?? {};
+
+  function handleContinue() {
+    navigation.navigate('Home');
   }
 
-  return renderContent();  
+  if (score > 0) {
+    return <QuizResultCorrect score={score} total={total} onContinue={handleContinue} />;
+  }
+  return <QuizResultIncorrect score={score} total={total} onContinue={handleContinue} />;
 }
