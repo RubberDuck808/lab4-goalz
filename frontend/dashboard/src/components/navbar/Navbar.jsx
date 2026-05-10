@@ -34,7 +34,10 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
 
       <nav
         className={`
-          relative bg-secondary-black w-[260px] h-full fixed md:static top-0 left-0 z-50
+          fixed md:static top-0 left-0 z-50
+          w-[280px] md:w-auto
+          h-screen md:h-full
+          bg-secondary-black
           transform transition-transform duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
@@ -75,6 +78,12 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
           <Navitem
             name="Game Map"
             icon="fa-map"
+            selectedItem={selectedItem}
+            setSelectedItem={handleSelect}
+          />
+          <Navitem
+            name="Sensor Management"
+            icon="fa-wifi"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />

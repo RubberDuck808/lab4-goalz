@@ -5,6 +5,7 @@ import Reports from '../components/dashboard/reports/reports';
 import ImportData from '../components/dashboard/import/import';
 import ArboretumMap from '../components/dashboard/map/ArboretumMap';
 import Settings from '../components/dashboard/settings/Settings';
+import SensorManagement from '../components/dashboard/sensors/SensorManagement';
 
 export default function Overview() {
   const [selectedItem, setSelectedItem] = useState("Arboretum Dashboard");
@@ -15,6 +16,8 @@ export default function Overview() {
         return <DashboardOverview setSelectedItem={setSelectedItem} />;
       case "Game Map":
         return <ArboretumMap />;
+      case "Sensor Management":
+        return <SensorManagement />;
       case "Reports":
         return <Reports />;
       case "Import dataset":
@@ -28,11 +31,11 @@ export default function Overview() {
 
 
   return (
-    <main className='h-full w-full flex flex'>
+    <main className='h-full w-full flex'>
       <div className='h-full'>
         <Navbar selectedItem={selectedItem} setSelectedItem={setSelectedItem} />
       </div>
-      <div className='w-full h-full overflow-y-auto'>
+      <div className='w-full h-full overflow-y-auto flex-1'>
         {renderContent()}
       </div>
     </main>

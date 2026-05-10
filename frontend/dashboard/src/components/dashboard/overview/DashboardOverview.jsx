@@ -6,7 +6,6 @@
     import { overviewService } from "../../../services/overviewService";
     import ManageElement from "./ManageElement";
     import ElementDetails from "./ElementDetails";
-    import SensorDetails from "./SensorDetails";
     import Loading from "../../Loading/Loading";
 
     const ELEMENT_TYPE_LABELS = {
@@ -26,7 +25,6 @@
         const [isModalOpen, setIsModalOpen] = useState(false);
         const [checkpoints, setCheckpoints] = useState([]);
         const [selectedElement, setSelectedElement] = useState(null);
-        const [selectedSensor, setSelectedSensor] = useState(null);
         const [isLoading, setIsLoading] = useState(true);
         const [coordsPick, setCoordsPick] = useState(null);
 
@@ -45,31 +43,24 @@
 
         // Opening the add modal clears any selection
         useEffect(() => {
-            if (isModalOpen) {
-                setSelectedElement(null);
-                setSelectedSensor(null);
-            }
+            if (isModalOpen) setSelectedElement(null);
         }, [isModalOpen]);
 
-        // Selecting an element or sensor closes the add modal
+        // Selecting an element closes the add modal
         useEffect(() => {
-            if (selectedElement || selectedSensor) setIsModalOpen(false);
-        }, [selectedElement, selectedSensor]);
+            if (selectedElement) setIsModalOpen(false);
+        }, [selectedElement]);
 
         const handleCheckpointClick = useCallback((cp) => {
             if (cp.type === 'element') {
                 const el = elements.find(e => e.id === cp.referenceId);
-                if (el) { setSelectedSensor(null); setSelectedElement(el); }
-            } else if (cp.type === 'sensor') {
-                const sensor = sensors.find(s => s.id === cp.referenceId);
-                if (sensor) { setSelectedElement(null); setSelectedSensor(sensor); }
+                if (el) setSelectedElement(el);
             }
-        }, [elements, sensors]);
+        }, [elements]);
 
         const handleOnExtentClick = () => {
             setIsModalOpen(false);
             setSelectedElement(null);
-            setSelectedSensor(null);
             setCoordsPick(null);
         };
 
@@ -80,16 +71,6 @@
 
         const handleElementSaved = () => {
             setSelectedElement(null);
-            fetchCheckpoints();
-        };
-
-        const handleSensorDeleted = () => {
-            setSelectedSensor(null);
-            fetchCheckpoints();
-        };
-
-        const handleSensorSaved = () => {
-            setSelectedSensor(null);
             fetchCheckpoints();
         };
 
@@ -137,7 +118,7 @@
             ? Math.round((elements.filter((e) => e.elementType?.id === TREE_TYPE_ID).length / elements.length) * 100)
             : 0;
 
-        const sidePanel = isModalOpen ? 'add' : selectedElement ? 'element' : selectedSensor ? 'sensor' : null;
+        const sidePanel = isModalOpen ? 'add' : selectedElement ? 'element' : null;
 
       return (
   <div className="flex flex-col min-h-screen h-full relative overflow-hidden">
@@ -175,16 +156,6 @@
               element={selectedElement}
               onElementSaved={handleElementSaved}
               onElementDeleted={handleElementDeleted}
-            />
-          </div>
-        )}
-
-        {sidePanel === "sensor" && (
-          <div className="w-full lg:w-[380px]">
-            <SensorDetails
-              sensor={selectedSensor}
-              onSensorSaved={handleSensorSaved}
-              onSensorDeleted={handleSensorDeleted}
             />
           </div>
         )}

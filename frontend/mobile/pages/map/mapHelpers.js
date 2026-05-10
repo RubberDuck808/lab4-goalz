@@ -46,14 +46,14 @@ export function zoneCentroid(zone) {
   return ringCentroid(extractRings(geom)[0]);
 }
 
-export function pickCpForZone(zone, allCps, role) {
-  const cps = allCps.filter(cp => {
+// Returns all eligible checkpoints for a zone in a stable order.
+export function getCpsForZone(zone, allCps, role) {
+  return allCps.filter(cp => {
     if (cp.zoneId !== zone.id) return false;
     if (role === 'Scout')       return cp.type === 'sensor';
     if (role === 'Trailblazer') return cp.type !== 'sensor';
     return true;
   });
-  return cps.length ? cps[Math.floor(Math.random() * cps.length)] : null;
 }
 
 export function nearestLocked(fromZone, allZones, doneIds) {

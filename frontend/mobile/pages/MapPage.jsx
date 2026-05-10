@@ -14,7 +14,7 @@ import {
   safeParseGeometry,
   extractRings,
   coordsToLatLng,
-  pickCpForZone,
+  getCpsForZone,
   nearestLocked,
   checkpointColor,
   zoneCentroid,
@@ -37,6 +37,7 @@ export default function MapPage({ navigation, route }) {
   const [activeZone,       setActiveZone]       = useState(null);
   const [completedZoneIds, setCompletedZoneIds] = useState(new Set());
   const [targetCp,         setTargetCp]         = useState(null);
+  const [pendingZoneCps,   setPendingZoneCps]   = useState([]); // remaining checkpoints in active zone
   const [nearTarget,       setNearTarget]        = useState(false);
   const [flashMsg,         setFlashMsg]         = useState(null);
   const flashAnim = useRef(new Animated.Value(0)).current;
@@ -172,8 +173,10 @@ export default function MapPage({ navigation, route }) {
         }
       } catch { /* keep fallback */ }
 
+      const startCps = getCpsForZone(startZone, checkpoints, role);
       setActiveZone(startZone);
-      setTargetCp(pickCpForZone(startZone, checkpoints, role));
+      setTargetCp(startCps[0] ?? null);
+      setPendingZoneCps(startCps.slice(1));
       flyToZone(startZone);
     }
 
@@ -184,19 +187,30 @@ export default function MapPage({ navigation, route }) {
   async function completeCheckpoint(cp, zone) {
     markVisited(cp.id);
     if (partyId) await visitCheckpoint(partyId, cp.id).catch(() => {});
-
-    const newDone = new Set(completedZoneIds).add(zone.id);
-    setCompletedZoneIds(newDone);
     setNearTarget(false);
 
-    const next = nearestLocked(zone, zones, newDone);
-    if (next) {
+    // More checkpoints left in this zone — advance to the next one.
+    if (pendingZoneCps.length > 0) {
+      const [next, ...rest] = pendingZoneCps;
+      setTargetCp(next);
+      setPendingZoneCps(rest);
+      showFlash(`Checkpoint done! ${rest.length + 1} left in zone`);
+      return;
+    }
+
+    // All checkpoints in this zone done — mark zone complete and move on.
+    const newDone = new Set(completedZoneIds).add(zone.id);
+    setCompletedZoneIds(newDone);
+
+    const nextZone = nearestLocked(zone, zones, newDone);
+    if (nextZone) {
       showFlash('Zone Complete! 🎉');
-      setActiveZone(next);
-      setTargetCp(pickCpForZone(next, checkpoints, role));
-      flyToZone(next);
+      const nextCps = getCpsForZone(nextZone, checkpoints, role);
+      setActiveZone(nextZone);
+      setTargetCp(nextCps[0] ?? null);
+      setPendingZoneCps(nextCps.slice(1));
+      flyToZone(nextZone);
     } else {
-      // All zones done — navigate to the completion screen once.
       if (!completedRef.current) {
         completedRef.current = true;
         setTimeout(() => navigation.navigate('AllCheckpointsComplete'), 600);
@@ -235,7 +249,11 @@ export default function MapPage({ navigation, route }) {
 
       <View style={styles.mapWrap}>
         {fromGame && totalZones > 0 && (
-          <MapHud targetCp={targetCp} remainingCount={remainingCount} />
+          <MapHud
+            targetCp={targetCp}
+            remainingCount={remainingCount}
+            zoneCpsLeft={pendingZoneCps.length + (targetCp ? 1 : 0)}
+          />
         )}
 
         {fromGame && nearTarget && targetCp && (
