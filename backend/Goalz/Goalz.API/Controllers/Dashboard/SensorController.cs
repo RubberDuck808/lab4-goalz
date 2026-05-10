@@ -54,21 +54,11 @@ public class SensorController : ControllerBase
     }
 
     [HttpPost("data")]
-    public async Task<IActionResult> SensorData([FromBody] SensorData data)
+    public async Task<IActionResult> SensorData([FromBody] SensorDataDTO sensorDataDto)
     {
         try
         {
-            var sensorDataDto = new SensorDataDTO
-            {
-                SensorId = data.SensorId,
-                Temperature = data.Temperature,
-                Humidity = data.Humidity,
-                SoilMoisture = data.SoilMoisture,
-                RawMoisture = data.RawMoisture
-            };
-
             await _sensorService.StoreSensorData(sensorDataDto);
-
             return Ok("Data successfully stored!");
         }
         catch (ArgumentOutOfRangeException ex)
@@ -83,6 +73,5 @@ public class SensorController : ControllerBase
         {
             return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
         }
-
     }
 }

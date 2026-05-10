@@ -52,14 +52,25 @@ public class SensorService : ISensorService
 
     public async Task StoreSensorData(SensorDataDTO sensorData)
     {
-        ValidateSensorData(sensorData);
+        await ValidateSensorData(sensorData);
 
+        var sensorDataEntity = new SensorData
+        {
+            SensorsId = sensorData.SensorId,
+            Temp = sensorData.Temperature,
+            Humidity = (long)sensorData.Humidity,
+            //SoilMoisture = sensorData.SoilMoisture,
+            //RawMoisture = sensorData.RawMoisture,
+            Light = (long)sensorData.Light,
+            Timestamp = DateTime.UtcNow
+        };
 
+        await _repository.StoreSensorData(sensorDataEntity);
     }
 
-    private void ValidateSensorData(SensorDataDTO sensorData)
+    private async Task ValidateSensorData(SensorDataDTO sensorData)
     {
-        var sensor = _repository.GetByIdAsync(sensorData.SensorId);
+        var sensor = await _repository.GetByIdAsync(sensorData.SensorId);
 
         if (sensor == null) 
         { 
