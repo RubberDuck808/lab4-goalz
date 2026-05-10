@@ -50,30 +50,36 @@ export default function MapPage({ navigation, route }) {
   const [sensorModal, setSensorModal] = useState(null);
 
   const initRef = useRef(false);
-  const postQuizRef = useRef(null); // {nextZone} when returning from quiz; null otherwise
   const [cameraActive, setCameraActive] = useState(false);
   const [leaveModal, setLeaveModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const { partyId, markVisited, addPendingVisit, role, gameConfig } = useGameContext();
+  const { partyId, markVisited, addPendingVisit, postQuizZoneId, setPostQuizZoneId, clearPostQuizZone, role, gameConfig } = useGameContext();
 
-  // Keep refs so the focus-effect closure can read current values without becoming stale
+  // Keep refs so effects can read current values without stale closures
   const checkpointsRef = useRef(checkpoints);
   useEffect(() => { checkpointsRef.current = checkpoints; }, [checkpoints]);
   const roleRef = useRef(role);
   useEffect(() => { roleRef.current = role; }, [role]);
+  const gameZonesRef = useRef(gameZones);
+  useEffect(() => { gameZonesRef.current = gameZones; }, [gameZones]);
 
-  // Fires when map regains focus: from Camera, from Quiz, or on initial mount
-  useFocusEffect(
-    useCallback(() => {
-      setCameraActive(false);
+  // Advance to the next zone or finish the game after returning from quiz
+  // postQuizZoneId is in context so it survives any screen remounts
+  useEffect(() => {
+    if (postQuizZoneId === null) return; // not in post-quiz state
 
-      const pending = postQuizRef.current;
-      if (!pending) return;
-      postQuizRef.current = null;
+    clearPostQuizZone(); // reset before doing anything to avoid double-trigger
 
-      const { nextZone } = pending;
+    if (postQuizZoneId === 0) {
+      // All zones done — go to completion screen
+      if (!completedRef.current) {
+        completedRef.current = true;
+        navigation.navigate('AllCheckpointsComplete');
+      }
+    } else {
+      // Advance to the next zone
+      const nextZone = gameZonesRef.current.find(z => z.id === postQuizZoneId);
       if (nextZone) {
-        // Advance to the next zone
         const cps = getCpsForZone(nextZone, checkpointsRef.current, roleRef.current);
         let nextCps = cps;
         if (cps.length === 0 && (roleRef.current === 'Trailblazer' || roleRef.current === 'Explorer')) {
@@ -83,7 +89,6 @@ export default function MapPage({ navigation, route }) {
         setActiveZone(nextZone);
         setTargetCp(nextCps[0] ?? null);
         setPendingZoneCps(nextCps.slice(1));
-        // fly to the new zone
         const geom = safeParseGeometry(nextZone.boundary);
         if (geom) {
           const coords = extractRings(geom).flatMap(coordsToLatLng);
@@ -96,14 +101,15 @@ export default function MapPage({ navigation, route }) {
             }, 400);
           }
         }
-      } else {
-        // All zones done — navigate to completion
-        if (!completedRef.current) {
-          completedRef.current = true;
-          setTimeout(() => navigation.navigate('AllCheckpointsComplete'), 300);
-        }
       }
-    }, [navigation])
+    }
+  }, [postQuizZoneId, clearPostQuizZone, navigation]);
+
+  // Reset camera lock when map regains focus (user returned from Camera screen)
+  useFocusEffect(
+    useCallback(() => {
+      setCameraActive(false);
+    }, [])
   );
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -308,7 +314,8 @@ export default function MapPage({ navigation, route }) {
     const newDone = new Set(completedZoneIds).add(zone.id);
     setCompletedZoneIds(newDone);
     const nextZone = nearestLocked(zone, gameZones, newDone);
-    postQuizRef.current = { nextZone }; // null nextZone = all zones done
+    // Store in context (survives remount): 0 = all done, N = advance to zone N
+    setPostQuizZoneId(nextZone ? nextZone.id : 0);
     showFlash('Zone Complete! 🎉');
     // Brief delay so the flash is visible before quiz opens
     setTimeout(() => navigation.navigate('Quiz', { fromGame: true }), 900);

@@ -10,6 +10,6 @@ namespace Goalz.Core.Interfaces
         Task<StartGameResult> StartGame(long partyId);
         Task<GameStateResponse?> GetGameState(long partyId);
         Task VisitCheckpoint(long partyId, long checkpointId);
-        Task CompleteGame(long partyId, List<long> checkpointIds);
+        Task CompleteGame(long partyId, string username, List<long> checkpointIds, int quizScore);
     }
 }

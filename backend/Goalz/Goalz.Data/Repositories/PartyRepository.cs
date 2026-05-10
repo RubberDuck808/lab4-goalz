@@ -98,7 +98,7 @@ namespace Goalz.Data.Repositories
             return await _context.PartyMembers.AnyAsync(pm => pm.PartyId == partyId && pm.UserId == userId);
         }
 
-        public async Task CompleteGameAsync(long partyId, List<long> checkpointIds)
+        public async Task CompleteGameAsync(long partyId, string username, List<long> checkpointIds, int quizScore)
         {
             var existingIds = await _context.PartyVisitedCheckpoints
                 .Where(pvc => pvc.PartyId == partyId)
@@ -116,6 +116,13 @@ namespace Goalz.Data.Repositories
             var party = await _context.Parties.FindAsync(partyId);
             if (party != null)
                 party.Status = "Completed";
+
+            // Award points to the completing member: 10 per checkpoint + quiz score
+            var member = await _context.PartyMembers
+                .Include(pm => pm.User)
+                .FirstOrDefaultAsync(pm => pm.PartyId == partyId && pm.User.Username == username);
+            if (member != null)
+                member.Score += checkpointIds.Count * 10 + quizScore;
 
             await _context.SaveChangesAsync();
         }

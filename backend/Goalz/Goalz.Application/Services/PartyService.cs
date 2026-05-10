@@ -193,11 +193,11 @@ namespace Goalz.Core.Services
             await _partyRepository.VisitCheckpointAsync(partyId, checkpointId);
         }
 
-        public async Task CompleteGame(long partyId, List<long> checkpointIds)
+        public async Task CompleteGame(long partyId, string username, List<long> checkpointIds, int quizScore)
         {
             var party = await _partyRepository.GetPartyById(partyId) ?? throw new Exception("Party not found");
             if (party.Status != "InGame") return;
-            await _partyRepository.CompleteGameAsync(partyId, checkpointIds);
+            await _partyRepository.CompleteGameAsync(partyId, username, checkpointIds, quizScore);
         }
     }
 }

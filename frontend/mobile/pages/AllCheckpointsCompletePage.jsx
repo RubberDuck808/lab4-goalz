@@ -5,12 +5,12 @@ import GameButtons from '../components/GameButtons';
 import { useGameContext } from '../context/GameContext';
 
 export default function AllCheckpointsCompletePage({ navigation }) {
-  const { partyId, pendingVisits, completeGame } = useGameContext();
+  const { partyId, pendingVisits, quizScore, completeGame } = useGameContext();
   const [saving, setSaving] = useState(false);
 
   async function handleFinish() {
     setSaving(true);
-    await completeGame(partyId, pendingVisits);
+    await completeGame(partyId, pendingVisits, quizScore);
     navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
   }
 

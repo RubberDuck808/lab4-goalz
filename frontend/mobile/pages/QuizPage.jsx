@@ -4,9 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import QuizAnswerButton from '../components/QuizAnswerButton';
 import QuizSpeechBubble from '../components/QuizSpeechBubble';
 import GameButtons from '../components/GameButtons';
+import { useGameContext } from '../context/GameContext';
 
 export default function QuizPage({ navigation, route }) {
   const fromGame = route?.params?.fromGame ?? false;
+  const { addQuizScore } = useGameContext();
     const [countdown, setCountdown] = useState(30);
     const [selectedAnswer, setSelectedAnswer] = useState("");
     const [answers] = useState([
@@ -48,19 +50,13 @@ export default function QuizPage({ navigation, route }) {
     }, [countdown]);
 
     const handleSubmit = () => {
-        if(selectedAnswer.isCorrect){
-            navigation.navigate('QuizResult', {
-                score: 100,
-                total: 1000,
-                fromGame,
-            });
-        }else {
-            navigation.navigate('QuizResult', {
-                score: 0,
-                total: 1000,
-                fromGame,
-            });
-        }
+        const correct = selectedAnswer.isCorrect;
+        if (correct && fromGame) addQuizScore(100);
+        navigation.navigate('QuizResult', {
+            score: correct ? 100 : 0,
+            total: 1000,
+            fromGame,
+        });
     }
 
     return (

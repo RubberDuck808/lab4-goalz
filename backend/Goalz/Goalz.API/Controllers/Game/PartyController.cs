@@ -76,7 +76,8 @@ namespace Goalz.Api.Controllers.Game
         [HttpPost("{id}/complete")]
         public async Task<IActionResult> CompleteGame(long id, [FromBody] CompleteGameRequest request)
         {
-            await _partyService.CompleteGame(id, request.CheckpointIds);
+            var username = User.Identity!.Name!;
+            await _partyService.CompleteGame(id, username, request.CheckpointIds, request.QuizScore);
             return Ok();
         }
     }

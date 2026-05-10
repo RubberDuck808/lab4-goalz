@@ -15,6 +15,9 @@ export function GameProvider({ children }) {
   const [role, setRoleState]         = useState(null);
   const [visitedCheckpointIds, setVisited] = useState(new Set());
   const [pendingVisits, setPendingVisits] = useState([]);
+  const [quizScore, setQuizScoreState] = useState(0);
+  // postQuizZoneId: null = not in quiz flow; 0 = all zones done; N = advance to zone N
+  const [postQuizZoneId, setPostQuizZoneId] = useState(null);
   const [username, setUsername] = useState(null);
   const [gameConfig, setGameConfigState] = useState(null);
 
@@ -77,17 +80,19 @@ export function GameProvider({ children }) {
   const setRole       = useCallback(r  => setRoleState(r), []);
   const setGameConfig = useCallback(c  => setGameConfigState(c), []);
   const markVisited     = useCallback(id => setVisited(prev => new Set([...prev, id])), []);
-  const addPendingVisit = useCallback(id => setPendingVisits(prev => prev.includes(id) ? prev : [...prev, id]), []);
+  const addPendingVisit  = useCallback(id => setPendingVisits(prev => prev.includes(id) ? prev : [...prev, id]), []);
+  const addQuizScore     = useCallback(pts => setQuizScoreState(prev => prev + pts), []);
+  const clearPostQuizZone = useCallback(() => setPostQuizZoneId(null), []);
 
   const resetGame = useCallback(() => {
     setPartyId(null); setPartyCode(null); setPartyName(null); setPartyStatus('Lobby');
     setMembersState([]); setRoleState(null); setVisited(new Set()); setGameConfigState(null);
-    setPendingVisits([]);
+    setPendingVisits([]); setQuizScoreState(0); setPostQuizZoneId(null);
   }, []);
 
-  const completeGame = useCallback(async (capturedPartyId, capturedVisits) => {
+  const completeGame = useCallback(async (capturedPartyId, capturedVisits, capturedQuizScore) => {
     if (capturedPartyId && capturedVisits.length > 0) {
-      await completeGameApi(capturedPartyId, capturedVisits).catch(() => {});
+      await completeGameApi(capturedPartyId, capturedVisits, capturedQuizScore).catch(() => {});
     }
     resetGame();
   }, [resetGame]);
@@ -95,8 +100,10 @@ export function GameProvider({ children }) {
   return (
     <GameContext.Provider value={{
       partyId, partyCode, partyName, partyStatus, members, role, visitedCheckpointIds,
-      pendingVisits, gameConfig, setParty, setMembers, setRole, setGameConfig,
-      markVisited, addPendingVisit, resetGame, completeGame, triggerPoll,
+      pendingVisits, quizScore, postQuizZoneId, gameConfig,
+      setParty, setMembers, setRole, setGameConfig, setPostQuizZoneId,
+      markVisited, addPendingVisit, addQuizScore, clearPostQuizZone,
+      resetGame, completeGame, triggerPoll,
     }}>
       {children}
     </GameContext.Provider>

@@ -74,9 +74,10 @@ namespace Goalz.Data.Repositories
                 {
                     Username = u.Username,
                     AvatarId = u.AvatarId,
-                    TotalPoints = u.PartyMembers
-                        .SelectMany(pm => pm.PartyGroup.PartyGroupAnswers)
-                        .Sum(pga => (long?)pga.ReceivedPoints) ?? 0L,
+                    TotalPoints =
+                        (u.PartyMembers.SelectMany(pm => pm.PartyGroup.PartyGroupAnswers)
+                            .Sum(pga => (long?)pga.ReceivedPoints) ?? 0L)
+                        + (u.PartyMembers.Sum(pm => (long?)pm.Score) ?? 0L),
                 })
                 .OrderByDescending(x => x.TotalPoints)
                 .Take(limit)
