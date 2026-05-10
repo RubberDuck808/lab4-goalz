@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
 import FriendsTab from '../components/FriendsTab';
@@ -16,9 +17,11 @@ export default function ProfilePage({ navigation, route }) {
   const [user, setUser] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
 
-  useEffect(() => {
-    getUser().then(setUser);
-  }, []);
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    getUser().then(u => { if (!cancelled) setUser(u); });
+    return () => { cancelled = true; };
+  }, []));
 
   const viewedUsername = route?.params?.username;
   const incomingRequest = route?.params?.incomingRequest === true;
