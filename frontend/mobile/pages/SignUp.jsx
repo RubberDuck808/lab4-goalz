@@ -5,12 +5,10 @@ import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
 import AppText from '../components/AppText';
-import { useColors } from '../context/AccessibilityContext';
 import { signUp } from '../services/api';
 import { getToken, storeUser } from '../services/session';
 
 export default function SignUp({ navigation }) {
-  const colors = useColors();
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -59,7 +57,7 @@ export default function SignUp({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safe}>
       <Logo style={styles.logo} />
       <View style={styles.form}>
         <AppText style={styles.heading}>Sign Up</AppText>

@@ -6,12 +6,10 @@ import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
 import AppText from '../components/AppText';
-import { useColors } from '../context/AccessibilityContext';
 import { login } from '../services/api';
 import { getToken, storeUser } from '../services/session';
 
 export default function Login({ navigation }) {
-  const colors = useColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -48,7 +46,7 @@ export default function Login({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safe}>
       <Logo style={styles.logo} />
       <View style={styles.form}>
         <AppText style={styles.heading}>Login</AppText>

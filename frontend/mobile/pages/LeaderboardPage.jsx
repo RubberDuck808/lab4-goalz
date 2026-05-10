@@ -5,12 +5,10 @@ import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
 import UserRow from '../components/UserRow';
 import AppText from '../components/AppText';
-import { useColors } from '../context/AccessibilityContext';
 import { getLeaderboard } from '../services/api';
 import { getUser } from '../services/session';
 
 export default function LeaderboardPage({ navigation }) {
-  const colors = useColors();
   const [entries, setEntries] = useState([]);
   const [currentUsername, setCurrentUsername] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +32,12 @@ export default function LeaderboardPage({ navigation }) {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safe}>
       <PageHeader title="Leaderboard" />
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <ActivityIndicator size="large" color="#3b82f6" />
         </View>
       ) : error ? (
         <View style={styles.center}>

@@ -5,13 +5,11 @@ import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
 import AppText from '../components/AppText';
-import { useColors } from '../context/AccessibilityContext';
 import { getUser, updateStoredUser } from '../services/session';
 import { updateProfile, changePassword } from '../services/api';
 import { getAvatar, AVATAR_COUNT } from '../utils/avatars';
 
 export default function EditProfilePage({ navigation }) {
-  const colors = useColors();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [avatarId, setAvatarId] = useState(1);
@@ -83,7 +81,7 @@ export default function EditProfilePage({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safe}>
       <PageHeader title="Edit Profile" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 

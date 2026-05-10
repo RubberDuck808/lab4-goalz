@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { GameProvider } from './context/GameContext';
-import { AccessibilityProvider, useColors } from './context/AccessibilityContext';
+import { AccessibilityProvider } from './context/AccessibilityContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from './services/navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -34,11 +34,6 @@ import AllCheckpointsCompletePage from './pages/AllCheckpointsCompletePage';
 
 const Stack = createNativeStackNavigator();
 
-function ThemedRoot({ children }) {
-  const colors = useColors();
-  return <View style={{ flex: 1, backgroundColor: colors.background }}>{children}</View>;
-}
-
 export default function App() {
   const [ready, setReady] = useState(false);
 
@@ -54,7 +49,6 @@ export default function App() {
     <AccessibilityProvider>
       <GameProvider>
         <SafeAreaProvider>
-          <ThemedRoot>
           <NavigationContainer
             ref={navigationRef}
             onReady={async () => {
@@ -93,7 +87,6 @@ export default function App() {
               <Stack.Screen name="AllCheckpointsComplete" component={AllCheckpointsCompletePage} />
             </Stack.Navigator>
           </NavigationContainer>
-          </ThemedRoot>
         </SafeAreaProvider>
       </GameProvider>
     </AccessibilityProvider>

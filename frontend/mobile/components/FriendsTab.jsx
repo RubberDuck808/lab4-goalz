@@ -2,7 +2,6 @@ import React, { useState, useCallback, useRef } from 'react';
 import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AppText from './AppText';
-import { useColors } from '../context/AccessibilityContext';
 import UserIcon from '../assets/User.svg';
 import UserRow from './UserRow';
 import { getConnections, getFriendRequests } from '../services/api';
@@ -10,7 +9,6 @@ import { getConnections, getFriendRequests } from '../services/api';
 const VISIBLE_LIMIT = 3;
 
 export default function FriendsTab({ currentUsername, viewedUsername, connectionsOnly = false, onViewProfile }) {
-  const colors = useColors();
   const targetUsername = viewedUsername ?? currentUsername;
   const tabs = connectionsOnly ? ['Connections'] : ['Connections', 'Requests'];
 
@@ -42,7 +40,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
   const extra = items.length - VISIBLE_LIMIT;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, borderColor: colors.border }]}>
+    <View style={styles.container}>
       {/* Tab bar */}
       <View style={styles.tabBar}>
         {tabs.map((tab, i) => (
@@ -60,11 +58,11 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
         ))}
       </View>
 
-      <View style={[styles.divider, { backgroundColor: colors.border }]} />
+      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="small" color={colors.accent} />
+          <ActivityIndicator size="small" color="#3b82f6" />
         </View>
       ) : visible.length === 0 ? (
         <View style={styles.center}>
@@ -93,7 +91,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
           {extra > 0 && (
             <>
-              <View style={[styles.rowDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.rowDivider} />
               <View style={styles.moreRow}>
                 <AppText style={styles.moreText}>{extra}+</AppText>
               </View>

@@ -3,7 +3,6 @@ import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AppText from '../components/AppText';
-import { useColors } from '../context/AccessibilityContext';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
 import FriendsTab from '../components/FriendsTab';
@@ -16,7 +15,6 @@ import { acceptFriendRequest, declineFriendRequest, getConnections, removeConnec
 import { getAvatar } from '../utils/avatars';
 
 export default function ProfilePage({ navigation, route }) {
-  const colors = useColors();
   const [user, setUser] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
 
@@ -63,7 +61,7 @@ export default function ProfilePage({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safe}>
       <PageHeader title="Profile" onBack={isOther ? () => navigation.goBack() : undefined} />
 
       {!isOther && (

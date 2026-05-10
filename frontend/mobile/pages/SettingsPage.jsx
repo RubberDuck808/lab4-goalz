@@ -1,16 +1,15 @@
 import React from 'react';
-import { View, TouchableOpacity, Switch, StyleSheet, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import AppText from '../components/AppText';
 import { clearUser } from '../services/session';
-import { useAccessibility, useColors, FONT_SCALES } from '../context/AccessibilityContext';
+import { useAccessibility, FONT_SCALES } from '../context/AccessibilityContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsPage({ navigation }) {
-  const { fontScale, colorMode, setFontScale, setColorMode } = useAccessibility();
-  const colors = useColors();
+  const { fontScale, setFontScale } = useAccessibility();
 
   async function handleLogout() {
     await clearUser();
@@ -18,24 +17,24 @@ export default function SettingsPage({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safe}>
       <PageHeader title="Settings" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         <AppText style={styles.sectionTitle}>Account</AppText>
-        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.background }]}>
+        <View style={styles.card}>
           <TouchableOpacity style={styles.navRow} onPress={() => navigation.navigate('EditProfile')} activeOpacity={0.7}>
             <AppText style={styles.navLabel}>Edit Profile</AppText>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={18} color="#a1a1aa" />
           </TouchableOpacity>
         </View>
 
         <AppText style={styles.sectionTitle}>Text Size</AppText>
-        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.background }]}>
+        <View style={styles.card}>
           {FONT_SCALES.map(({ label, value }) => (
             <TouchableOpacity
               key={value}
-              style={[styles.optionRow, { borderBottomColor: colors.border }]}
+              style={styles.optionRow}
               onPress={() => setFontScale(value)}
               activeOpacity={0.7}
             >
@@ -43,22 +42,6 @@ export default function SettingsPage({ navigation }) {
               <View style={[styles.radio, fontScale === value && styles.radioSelected]} />
             </TouchableOpacity>
           ))}
-        </View>
-
-        <AppText style={styles.sectionTitle}>Accessibility</AppText>
-        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.background }]}>
-          <View style={[styles.optionRow, { borderBottomColor: colors.border }]}>
-            <View>
-              <AppText style={styles.optionLabel}>High Contrast</AppText>
-              <AppText style={styles.optionHint}>Black & white high-contrast mode</AppText>
-            </View>
-            <Switch
-              value={colorMode === 'high_contrast'}
-              onValueChange={(val) => setColorMode(val ? 'high_contrast' : 'none')}
-              trackColor={{ false: '#d4d4d8', true: '#3b82f6' }}
-              thumbColor="#fff"
-            />
-          </View>
         </View>
 
         <View style={styles.logoutWrap}>
@@ -113,7 +96,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f4f4f5',
   },
   optionLabel: { fontSize: 16, color: '#27272a', fontWeight: '500' },
-  optionHint: { fontSize: 12, color: '#a1a1aa', marginTop: 2 },
 
   radio: {
     width: 22,
