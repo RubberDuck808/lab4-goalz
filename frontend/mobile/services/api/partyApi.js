@@ -101,3 +101,17 @@ export async function visitCheckpoint(partyId, checkpointId) {
   if (response.ok) return { success: true };
   return { success: false, error: 'Could not visit checkpoint.' };
 }
+
+export async function completeGame(partyId, checkpointIds) {
+  try {
+    const response = await apiFetch(`${BASE_URL}/api/game/party/${partyId}/complete`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ checkpointIds }),
+    });
+    if (response.ok) return { success: true };
+    return { success: false, error: 'Could not save game.' };
+  } catch {
+    return { success: false, error: 'Could not reach the server.' };
+  }
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { checkpointColor } from './mapHelpers';
 
-export default function MapHud({ targetCp, remainingCount, zoneCpsLeft }) {
+export default function MapHud({ targetCp, remainingCount, zoneCpsLeft, sensorsLeft }) {
   return (
     <View style={styles.hud}>
       {targetCp ? (
@@ -19,9 +19,15 @@ export default function MapHud({ targetCp, remainingCount, zoneCpsLeft }) {
           </View>
         </View>
       ) : <View style={styles.hudTarget} />}
-      <View style={styles.hudRight}>
-        <Text style={styles.hudCount}>{remainingCount}</Text>
-        <Text style={styles.hudLabel}>{remainingCount === 1 ? 'zone left' : 'zones left'}</Text>
+      <View style={styles.hudStats}>
+        <View style={styles.hudStat}>
+          <Text style={styles.hudCount}>{remainingCount}</Text>
+          <Text style={styles.hudLabel}>{remainingCount === 1 ? 'zone left' : 'zones left'}</Text>
+        </View>
+        <View style={[styles.hudStat, styles.hudStatSensor]}>
+          <Text style={[styles.hudCount, styles.hudCountSensor]}>{sensorsLeft}</Text>
+          <Text style={styles.hudLabel}>{sensorsLeft === 1 ? 'sensor left' : 'sensors left'}</Text>
+        </View>
       </View>
     </View>
   );
@@ -45,7 +51,10 @@ const styles = StyleSheet.create({
   hudTargetName: { fontSize: 14, fontWeight: '700', color: '#27272a', maxWidth: 160 },
   hudTargetLabel:      { fontSize: 10, fontWeight: '600', color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
   hudTargetLabelPhoto: { color: '#FF9600' },
-  hudRight:      { alignItems: 'flex-end' },
-  hudCount:      { color: '#29e87b', fontSize: 22, fontWeight: '900', lineHeight: 24 },
-  hudLabel:      { color: '#71717a', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
+  hudStats:         { flexDirection: 'row', gap: 12, alignItems: 'flex-end' },
+  hudStat:          { alignItems: 'flex-end' },
+  hudStatSensor:    { borderLeftWidth: 1, borderLeftColor: '#e4e4e7', paddingLeft: 12 },
+  hudCount:         { color: '#29e87b', fontSize: 22, fontWeight: '900', lineHeight: 24 },
+  hudCountSensor:   { color: '#1CB0F6' },
+  hudLabel:         { color: '#71717a', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
 });

@@ -98,6 +98,28 @@ namespace Goalz.Data.Repositories
             return await _context.PartyMembers.AnyAsync(pm => pm.PartyId == partyId && pm.UserId == userId);
         }
 
+        public async Task CompleteGameAsync(long partyId, List<long> checkpointIds)
+        {
+            var existingIds = await _context.PartyVisitedCheckpoints
+                .Where(pvc => pvc.PartyId == partyId)
+                .Select(pvc => pvc.CheckpointId)
+                .ToHashSetAsync();
+
+            var newVisits = checkpointIds
+                .Where(id => !existingIds.Contains(id))
+                .Select(id => new PartyVisitedCheckpoint { PartyId = partyId, CheckpointId = id })
+                .ToList();
+
+            if (newVisits.Count > 0)
+                await _context.PartyVisitedCheckpoints.AddRangeAsync(newVisits);
+
+            var party = await _context.Parties.FindAsync(partyId);
+            if (party != null)
+                party.Status = "Completed";
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<List<Party>> GetStaleLobbyPartiesAsync(DateTime cutoff)
         {
             return await _context.Parties

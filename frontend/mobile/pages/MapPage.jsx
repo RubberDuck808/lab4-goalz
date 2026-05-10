@@ -8,7 +8,6 @@ import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import { useGameContext } from '../context/GameContext';
-import { visitCheckpoint } from '../services/api/partyApi';
 import { apiFetch } from '../services/api/api';
 import {
   ARBORETUM_REGION,
@@ -51,16 +50,60 @@ export default function MapPage({ navigation, route }) {
   const [sensorModal, setSensorModal] = useState(null);
 
   const initRef = useRef(false);
+  const postQuizRef = useRef(null); // {nextZone} when returning from quiz; null otherwise
   const [cameraActive, setCameraActive] = useState(false);
   const [leaveModal, setLeaveModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const { partyId, markVisited, role, gameConfig } = useGameContext();
+  const { partyId, markVisited, addPendingVisit, role, gameConfig } = useGameContext();
 
-  // Reset camera lock when map regains focus (user returned from Camera screen)
+  // Keep refs so the focus-effect closure can read current values without becoming stale
+  const checkpointsRef = useRef(checkpoints);
+  useEffect(() => { checkpointsRef.current = checkpoints; }, [checkpoints]);
+  const roleRef = useRef(role);
+  useEffect(() => { roleRef.current = role; }, [role]);
+
+  // Fires when map regains focus: from Camera, from Quiz, or on initial mount
   useFocusEffect(
     useCallback(() => {
       setCameraActive(false);
-    }, [])
+
+      const pending = postQuizRef.current;
+      if (!pending) return;
+      postQuizRef.current = null;
+
+      const { nextZone } = pending;
+      if (nextZone) {
+        // Advance to the next zone
+        const cps = getCpsForZone(nextZone, checkpointsRef.current, roleRef.current);
+        let nextCps = cps;
+        if (cps.length === 0 && (roleRef.current === 'Trailblazer' || roleRef.current === 'Explorer')) {
+          const spot = generatePhotoSpot(nextZone);
+          nextCps = spot ? [spot] : [];
+        }
+        setActiveZone(nextZone);
+        setTargetCp(nextCps[0] ?? null);
+        setPendingZoneCps(nextCps.slice(1));
+        // fly to the new zone
+        const geom = safeParseGeometry(nextZone.boundary);
+        if (geom) {
+          const coords = extractRings(geom).flatMap(coordsToLatLng);
+          if (coords.length) {
+            setTimeout(() => {
+              mapRef.current?.fitToCoordinates(coords, {
+                edgePadding: { top: 100, right: 80, bottom: 120, left: 80 },
+                animated: true,
+              });
+            }, 400);
+          }
+        }
+      } else {
+        // All zones done — navigate to completion
+        if (!completedRef.current) {
+          completedRef.current = true;
+          setTimeout(() => navigation.navigate('AllCheckpointsComplete'), 300);
+        }
+      }
+    }, [navigation])
   );
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -248,9 +291,9 @@ export default function MapPage({ navigation, route }) {
   }, [gameZones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
-  async function completeCheckpoint(cp, zone) {
+  function completeCheckpoint(cp, zone) {
     markVisited(cp.id);
-    if (partyId) await visitCheckpoint(partyId, cp.id).catch(() => {});
+    addPendingVisit(cp.id); // deferred — only sent to backend on full game completion
     setNearTarget(false);
 
     if (pendingZoneCps.length > 0) {
@@ -261,23 +304,14 @@ export default function MapPage({ navigation, route }) {
       return;
     }
 
+    // Zone complete — show quiz before advancing
     const newDone = new Set(completedZoneIds).add(zone.id);
     setCompletedZoneIds(newDone);
-
     const nextZone = nearestLocked(zone, gameZones, newDone);
-    if (nextZone) {
-      showFlash('Zone Complete! 🎉');
-      const nextCps = getTargetCpsForZone(nextZone);
-      setActiveZone(nextZone);
-      setTargetCp(nextCps[0] ?? null);
-      setPendingZoneCps(nextCps.slice(1));
-      flyToZone(nextZone);
-    } else {
-      if (!completedRef.current) {
-        completedRef.current = true;
-        setTimeout(() => navigation.navigate('AllCheckpointsComplete'), 600);
-      }
-    }
+    postQuizRef.current = { nextZone }; // null nextZone = all zones done
+    showFlash('Zone Complete! 🎉');
+    // Brief delay so the flash is visible before quiz opens
+    setTimeout(() => navigation.navigate('Quiz', { fromGame: true }), 900);
   }
 
   async function handleVisit() {
@@ -298,6 +332,20 @@ export default function MapPage({ navigation, route }) {
   const totalZones     = gameZones.length;
   const remainingCount = totalZones - completedZoneIds.size;
 
+  const sensorsLeft = React.useMemo(() => {
+    if (!fromGame) return 0;
+    // Sensors still pending in the current zone
+    const currentSensors =
+      (targetCp?.type === 'sensor' ? 1 : 0) +
+      pendingZoneCps.filter(cp => cp.type === 'sensor').length;
+    // Sensors in zones not yet started
+    const futureSensors = gameZones
+      .filter(z => !completedZoneIds.has(z.id) && z.id !== activeZone?.id)
+      .flatMap(z => getCpsForZone(z, checkpoints, role))
+      .filter(cp => cp.type === 'sensor').length;
+    return currentSensors + futureSensors;
+  }, [fromGame, targetCp, pendingZoneCps, gameZones, completedZoneIds, activeZone, checkpoints, role]);
+
   function handleLeaveGame() {
     setLeaveModal(true);
   }
@@ -316,6 +364,7 @@ export default function MapPage({ navigation, route }) {
             targetCp={targetCp}
             remainingCount={remainingCount}
             zoneCpsLeft={pendingZoneCps.length + (targetCp ? 1 : 0)}
+            sensorsLeft={sensorsLeft}
           />
         )}
 

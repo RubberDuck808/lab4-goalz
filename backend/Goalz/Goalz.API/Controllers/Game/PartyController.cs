@@ -71,5 +71,13 @@ namespace Goalz.Api.Controllers.Game
             await _partyService.VisitCheckpoint(id, request.CheckpointId);
             return Ok();
         }
+
+        [Authorize]
+        [HttpPost("{id}/complete")]
+        public async Task<IActionResult> CompleteGame(long id, [FromBody] CompleteGameRequest request)
+        {
+            await _partyService.CompleteGame(id, request.CheckpointIds);
+            return Ok();
+        }
     }
 }

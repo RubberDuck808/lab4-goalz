@@ -18,5 +18,6 @@ namespace Goalz.Application.Interfaces
         Task<bool> IsMemberAsync(long partyId, long userId);
         Task<List<Party>> GetStaleLobbyPartiesAsync(DateTime cutoff);
         Task DeleteAsync(Party party);
+        Task CompleteGameAsync(long partyId, List<long> checkpointIds);
     }
 }

@@ -1,14 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GameButtons from '../components/GameButtons';
 import { useGameContext } from '../context/GameContext';
 
 export default function AllCheckpointsCompletePage({ navigation }) {
-  const { resetGame } = useGameContext();
+  const { partyId, pendingVisits, completeGame } = useGameContext();
+  const [saving, setSaving] = useState(false);
 
-  function handleFinish() {
-    resetGame();
+  async function handleFinish() {
+    setSaving(true);
+    await completeGame(partyId, pendingVisits);
     navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
   }
 
@@ -21,9 +23,13 @@ export default function AllCheckpointsCompletePage({ navigation }) {
           Your group has visited every checkpoint.{'\n'}Great work!
         </Text>
         <View style={styles.btnWrap}>
-          <GameButtons variant="accept" onPress={handleFinish}>
-            Finish Game
-          </GameButtons>
+          {saving ? (
+            <ActivityIndicator size="large" color="#1CB0F6" />
+          ) : (
+            <GameButtons variant="accept" onPress={handleFinish}>
+              Finish Game
+            </GameButtons>
+          )}
         </View>
       </View>
     </SafeAreaView>

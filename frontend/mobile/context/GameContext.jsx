@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { getGameState } from '../services/api';
+import { completeGame as completeGameApi } from '../services/api/partyApi';
 import { getUser } from '../services/session';
 
 const GameContext = createContext(null);
@@ -13,6 +14,7 @@ export function GameProvider({ children }) {
   const [members, setMembersState]   = useState([]);
   const [role, setRoleState]         = useState(null);
   const [visitedCheckpointIds, setVisited] = useState(new Set());
+  const [pendingVisits, setPendingVisits] = useState([]);
   const [username, setUsername] = useState(null);
   const [gameConfig, setGameConfigState] = useState(null);
 
@@ -74,17 +76,27 @@ export function GameProvider({ children }) {
   const setMembers    = useCallback(m  => setMembersState(m), []);
   const setRole       = useCallback(r  => setRoleState(r), []);
   const setGameConfig = useCallback(c  => setGameConfigState(c), []);
-  const markVisited   = useCallback(id => setVisited(prev => new Set([...prev, id])), []);
-  const resetGame     = useCallback(() => {
+  const markVisited     = useCallback(id => setVisited(prev => new Set([...prev, id])), []);
+  const addPendingVisit = useCallback(id => setPendingVisits(prev => prev.includes(id) ? prev : [...prev, id]), []);
+
+  const resetGame = useCallback(() => {
     setPartyId(null); setPartyCode(null); setPartyName(null); setPartyStatus('Lobby');
     setMembersState([]); setRoleState(null); setVisited(new Set()); setGameConfigState(null);
+    setPendingVisits([]);
   }, []);
+
+  const completeGame = useCallback(async (capturedPartyId, capturedVisits) => {
+    if (capturedPartyId && capturedVisits.length > 0) {
+      await completeGameApi(capturedPartyId, capturedVisits).catch(() => {});
+    }
+    resetGame();
+  }, [resetGame]);
 
   return (
     <GameContext.Provider value={{
       partyId, partyCode, partyName, partyStatus, members, role, visitedCheckpointIds,
-      gameConfig, setParty, setMembers, setRole, setGameConfig, markVisited, resetGame,
-      triggerPoll,
+      pendingVisits, gameConfig, setParty, setMembers, setRole, setGameConfig,
+      markVisited, addPendingVisit, resetGame, completeGame, triggerPoll,
     }}>
       {children}
     </GameContext.Provider>

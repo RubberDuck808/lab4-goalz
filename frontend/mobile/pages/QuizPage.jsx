@@ -5,7 +5,8 @@ import QuizAnswerButton from '../components/QuizAnswerButton';
 import QuizSpeechBubble from '../components/QuizSpeechBubble';
 import GameButtons from '../components/GameButtons';
 
-export default function QuizPage({ navigation }) {
+export default function QuizPage({ navigation, route }) {
+  const fromGame = route?.params?.fromGame ?? false;
     const [countdown, setCountdown] = useState(30);
     const [selectedAnswer, setSelectedAnswer] = useState("");
     const [answers] = useState([
@@ -34,6 +35,7 @@ export default function QuizPage({ navigation }) {
               navigation.navigate('QuizResult', {
                 score: 0,
                 total: 1000,
+                fromGame,
             });
             return;
         }
@@ -50,11 +52,13 @@ export default function QuizPage({ navigation }) {
             navigation.navigate('QuizResult', {
                 score: 100,
                 total: 1000,
+                fromGame,
             });
         }else {
             navigation.navigate('QuizResult', {
                 score: 0,
                 total: 1000,
+                fromGame,
             });
         }
     }
