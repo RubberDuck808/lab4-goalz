@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import AppText from '../components/AppText';
+import { useColors } from '../context/AccessibilityContext';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
 import FriendsTab from '../components/FriendsTab';
@@ -14,6 +16,7 @@ import { acceptFriendRequest, declineFriendRequest, getConnections, removeConnec
 import { getAvatar } from '../utils/avatars';
 
 export default function ProfilePage({ navigation, route }) {
+  const colors = useColors();
   const [user, setUser] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
 
@@ -60,7 +63,7 @@ export default function ProfilePage({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <PageHeader title="Profile" onBack={isOther ? () => navigation.goBack() : undefined} />
 
       {!isOther && (
@@ -74,13 +77,13 @@ export default function ProfilePage({ navigation, route }) {
 
       <View style={styles.infoRow}>
         <View style={styles.textBlock}>
-          <Text style={styles.username}>{viewedUsername ?? user?.username ?? '—'}</Text>
-          <Text style={styles.joined}>
+          <AppText style={styles.username}>{viewedUsername ?? user?.username ?? '—'}</AppText>
+          <AppText style={styles.joined}>
             {!isOther && user?.createdAt
               ? `Joined ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
               : 'Joined —'}
-          </Text>
-          <Text style={styles.badges}>Badges 0</Text>
+          </AppText>
+          <AppText style={styles.badges}>Badges 0</AppText>
         </View>
         <Image source={getAvatar(isOther ? viewedAvatarId : user?.avatarId)} style={styles.avatar} resizeMode="contain" />
       </View>
@@ -102,10 +105,10 @@ export default function ProfilePage({ navigation, route }) {
       )}
 
       <View style={styles.content}>
-        <Text style={styles.sectionTitle}>Statistics</Text>
+        <AppText style={styles.sectionTitle}>Statistics</AppText>
         <StatisticsCard />
 
-        <Text style={styles.sectionTitle}>Friends</Text>
+        <AppText style={styles.sectionTitle}>Friends</AppText>
         {!isOther && <PlayerSearch currentUsername={user?.username} />}
         <FriendsTab
           currentUsername={user?.username}

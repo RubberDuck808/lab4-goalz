@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { useColors } from '../context/AccessibilityContext';
 import AwardIcon from '../assets/Award.svg';
 import NavigationIcon from '../assets/Navigation.svg';
 import UserIcon from '../assets/User.svg';
@@ -11,6 +12,7 @@ const NAV_ITEMS = [
 ];
 
 export default function BottomNavBar({ onNavigateHome, onNavigateToProfile, onNavigateToLeaderboard, activeScreen }) {
+  const colors = useColors();
   const handlers = {
     home: onNavigateHome,
     profile: onNavigateToProfile,
@@ -18,7 +20,7 @@ export default function BottomNavBar({ onNavigateHome, onNavigateToProfile, onNa
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
       {NAV_ITEMS.map(({ Icon, alt, screenKey, width, height }) => {
         const isActive = activeScreen === screenKey;
         return (

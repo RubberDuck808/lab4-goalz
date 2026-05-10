@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import BottomNavBar from '../components/BottomNavBar';
 import UserRow from '../components/UserRow';
+import AppText from '../components/AppText';
+import { useColors } from '../context/AccessibilityContext';
 import { getLeaderboard } from '../services/api';
 import { getUser } from '../services/session';
 
 export default function LeaderboardPage({ navigation }) {
+  const colors = useColors();
   const [entries, setEntries] = useState([]);
   const [currentUsername, setCurrentUsername] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,20 +34,20 @@ export default function LeaderboardPage({ navigation }) {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <PageHeader title="Leaderboard" />
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
+          <AppText style={styles.errorText}>{error}</AppText>
         </View>
       ) : entries.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyText}>No scores yet — play a game to appear here!</Text>
+          <AppText style={styles.emptyText}>No scores yet — play a game to appear here!</AppText>
         </View>
       ) : (
         <FlatList

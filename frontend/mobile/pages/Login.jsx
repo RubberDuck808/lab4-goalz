@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
+import AppText from '../components/AppText';
+import { useColors } from '../context/AccessibilityContext';
 import { login } from '../services/api';
 import { getToken, storeUser } from '../services/session';
 
 export default function Login({ navigation }) {
+  const colors = useColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -45,10 +48,10 @@ export default function Login({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <Logo style={styles.logo} />
       <View style={styles.form}>
-        <Text style={styles.heading}>Login</Text>
+        <AppText style={styles.heading}>Login</AppText>
         <TextInput
           placeholder="email"
           keyboardType="email-address"
@@ -62,7 +65,7 @@ export default function Login({ navigation }) {
           value={password}
           onChangeText={setPassword}
         />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <AppText style={styles.error}>{error}</AppText> : null}
         <View style={{ marginTop: 24 }}>
           {loading ? (
             <ActivityIndicator size="large" color="#1CB0F6" />
@@ -73,7 +76,7 @@ export default function Login({ navigation }) {
           )}
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.link}>I don't have an account yet.</Text>
+          <AppText style={styles.link}>I don't have an account yet.</AppText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

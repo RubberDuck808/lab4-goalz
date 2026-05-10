@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
+import AppText from '../components/AppText';
+import { useColors } from '../context/AccessibilityContext';
 import { getUser, updateStoredUser } from '../services/session';
 import { updateProfile, changePassword } from '../services/api';
 import { getAvatar, AVATAR_COUNT } from '../utils/avatars';
 
 export default function EditProfilePage({ navigation }) {
+  const colors = useColors();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [avatarId, setAvatarId] = useState(1);
@@ -80,11 +83,11 @@ export default function EditProfilePage({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <PageHeader title="Edit Profile" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        <Text style={styles.sectionTitle}>Avatar</Text>
+        <AppText style={styles.sectionTitle}>Avatar</AppText>
         <View style={styles.avatarGrid}>
           {Array.from({ length: AVATAR_COUNT }, (_, i) => i + 1).map(id => (
             <TouchableOpacity
@@ -98,24 +101,24 @@ export default function EditProfilePage({ navigation }) {
           ))}
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Profile Info</Text>
+        <AppText style={[styles.sectionTitle, { marginTop: 24 }]}>Profile Info</AppText>
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Username</Text>
+          <AppText style={styles.label}>Username</AppText>
           <TextInput
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <Text style={styles.label}>Email</Text>
+          <AppText style={styles.label}>Email</AppText>
           <TextInput
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
-          {profileSuccess ? <Text style={styles.successText}>{profileSuccess}</Text> : null}
+          {profileError ? <AppText style={styles.errorText}>{profileError}</AppText> : null}
+          {profileSuccess ? <AppText style={styles.successText}>{profileSuccess}</AppText> : null}
           <GameButtons
             variant="task"
             onPress={handleSaveProfile}
@@ -125,31 +128,31 @@ export default function EditProfilePage({ navigation }) {
           </GameButtons>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Change Password</Text>
+        <AppText style={[styles.sectionTitle, { marginTop: 24 }]}>Change Password</AppText>
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Current Password</Text>
+          <AppText style={styles.label}>Current Password</AppText>
           <TextInput
             value={currentPassword}
             onChangeText={setCurrentPassword}
             secureTextEntry
             autoCapitalize="none"
           />
-          <Text style={styles.label}>New Password</Text>
+          <AppText style={styles.label}>New Password</AppText>
           <TextInput
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry
             autoCapitalize="none"
           />
-          <Text style={styles.label}>Confirm New Password</Text>
+          <AppText style={styles.label}>Confirm New Password</AppText>
           <TextInput
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
             autoCapitalize="none"
           />
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-          {passwordSuccess ? <Text style={styles.successText}>{passwordSuccess}</Text> : null}
+          {passwordError ? <AppText style={styles.errorText}>{passwordError}</AppText> : null}
+          {passwordSuccess ? <AppText style={styles.successText}>{passwordSuccess}</AppText> : null}
           <GameButtons
             variant="accept"
             onPress={handleChangePassword}

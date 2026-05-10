@@ -1,15 +1,16 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { getAvatar } from '../utils/avatars';
+import AppText from './AppText';
 
 export default function UserRow({ username, rank, score, badge, onPress, avatarId }) {
   const content = (
     <View style={styles.row}>
-      {rank != null && <Text style={styles.rank}>{rank}</Text>}
+      {rank != null && <AppText style={styles.rank}>{rank}</AppText>}
       <Image source={getAvatar(avatarId)} style={styles.avatar} />
-      <Text style={styles.name}>{username}</Text>
-      {score != null && <Text style={styles.score}>{score} pts</Text>}
-      {badge != null && <Text style={styles.badge}>{badge}</Text>}
+      <AppText style={styles.name}>{username}</AppText>
+      {score != null && <AppText style={styles.score}>{score} pts</AppText>}
+      {badge != null && <AppText style={styles.badge}>{badge}</AppText>}
     </View>
   );
 

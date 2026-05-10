@@ -4,18 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import BottomNavBar from '../components/BottomNavBar';
+import { useColors } from '../context/AccessibilityContext';
 
 export default function HomePage({ navigation }) {
+  const colors = useColors();
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <PageHeader title="Home" />
       <View style={styles.center}>
         <View style={styles.actions}>
           <GameButtons variant="accept" onPress={() => navigation.navigate('RouteMode')}>
             Start Route
-          </GameButtons>
-          <GameButtons variant="task" onPress={() => navigation.navigate('Map')}>
-            View Map
           </GameButtons>
         </View>
       </View>

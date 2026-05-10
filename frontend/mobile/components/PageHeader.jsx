@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LessThanIcon from '../assets/lessthan.svg';
+import AppText from './AppText';
+import { useColors } from '../context/AccessibilityContext';
 
 export default function PageHeader({ title = '', onBack, variant = 'back' }) {
+  const colors = useColors();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
       {onBack && (
         variant === 'cancel' ? (
           <TouchableOpacity onPress={onBack} style={styles.cancelBtn} activeOpacity={0.85}>
@@ -19,7 +22,7 @@ export default function PageHeader({ title = '', onBack, variant = 'back' }) {
           </TouchableOpacity>
         )
       )}
-      <Text style={styles.title}>{title.toUpperCase()}</Text>
+      <AppText style={[styles.title, { color: colors.text }]}>{title.toUpperCase()}</AppText>
     </View>
   );
 }
@@ -31,7 +34,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
+    borderBottomWidth: 1,
   },
   backBtn: {
     position: 'absolute',

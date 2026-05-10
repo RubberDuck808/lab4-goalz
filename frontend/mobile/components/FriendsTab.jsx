@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import AppText from './AppText';
+import { useColors } from '../context/AccessibilityContext';
 import UserIcon from '../assets/User.svg';
 import UserRow from './UserRow';
 import { getConnections, getFriendRequests } from '../services/api';
@@ -8,6 +10,7 @@ import { getConnections, getFriendRequests } from '../services/api';
 const VISIBLE_LIMIT = 3;
 
 export default function FriendsTab({ currentUsername, viewedUsername, connectionsOnly = false, onViewProfile }) {
+  const colors = useColors();
   const targetUsername = viewedUsername ?? currentUsername;
   const tabs = connectionsOnly ? ['Connections'] : ['Connections', 'Requests'];
 
@@ -39,7 +42,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
   const extra = items.length - VISIBLE_LIMIT;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background, borderColor: colors.border }]}>
       {/* Tab bar */}
       <View style={styles.tabBar}>
         {tabs.map((tab, i) => (
@@ -49,25 +52,25 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
             onPress={() => setActiveTab(i)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
+            <AppText style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
               {tab}
-            </Text>
+            </AppText>
             {activeTab === i && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="small" color="#3b82f6" />
+          <ActivityIndicator size="small" color={colors.accent} />
         </View>
       ) : visible.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyText}>
+          <AppText style={styles.emptyText}>
             {isConnections ? 'No connections yet' : 'No pending requests'}
-          </Text>
+          </AppText>
         </View>
       ) : (
         <View style={styles.list}>
@@ -90,9 +93,9 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
           {extra > 0 && (
             <>
-              <View style={styles.rowDivider} />
+              <View style={[styles.rowDivider, { backgroundColor: colors.border }]} />
               <View style={styles.moreRow}>
-                <Text style={styles.moreText}>{extra}+</Text>
+                <AppText style={styles.moreText}>{extra}+</AppText>
               </View>
             </>
           )}

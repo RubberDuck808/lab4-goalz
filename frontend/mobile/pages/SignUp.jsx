@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
+import AppText from '../components/AppText';
+import { useColors } from '../context/AccessibilityContext';
 import { signUp } from '../services/api';
 import { getToken, storeUser } from '../services/session';
 
 export default function SignUp({ navigation }) {
+  const colors = useColors();
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,10 +59,10 @@ export default function SignUp({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <Logo style={styles.logo} />
       <View style={styles.form}>
-        <Text style={styles.heading}>Sign Up</Text>
+        <AppText style={styles.heading}>Sign Up</AppText>
         <TextInput
           placeholder="username"
           autoCapitalize="none"
@@ -90,7 +93,7 @@ export default function SignUp({ navigation }) {
           value={repeatPassword}
           onChangeText={setRepeatPassword}
         />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <AppText style={styles.error}>{error}</AppText> : null}
         <View style={{ marginTop: 24 }}>
           {loading ? (
             <ActivityIndicator size="large" color="#1CB0F6" />
@@ -101,7 +104,7 @@ export default function SignUp({ navigation }) {
           )}
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.link}>I already have an account.</Text>
+          <AppText style={styles.link}>I already have an account.</AppText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

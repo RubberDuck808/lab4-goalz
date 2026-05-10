@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import AppText from './AppText';
 
 const SIZES = {
   default: { width: 328, height: 48, borderRadius: 13 },
@@ -38,7 +39,7 @@ export default function GameButtons({ children, onPress, variant = 'task', size 
         style,
       ]}
     >
-      <Text style={styles.text}>{children}</Text>
+      <AppText style={styles.text}>{children}</AppText>
     </TouchableOpacity>
   );
 }
