@@ -13,7 +13,6 @@ variables:
 # ------------------------
 backend:deploy:
   stage: deploy
-  tags: [docker]
   image: google/cloud-sdk:alpine
   before_script:
     - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_KEY
@@ -60,7 +59,6 @@ backend:deploy:
 # ------------------------
 dashboard:deploy:
   stage: deploy
-  tags: [docker]
   image: google/cloud-sdk:alpine
   before_script:
     - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_KEY
@@ -106,7 +104,6 @@ dashboard:deploy:
 # ------------------------
 mobile:eas-update:
   stage: mobile
-  tags: [docker]
   image: node:$NODE_VERSION
   before_script:
     - npm install -g eas-cli
