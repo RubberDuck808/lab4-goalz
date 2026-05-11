@@ -1,20 +1,13 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "DHT.h"
+#include "secrets.h"
 
 #define DHTPIN 4
 #define DHTTYPE DHT11
 #define MOISTURE_PIN 35
 
 DHT dht(DHTPIN, DHTTYPE);
-
-const char* ssid = "COSMOTE_F274";
-const char* password = "17953580";
-
-// IPv4 address of your laptop
-const char* apiUrl = "http://192.168.1.116:5000/api/dashboard/sensors/data";
-
-const int sensorId = 42;
 
 const int dryValue = 3500;
 const int wetValue = 1200;
@@ -59,7 +52,7 @@ void loop() {
 void connectToWiFi() {
   Serial.print("Connected with WiFi");
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -92,7 +85,7 @@ bool readSensors(SensorData &data) {
 String createJson(SensorData data) {
   String json = "{";
   json += "\"sensorId\":";
-  json += sensorId;
+  json += SENSOR_ID;
   json += ",";
   json += "\"temperature\":";
   json += data.temperature;
@@ -124,7 +117,7 @@ void sendSensorData(SensorData data) {
 
   String json = createJson(data);
 
-  http.begin(client, apiUrl);
+  http.begin(client, API_URL);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(10000);
 
