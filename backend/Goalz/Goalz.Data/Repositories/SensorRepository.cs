@@ -46,4 +46,10 @@ public class SensorRepository : ISensorRepository
         var idSet = ids.ToHashSet();
         return await _context.Sensors.Where(s => idSet.Contains(s.Id)).ToListAsync();
     }
+
+    public async Task StoreSensorData(SensorData sensorData)
+    {
+        _context.SensorData.Add(sensorData);
+        await _context.SaveChangesAsync();
+    }
 }
