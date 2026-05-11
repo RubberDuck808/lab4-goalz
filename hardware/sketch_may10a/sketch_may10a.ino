@@ -46,7 +46,7 @@ void loop() {
   printSensorData(data);
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi niet verbonden, opnieuw verbinden...");
+    Serial.println("WiFi connection failed, try again...");
     connectToWiFi();
   }
 
@@ -57,7 +57,7 @@ void loop() {
 }
 
 void connectToWiFi() {
-  Serial.print("Verbinden met WiFi");
+  Serial.print("Connected with WiFi");
 
   WiFi.begin(ssid, password);
 
@@ -67,8 +67,8 @@ void connectToWiFi() {
   }
 
   Serial.println();
-  Serial.println("WiFi verbonden!");
-  Serial.print("IP adres: ");
+  Serial.println("Connected with WiFi!");
+  Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 }
 
@@ -77,7 +77,7 @@ bool readSensors(SensorData &data) {
   data.humidity = dht.readHumidity();
 
   if (isnan(data.temperature) || isnan(data.humidity)) {
-    Serial.println("DHT sensor fout!");
+    Serial.println("DHT sensor error!");
     return false;
   }
 
@@ -115,7 +115,7 @@ String createJson(SensorData data) {
 
 void sendSensorData(SensorData data) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Kan data niet versturen: geen WiFi");
+    Serial.println("Failed to send data: no WiFi connection");
     return;
   }
 
@@ -133,7 +133,7 @@ void sendSensorData(SensorData data) {
   Serial.print("POST response code: ");
   Serial.println(responseCode);
 
-  Serial.println("Verstuurde JSON:");
+  Serial.println("Sent JSON:");
   Serial.println(json);
 
   if (responseCode <= 0) {
