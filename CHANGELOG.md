@@ -2,7 +2,9 @@
 
 ## Table of Contents
 
-1. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
+1. [Mobile: PopUp — speech bubble pointer Rectangle 18 & 19](#58-mobile-popup--speech-bubble-pointer-rectangle-18--19--2026-05-10)
+2. [Mobile: PopUp component (mascot notification)](#58-mobile-popup-component-mascot-notification--2026-05-08)
+2. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
 2. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
 3. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
 4. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
@@ -29,6 +31,38 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## [#58] Mobile: PopUp — speech bubble pointer Rectangle 18 & 19 — 2026-05-10
+
+### Changed
+- `frontend/mobile/pages/PopUp.jsx` — redesigned speech bubble area to match Figma node 1080-3925
+  - **Mascot** scaled to Figma dimensions: `102.13 × 95.26` (was `402 × 282`)
+  - **Rectangle 19** (`styles.rectangle19`) added as left-pointing speech bubble nib: `13.73 × 12.01`, `borderWidth: 2`, `borderColor: '#22CF64'`, `borderRadius: 11`, rotated 45°, overlaps Rectangle 18 by 8 pt via `marginRight: -8`
+  - **Rectangle 18** (`styles.bubble`) adjusted to Figma spec: `backgroundColor: '#fff'` (was `#f4f4f5`), `borderRadius: 10` (was 11), `borderWidth: 2`, `borderColor: '#22CF64'`
+  - Wrapper `bubbleOuter` (`flex: 1, flexDirection: 'row', alignItems: 'center'`) introduced to lay out Rectangle 19 and Rectangle 18 side-by-side
+
+### Rationale
+- Figma layer structure separates the green-bordered nib (Rectangle 19) from the white fill box (Rectangle 18) — mirroring this in React Native makes each layer independently adjustable
+- Rectangle 19 uses a rotated, fully-rounded View instead of the CSS triangle trick because `borderRadius: 11` and `borderColor` must both be applied as per Figma spec; the overlap hides the right half, leaving only the left pointer visible
+
+> Change completed after ~15 min
+
+---
+
+## [#58] Mobile: PopUp component (mascot notification) — 2026-05-08
+
+### Added
+- `frontend/mobile/pages/PopUp.jsx` — reusable modal overlay matching Figma wireframe (node 1059-3999): dark semi-transparent overlay, squirrel mascot on the left, speech bubble (white fill, green SVG border with left-pointing tail) on the right, green confirmation button at the bottom
+- Props: `visible` (boolean), `message` (string), `onConfirm` (callback)
+
+### Rationale
+- Reused the SVG speech bubble path from the existing `QuizSpeechBubble.jsx` — same shape and green stroke, no new dependency
+- `Modal transparent` + `statusBarTranslucent` for a native overlay look on both Android and iOS
+- Figma asset URL used for the mascot image (expires after 7 days — replace with a local asset if needed)
+
+> Change completed after ~5 min
+
+---
 
 ## Docs: End-user guide and deployment guide — 2026-05-03
 

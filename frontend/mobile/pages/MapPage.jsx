@@ -23,6 +23,7 @@ import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
 import ElementModal from './map/ElementModal';
 import SensorModal from './map/SensorModal';
+import PopUp from './PopUp';
 
 export default function MapPage({ navigation, route }) {
   // Track whether we've already navigated away so the completion fires only once.
@@ -45,6 +46,7 @@ export default function MapPage({ navigation, route }) {
   const [mapReady,      setMapReady]      = useState(false);
   const [elementModal,  setElementModal]  = useState(null); // { cp, zone } | null
   const [sensorModal,   setSensorModal]   = useState(null); // { cp, zone, sensorId, sensorName } | null
+  const [popUpState,    setPopUpState]    = useState(null); // { cp, zone } | null
 
   const initRef = useRef(false);
   const pendingCpRef = useRef(null);       // checkpoint to complete when map regains focus
@@ -341,8 +343,18 @@ export default function MapPage({ navigation, route }) {
         onClose={() => {
           const { cp, zone } = sensorModal;
           setSensorModal(null);
+          setPopUpState({ cp, zone });
+        }}
+      />
+      <PopUp
+        visible={!!popUpState}
+        message="demo quiz info"
+        onConfirm={() => {
+          const { cp, zone } = popUpState;
+          setPopUpState(null);
           completeCheckpoint(cp, zone);
         }}
+        buttonLabel="I've read the information"
       />
     </SafeAreaView>
   );
