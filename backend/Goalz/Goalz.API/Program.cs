@@ -81,6 +81,8 @@ builder.Services.AddScoped<ISensorRepository, SensorRepository>();
 builder.Services.AddScoped<ISensorService, SensorService>();
 builder.Services.AddScoped<ISensorDataRepository, SensorDataRepository>();
 builder.Services.AddScoped<ISensorDataService, SensorDataService>();
+builder.Services.AddScoped<IPopUpRepository, PopUpRepository>();
+builder.Services.AddScoped<IPopUpService, PopUpService>();
 
 // Dataset import
 builder.Services.AddScoped<IDatasetService, DatasetService>();

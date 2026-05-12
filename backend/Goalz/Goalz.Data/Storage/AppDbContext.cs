@@ -21,6 +21,7 @@ namespace Goalz.Data.Storage
         public DbSet<PartyGroup> PartyGroups { get; set; }
         public DbSet<PartyGroupAnswer> PartyGroupAnswers { get; set; }
         public DbSet<PartyVisitedCheckpoint> PartyVisitedCheckpoints { get; set; }
+        public DbSet<PopUp> PopUps { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,8 +77,14 @@ namespace Goalz.Data.Storage
                 entity.HasIndex(c => c.ZoneId);
             });
 
-            modelBuilder.Entity<Sensor>()
-                .Property(s => s.Geo).HasColumnName("Geom");
+            modelBuilder.Entity<Sensor>(entity =>
+            {
+                entity.Property(s => s.Geo).HasColumnName("Geom");
+                entity.HasOne(s => s.PopUp)
+                    .WithOne()
+                    .HasForeignKey<Sensor>(s => s.PopUpId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
             modelBuilder.Entity<SensorData>(entity =>
             {

@@ -2,7 +2,8 @@
 
 ## Table of Contents
 
-1. [Mobile: PopUp — speech bubble pointer Rectangle 18 & 19](#58-mobile-popup--speech-bubble-pointer-rectangle-18--19--2026-05-10)
+1. [#64 PopUp database connection](#64-popup-database-connection--2026-05-11)
+2. [Mobile: PopUp — speech bubble pointer Rectangle 18 & 19](#58-mobile-popup--speech-bubble-pointer-rectangle-18--19--2026-05-10)
 2. [Mobile: PopUp component (mascot notification)](#58-mobile-popup-component-mascot-notification--2026-05-08)
 2. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
 2. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
@@ -31,6 +32,33 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## [#64] PopUp database connection — 2026-05-11
+
+### Added
+- `Goalz.Domain/Entities/PopUp.cs` — new entity with `Id` and `InfoText`
+- `Goalz.Domain/Entities/Sensor.cs` — added `PopUpId` (FK) and `PopUp` navigation property (optional one-to-one)
+- `Goalz.Data/Storage/AppDbContext.cs` — added `DbSet<PopUp>`, configured one-to-one `Sensor → PopUp` with `OnDelete(SetNull)`
+- `Goalz.Application/Interfaces/IPopUpRepository.cs`, `IPopUpService.cs` — interfaces
+- `Goalz.Data/Repositories/PopUpRepository.cs` — `GetBySensorIdAsync`, `CreateAsync`, `UpdateAsync`, `DeleteAsync`
+- `Goalz.Application/Services/PopUpService.cs` — service wrapping repo, validates sensor exists and has no duplicate popup
+- `Goalz.Application/DTOs/PopUpDto.cs`, `CreatePopUpRequest.cs`, `UpdatePopUpRequest.cs`
+- `Goalz.API/Controllers/Game/PopUpController.cs` — `GET /api/game/sensors/{sensorId}/popup`
+- `Goalz.API/Controllers/Dashboard/PopUpController.cs` — `POST/PUT/DELETE /api/dashboard/sensors/{sensorId}/popup`
+- `Goalz.API/Program.cs` — DI registrations for `IPopUpRepository` and `IPopUpService`
+- Migration `AddSensorPopUp` — creates `PopUps` table, adds `PopUpId` column and unique index on `Sensors`
+- `frontend/mobile/services/api/api.js` — `getSensorPopUp(sensorId)` calling the new game endpoint
+- `frontend/mobile/pages/MapPage.jsx` — fetches popup message on sensor modal close, passes it to `<PopUp>`
+
+### Rationale
+- `PopUp` is a separate entity (not a field on `Sensor`) so staff can manage messages independently via the dashboard
+- FK lives on `Sensor` (one-to-one optional) so a sensor can exist without a popup message
+- `OnDelete(SetNull)` means deleting a popup message leaves the sensor intact
+- Migration was manually trimmed to remove an unrelated `PartyGroupAnswer → PartyGroupAnswers` rename that EF bundled in due to pre-existing schema drift
+
+> Issue closed after 0 min
+
+---
 
 ## [#58] Mobile: PopUp — speech bubble pointer Rectangle 18 & 19 — 2026-05-10
 
