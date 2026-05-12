@@ -7,4 +7,6 @@ public class Sensor
     public long Id { get; set; }
     public string? SensorName { get; set; }
     public Point? Geo { get; set; }
+    public long? PopUpId { get; set; }
+    public PopUp? PopUp { get; set; }
 }
