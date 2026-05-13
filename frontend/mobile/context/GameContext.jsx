@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { getGameState } from '../services/api';
-import { completeGame as completeGameApi } from '../services/api/partyApi';
+import { completeGame as completeGameApi, completeSoloGame } from '../services/api/partyApi';
 import { getUser } from '../services/session';
+import { buildPartyConnection } from '../services/signalr';
 
 const GameContext = createContext(null);
 
@@ -21,8 +22,6 @@ export function GameProvider({ children }) {
   const [username, setUsername] = useState(null);
   const [gameConfig, setGameConfigState] = useState(null);
 
-  // Keep a ref so the poll closure always sees the latest username without
-  // needing to restart the interval every time username changes.
   const usernameRef = useRef(username);
   useEffect(() => { usernameRef.current = username; }, [username]);
 
@@ -30,47 +29,108 @@ export function GameProvider({ children }) {
     getUser().then(u => { if (u) setUsername(u.username); });
   }, []);
 
-  // Expose a stable poll trigger so pages can request an immediate refresh
-  // (e.g. right after the host calls startGame).
+  // Applies a GameStateResponse from either a hub push or the fallback poll.
+  const applyServerState = useCallback((data) => {
+    if (!data) return;
+    const { members: serverMembers, status, visitedCheckpointIds: visited,
+            groupSize, boundaryId, zoneCount, checkpointsPerZone, allowedRoles } = data;
+
+    setPartyStatus(status);
+    setMembersState(serverMembers.map(m => m.username));
+
+    const currentUsername = usernameRef.current;
+    if (currentUsername) {
+      const myRole = serverMembers.find(m => m.username === currentUsername)?.role;
+      if (myRole) setRoleState(myRole);
+    }
+
+    setVisited(new Set(visited || []));
+    setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone,
+                         allowedRoles: allowedRoles ?? [] });
+  }, []);
+
+  // Expose a stable poll trigger so pages can force an immediate refresh
+  // (e.g. right after the host calls startGame as a belt-and-braces flush).
   const pollRef = useRef(null);
   const triggerPoll = useCallback(() => { pollRef.current?.(); }, []);
 
   useEffect(() => {
     if (!partyId) return;
 
-    async function poll() {
+    let connection = null;
+    let fallbackTimer = null;
+    let appStateSub = null;
+    let cancelled = false;
+
+    // 30-second fallback poll — keeps state consistent if the hub connection drops
+    // and hasn't reconnected yet. Much cheaper than the old 3-second interval.
+    async function fallbackPoll() {
+      if (cancelled) return;
       const res = await getGameState(partyId);
-      if (!res.success || !res.data) return;
-
-      const { members: serverMembers, status, visitedCheckpointIds: visited,
-              groupSize, boundaryId, zoneCount, checkpointsPerZone, allowedRoles } = res.data;
-
-      setPartyStatus(status);
-      setMembersState(serverMembers.map(m => m.username));
-
-      // Use the ref so we always have the latest username even if the effect
-      // closure captured an earlier (possibly null) snapshot.
-      const currentUsername = usernameRef.current;
-      if (currentUsername) {
-        const myRole = serverMembers.find(m => m.username === currentUsername)?.role;
-        if (myRole) setRoleState(myRole);
-      }
-
-      setVisited(new Set(visited || []));
-      setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone,
-                           allowedRoles: allowedRoles ?? [] });
+      if (!cancelled && res.success && res.data) applyServerState(res.data);
     }
 
-    pollRef.current = poll;
-    poll();
-    const t = setInterval(() => {
-      if (AppState.currentState === 'active') poll();
-    }, 3000);
-    const appStateSub = AppState.addEventListener('change', state => {
-      if (state === 'active') poll();
-    });
-    return () => { clearInterval(t); pollRef.current = null; appStateSub.remove(); };
-  }, [partyId]);
+    pollRef.current = fallbackPoll;
+
+    function scheduleFallback() {
+      clearTimeout(fallbackTimer);
+      fallbackTimer = setTimeout(function tick() {
+        if (cancelled) return;
+        fallbackPoll().finally(() => {
+          if (!cancelled) fallbackTimer = setTimeout(tick, 30000);
+        });
+      }, 30000);
+    }
+
+    async function start() {
+      // Initial fetch so state is populated immediately on join.
+      await fallbackPoll();
+      if (cancelled) return;
+
+      connection = buildPartyConnection();
+
+      connection.on('MemberJoined',      (state) => { if (!cancelled) applyServerState(state); });
+      connection.on('GameStarted',       (state) => { if (!cancelled) applyServerState(state); });
+      connection.on('CheckpointVisited', (state) => { if (!cancelled) applyServerState(state); });
+      // GameCompleted carries only { username } — full state not needed; the completing
+      // player's own completeGame() call handles local teardown via resetGame().
+
+      connection.onreconnected(() => {
+        if (!cancelled) {
+          connection.invoke('JoinPartyRoom', partyId).catch(() => {});
+          fallbackPoll();
+        }
+      });
+
+      try {
+        await connection.start();
+        if (cancelled) { connection.stop(); return; }
+        await connection.invoke('JoinPartyRoom', partyId);
+      } catch {
+        // Hub unreachable — fallback poll carries the load.
+      }
+
+      // Start the fallback interval after the hub is up.
+      scheduleFallback();
+
+      appStateSub = AppState.addEventListener('change', state => {
+        if (state === 'active' && !cancelled) fallbackPoll();
+      });
+    }
+
+    start();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(fallbackTimer);
+      pollRef.current = null;
+      appStateSub?.remove();
+      if (connection) {
+        connection.invoke('LeavePartyRoom', partyId).catch(() => {});
+        connection.stop();
+      }
+    };
+  }, [partyId, applyServerState]);
 
   const setParty = useCallback((id, code, name, initial = []) => {
     setPartyId(id); setPartyCode(code); setPartyName(name); setMembersState(initial);
@@ -91,8 +151,10 @@ export function GameProvider({ children }) {
   }, []);
 
   const completeGame = useCallback(async (capturedPartyId, capturedVisits, capturedQuizScore) => {
-    if (capturedPartyId && capturedVisits.length > 0) {
+    if (capturedPartyId) {
       await completeGameApi(capturedPartyId, capturedVisits, capturedQuizScore).catch(() => {});
+    } else if (!capturedPartyId) {
+      await completeSoloGame(capturedVisits.length, capturedQuizScore).catch(() => {});
     }
     resetGame();
   }, [resetGame]);

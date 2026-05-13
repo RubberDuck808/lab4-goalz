@@ -4,7 +4,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export async function getZones() {
   try {
-    const response = await apiFetch(`${BASE_URL}/api/game/zones`, {
+    const response = await apiFetch(`${BASE_URL}/api/game/map/zones`, {
       headers: await authHeaders(),
     });
     if (response.ok) return { success: true, data: await response.json() };
@@ -16,7 +16,7 @@ export async function getZones() {
 
 export async function getBoundaries() {
   try {
-    const response = await apiFetch(`${BASE_URL}/api/game/boundaries`, {
+    const response = await apiFetch(`${BASE_URL}/api/game/map/boundaries`, {
       headers: await authHeaders(),
     });
     if (response.ok) return { success: true, data: await response.json() };
@@ -100,6 +100,47 @@ export async function visitCheckpoint(partyId, checkpointId) {
   });
   if (response.ok) return { success: true };
   return { success: false, error: 'Could not visit checkpoint.' };
+}
+
+export async function getUserStats(username) {
+  try {
+    const url = username
+      ? `${BASE_URL}/api/game/users/stats/${encodeURIComponent(username)}`
+      : `${BASE_URL}/api/game/users/stats`;
+    const response = await apiFetch(url, { headers: await authHeaders() });
+    if (response.ok) return { success: true, data: await response.json() };
+    return { success: false, data: null };
+  } catch {
+    return { success: false, data: null };
+  }
+}
+
+export async function completeSoloGame(checkpointCount, quizScore = 0) {
+  try {
+    const response = await apiFetch(`${BASE_URL}/api/game/users/solo/complete`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ checkpointCount, quizScore }),
+    });
+    if (response.ok) return { success: true };
+    return { success: false, error: 'Could not save solo game.' };
+  } catch {
+    return { success: false, error: 'Could not reach the server.' };
+  }
+}
+
+export async function submitQuizAnswer(questionId, answerId) {
+  try {
+    const response = await apiFetch(`${BASE_URL}/api/game/quiz/answer`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ questionId, answerId }),
+    });
+    if (response.ok) return { success: true, data: await response.json() };
+    return { success: false, error: 'Could not submit answer.' };
+  } catch {
+    return { success: false, error: 'Could not reach the server.' };
+  }
 }
 
 export async function completeGame(partyId, checkpointIds, quizScore = 0) {

@@ -2,6 +2,59 @@
 
 ## Table of Contents
 
+1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
+1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+---
+
+## Feat: SignalR real-time push — 2026-05-13
+
+### Changed
+- `Program.cs`: Added `OnMessageReceived` JWT handler so SignalR WebSocket handshakes can authenticate via `?access_token=` query parameter (WebSockets cannot send HTTP headers)
+- `Hubs/PartyHub.cs`: Added `[Authorize]`, replaced stub client-invocation methods with `JoinPartyRoom` / `LeavePartyRoom` group management; server-side push is now via `IHubContext`
+- `Controllers/Game/PartyController.cs`: Injected `IHubContext<PartyHub>`; `JoinParty`, `StartGame`, `VisitCheckpoint`, and `CompleteGame` now push the updated `GameStateResponse` (or completion notice) to the party's SignalR group after each mutation
+- `services/signalr.js` (new): Hub connection builder — JWT token factory, automatic reconnect, warning-level logging
+- `context/GameContext.jsx`: Replaced 3-second `setInterval` poll with a SignalR hub connection; `MemberJoined`, `GameStarted`, `CheckpointVisited` events call a shared `applyServerState()` function; 30-second fallback poll retained for reconnection resilience; connection is torn down and `LeavePartyRoom` invoked on unmount
+- `package.json`: Added `@microsoft/signalr` (10 packages, Expo SDK 54 WebSocket compatible)
+
+### Rationale
+- At 10k users / 20-player parties the old 3-second poll produced ~3,300 DB round-trips per second — SignalR pushes state only on actual changes, eliminating ~95% of that load
+- The hub was already scaffolded (`AddSignalR`, `/hubs/party` mapped) but never connected end-to-end; this wires it up fully
+- Full `GameStateResponse` is pushed on each event so the client update path is identical to the former poll — no new client state shape to maintain
+- 30-second fallback poll ensures eventual consistency if the WebSocket drops on flaky mobile networks
+
+> Issue closed after 0 min
+
+---
+
+## Fix: Mobile/backend flow audit — 2026-05-13
+
+### Changed
+- `GameContext.jsx`: Party `completeGame()` guard no longer skips the API call when `pendingVisits` is empty — a party game with 0 checkpoint visits now correctly marks the party as "Completed"
+- `QuizController.cs`: Removed `isCorrect` from `GET /api/game/quiz/question` response — answer correctness is no longer visible in the network response
+- `QuizController.cs`: Added `POST /api/game/quiz/answer` — server-side answer verification returns `{ correct, points }`; quiz score is now server-validated instead of client-calculated
+- `QuizPage.jsx`: Updated to call `POST /api/game/quiz/answer` on submit instead of reading `isCorrect` locally
+- `partyApi.js`: Added `submitQuizAnswer()`; updated `getZones()` → `/api/game/map/zones` and `getBoundaries()` → `/api/game/map/boundaries` (full geometry, replaces minimal endpoints)
+- `MapPage.jsx`: Replaced three raw `apiFetch()` calls with the exported `getZones()`, `getBoundaries()`, `getCheckpoints()` helpers; removed unused `apiFetch` import
+- `MapPage.jsx`: `zoneCount` cap now sorts zones by proximity to the player before slicing, so the nearest N zones are selected instead of the first N by DB order
+- `PartyRepository.cs`: `CompleteGameAsync` now writes `PartyMember.Score` for the completing player (`checkpoints * 10 + quizScore`)
+- `ZoneController.cs` (game): Deleted — `GET /api/game/zones` was redundant with `GET /api/game/map/zones`
+- `BoundaryController.cs` (game): Deleted — `GET /api/game/boundaries` was redundant with `GET /api/game/map/boundaries`
+- `agent_docs/api_endpoints.md`: Added full documentation for map, sensor, quiz, party, and leaderboard endpoints; updated quick reference table
+
+### Rationale
+- Party completion guard bug would leave parties in "InGame" forever if a player bailed immediately after the host started
+- Exposing `isCorrect` allowed any player to cheat by reading the quiz question network response; server-side validation closes that hole
+- `MapPage` was bypassing the established API helper layer, making the code inconsistent and harder to maintain
+- Zone cap by DB order meant players could be assigned zones on the opposite side of the arboretum when a cap was configured
+- `PartyMember.Score` was an entity field that had existed but was never written — leaderboard per-party scores were always 0
+- Consolidating to the `/map/` endpoints removes two redundant controllers and one confusing endpoint split
+
+> Issue closed after 0 min
+
+---
+
+1. [Feature: UserStatistics table + completion receipt](#feature-userstatistics-table--completion-receipt--2026-05-11)
+1. [Fix: quiz timing, real questions, solo stats](#fix-quiz-timing-real-questions-solo-stats--2026-05-10)
 1. [Mobile: Performance & security hardening](#mobile-performance--security-hardening--2026-05-10)
 1. [Feature: Pending element submission & admin approval flow](#feature-pending-element-submission--admin-approval-flow--2026-05-07)
 2. [Mobile: Camera flow — iOS/Android hardening](#mobile-camera-flow--iosandroid-hardening--2026-05-07)
@@ -34,6 +87,47 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## Feature: UserStatistics table + completion receipt — 2026-05-11 09:00
+
+### Added
+- **`UserStatistics` entity** — dedicated table (1-to-1 with User) tracking `CheckpointsVisited`, `PicturesTaken`, `PartiesJoined`, `GamesPlayed`, `TotalPoints`. Migration `AddUserStatistics` creates the table; `SoloScore` removed from Users.
+- **`GET /api/game/users/stats`** — returns own stats; **`GET /api/game/users/stats/{username}`** — returns any user's stats (for viewing other profiles).
+- **Completion receipt screen** — `AllCheckpointsCompletePage` now shows a restaurant-bill breakdown: checkpoints × 10 pts, quiz bonus, total. Styled as a torn receipt card.
+- **Real stats on Profile** — `ProfilePage` fetches `getUserStats` on focus; `StatisticsCard` now renders all 5 fields in a 2-column grid with a full-width "Total points" accent row.
+
+### Changed
+- `PartyRepository.CompleteGameAsync` now upserts `UserStatistics` instead of writing to `PartyMember.Score`.
+- `PartyService.JoinParty` increments `PartiesJoined` when a new member joins a party.
+- `UserRepository.GetLeaderboardAsync` reads `UserStatistics.TotalPoints` directly — no more multi-table sum.
+- Removed `SoloScore` from `User` entity; `UserService.AddSoloScoreAsync` replaced by `AddGameStatsAsync`.
+
+### Rationale
+- Single source of truth for user stats instead of scattered columns and runtime aggregation.
+- Leaderboard query is now a simple join + single column read rather than a cross-table sum.
+
+> Issue closed after 60 min
+
+---
+
+## Fix: quiz timing, real questions, solo stats — 2026-05-10 20:30
+
+### Fixed
+- **Timing bug**: `AllCheckpointsComplete` was showing before the quiz screen because `useEffect` on `postQuizZoneId` fired synchronously when the state was set. Replaced with `useFocusEffect` + a ref so zone advancement only runs when `MapPage` regains focus after the quiz — never before. `QuizResultPage` still handles the all-zones-done case directly (navigates to `AllCheckpointsComplete` without returning to map).
+
+### Added
+- **Real quiz questions**: `Quizzes`, `Questions`, `Answers` tables created via migration `20260510202138_AddQuizQuestionAnswer`. Seeded 10 sustainability questions (4 answers each, 1 correct). `GET /api/game/quiz/question` returns a random question with shuffled answers.
+- **`QuizPage`** now fetches a real question from the API on mount; shows a loading spinner while fetching; Submit button disabled until an answer is selected; countdown pauses until question loads.
+- **Solo player stats**: `User.SoloScore` column added (`20260510202730_AddUserSoloScore`). `POST /api/game/users/solo/complete` awards `checkpointCount × 10 + quizScore` to the user's `SoloScore`. Leaderboard now sums `SoloScore` alongside party-based points. `GameContext.completeGame` calls the solo endpoint when `partyId` is null.
+
+### Rationale
+- `useFocusEffect` fires on screen focus events (navigation stack changes), not on React state changes, making it the correct hook for "do X after returning from another screen."
+- Seed data embedded in the migration so the tables are usable immediately after `dotnet ef database update` — no separate seed command needed.
+- `SoloScore` column is simpler than creating a solo party record; the leaderboard already sums multiple score sources so adding one more column is low-friction.
+
+> Issue closed after 120 min
+
+---
 
 ## Mobile + Backend: Player avatars — 2026-05-10 13:00
 

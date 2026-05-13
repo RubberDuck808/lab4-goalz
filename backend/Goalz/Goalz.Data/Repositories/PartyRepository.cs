@@ -100,6 +100,7 @@ namespace Goalz.Data.Repositories
 
         public async Task CompleteGameAsync(long partyId, string username, List<long> checkpointIds, int quizScore)
         {
+            // Batch-insert unvisited checkpoints
             var existingIds = await _context.PartyVisitedCheckpoints
                 .Where(pvc => pvc.PartyId == partyId)
                 .Select(pvc => pvc.CheckpointId)
@@ -117,12 +118,26 @@ namespace Goalz.Data.Repositories
             if (party != null)
                 party.Status = "Completed";
 
-            // Award points to the completing member: 10 per checkpoint + quiz score
-            var member = await _context.PartyMembers
-                .Include(pm => pm.User)
-                .FirstOrDefaultAsync(pm => pm.PartyId == partyId && pm.User.Username == username);
-            if (member != null)
-                member.Score += checkpointIds.Count * 10 + quizScore;
+            // Update UserStatistics and PartyMember.Score for the completing player
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user != null)
+            {
+                var stats = await _context.UserStatistics.FirstOrDefaultAsync(s => s.UserId == user.Id);
+                if (stats == null)
+                {
+                    stats = new UserStatistics { UserId = user.Id };
+                    _context.UserStatistics.Add(stats);
+                }
+                var memberScore = (long)(checkpointIds.Count * 10) + quizScore;
+                stats.CheckpointsVisited += checkpointIds.Count;
+                stats.GamesPlayed        += 1;
+                stats.TotalPoints        += memberScore;
+
+                var member = await _context.PartyMembers
+                    .FirstOrDefaultAsync(pm => pm.PartyId == partyId && pm.UserId == user.Id);
+                if (member != null)
+                    member.Score = memberScore;
+            }
 
             await _context.SaveChangesAsync();
         }

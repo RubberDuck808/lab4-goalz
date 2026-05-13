@@ -61,6 +61,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = JwtRegisteredClaimNames.Sub,
             RoleClaimType = "role",
         };
+        // SignalR WebSocket connections cannot send HTTP headers, so the JWT arrives
+        // as ?access_token= on hub handshake requests.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // Dashboard auth

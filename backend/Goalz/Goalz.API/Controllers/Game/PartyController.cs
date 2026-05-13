@@ -1,22 +1,25 @@
+using Goalz.Api.Hubs;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Goalz.Api.Controllers.Game
 {
     [ApiController]
     [Route("api/game/party")]
     [EnableRateLimiting("party")]
-
     public class PartyController : ControllerBase
     {
         private readonly IPartyService _partyService;
+        private readonly IHubContext<PartyHub> _hub;
 
-        public PartyController(IPartyService partyService)
+        public PartyController(IPartyService partyService, IHubContext<PartyHub> hub)
         {
             _partyService = partyService;
+            _hub = hub;
         }
 
         [Authorize]
@@ -33,16 +36,19 @@ namespace Goalz.Api.Controllers.Game
             var result = await _partyService.GetParty(id);
             return Ok(result);
         }
-        
-        [Authorize] //adds the condition that the Authorize Token is needed. The Authorization Middleware is registered in Program.cs
+
+        [Authorize]
         [HttpPost("join")]
         public async Task<IActionResult> JoinParty([FromBody] JoinPartyRequest request)
         {
-            var username = User.Identity!.Name!;  //from JWT Token
+            var username = User.Identity!.Name!;
             var result = await _partyService.JoinParty(request.Code, username);
             if (result == null) return NotFound("Party not found");
+
+            var state = await _partyService.GetGameState(result.Id);
+            await _hub.Clients.Group(result.Id.ToString()).SendAsync("MemberJoined", state);
+
             return Ok(result);
-            
         }
 
         [Authorize]
@@ -52,6 +58,10 @@ namespace Goalz.Api.Controllers.Game
             var result = await _partyService.StartGame(id);
             if (!result.Success)
                 return result.Error == "Party not found" ? NotFound(result.Error) : BadRequest(result.Error);
+
+            var state = await _partyService.GetGameState(id);
+            await _hub.Clients.Group(id.ToString()).SendAsync("GameStarted", state);
+
             return Ok();
         }
 
@@ -69,6 +79,10 @@ namespace Goalz.Api.Controllers.Game
         public async Task<IActionResult> VisitCheckpoint(long id, [FromBody] VisitCheckpointRequest request)
         {
             await _partyService.VisitCheckpoint(id, request.CheckpointId);
+
+            var state = await _partyService.GetGameState(id);
+            await _hub.Clients.Group(id.ToString()).SendAsync("CheckpointVisited", state);
+
             return Ok();
         }
 
@@ -78,6 +92,9 @@ namespace Goalz.Api.Controllers.Game
         {
             var username = User.Identity!.Name!;
             await _partyService.CompleteGame(id, username, request.CheckpointIds, request.QuizScore);
+
+            await _hub.Clients.Group(id.ToString()).SendAsync("GameCompleted", new { username });
+
             return Ok();
         }
     }

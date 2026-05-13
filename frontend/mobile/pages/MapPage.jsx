@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,7 +8,7 @@ import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import { useGameContext } from '../context/GameContext';
-import { apiFetch } from '../services/api/api';
+import { getZones, getBoundaries, getCheckpoints } from '../services/api/partyApi';
 import {
   ARBORETUM_REGION,
   VISIT_RADIUS_METERS,
@@ -53,6 +53,9 @@ export default function MapPage({ navigation, route }) {
   const [cameraActive, setCameraActive] = useState(false);
   const [leaveModal, setLeaveModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  // Tracks the most-recent GPS fix so we can immediately check proximity
+  // when targetCp changes (e.g. user is already standing next to the next checkpoint)
+  const lastCoordsRef = useRef(null);
   const { partyId, markVisited, addPendingVisit, postQuizZoneId, setPostQuizZoneId, clearPostQuizZone, role, gameConfig } = useGameContext();
 
   // Keep refs so effects can read current values without stale closures
@@ -62,54 +65,47 @@ export default function MapPage({ navigation, route }) {
   useEffect(() => { roleRef.current = role; }, [role]);
   const gameZonesRef = useRef(gameZones);
   useEffect(() => { gameZonesRef.current = gameZones; }, [gameZones]);
+  // Ref so the useFocusEffect callback can read the latest value without stale closure
+  const postQuizZoneIdRef = useRef(postQuizZoneId);
+  useEffect(() => { postQuizZoneIdRef.current = postQuizZoneId; }, [postQuizZoneId]);
 
-  // Advance to the next zone or finish the game after returning from quiz
-  // postQuizZoneId is in context so it survives any screen remounts
-  useEffect(() => {
-    if (postQuizZoneId === null) return; // not in post-quiz state
-
-    clearPostQuizZone(); // reset before doing anything to avoid double-trigger
-
-    if (postQuizZoneId === 0) {
-      // All zones done — go to completion screen
-      if (!completedRef.current) {
-        completedRef.current = true;
-        navigation.navigate('AllCheckpointsComplete');
-      }
-    } else {
-      // Advance to the next zone
-      const nextZone = gameZonesRef.current.find(z => z.id === postQuizZoneId);
-      if (nextZone) {
-        const cps = getCpsForZone(nextZone, checkpointsRef.current, roleRef.current);
-        let nextCps = cps;
-        if (cps.length === 0 && (roleRef.current === 'Trailblazer' || roleRef.current === 'Explorer')) {
-          const spot = generatePhotoSpot(nextZone);
-          nextCps = spot ? [spot] : [];
-        }
-        setActiveZone(nextZone);
-        setTargetCp(nextCps[0] ?? null);
-        setPendingZoneCps(nextCps.slice(1));
-        const geom = safeParseGeometry(nextZone.boundary);
-        if (geom) {
-          const coords = extractRings(geom).flatMap(coordsToLatLng);
-          if (coords.length) {
-            setTimeout(() => {
-              mapRef.current?.fitToCoordinates(coords, {
-                edgePadding: { top: 100, right: 80, bottom: 120, left: 80 },
-                animated: true,
-              });
-            }, 400);
-          }
-        }
-      }
-    }
-  }, [postQuizZoneId, clearPostQuizZone, navigation]);
-
-  // Reset camera lock when map regains focus (user returned from Camera screen)
+  // When the map regains focus after returning from Quiz/QuizResult:
+  // - reset camera lock (returned from Camera)
+  // - advance to the next zone if postQuizZoneId is set
+  // Using useFocusEffect (not useEffect) so this only fires on screen-focus,
+  // never synchronously when setPostQuizZoneId is called — that was the timing bug.
+  // The zoneId===0 (all done) case is handled by QuizResultPage directly;
+  // Map never regains focus in that path.
   useFocusEffect(
     useCallback(() => {
       setCameraActive(false);
-    }, [])
+      const zoneId = postQuizZoneIdRef.current;
+      if (!zoneId) return; // null or 0 — nothing to advance
+      clearPostQuizZone();
+      const nextZone = gameZonesRef.current.find(z => z.id === zoneId);
+      if (!nextZone) return;
+      const cps = getCpsForZone(nextZone, checkpointsRef.current, roleRef.current);
+      let nextCps = cps;
+      if (cps.length === 0 && (roleRef.current === 'Trailblazer' || roleRef.current === 'Explorer')) {
+        const spot = generatePhotoSpot(nextZone);
+        nextCps = spot ? [spot] : [];
+      }
+      setActiveZone(nextZone);
+      setTargetCp(nextCps[0] ?? null);
+      setPendingZoneCps(nextCps.slice(1));
+      const geom = safeParseGeometry(nextZone.boundary);
+      if (geom) {
+        const coords = extractRings(geom).flatMap(coordsToLatLng);
+        if (coords.length) {
+          setTimeout(() => {
+            mapRef.current?.fitToCoordinates(coords, {
+              edgePadding: { top: 100, right: 80, bottom: 120, left: 80 },
+              animated: true,
+            });
+          }, 400);
+        }
+      }
+    }, [clearPostQuizZone])
   );
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -158,8 +154,13 @@ export default function MapPage({ navigation, route }) {
       const { status } = await Location.requestForegroundPermissionsAsync().catch(() => ({ status: 'denied' }));
       if (status !== 'granted') return;
       sub = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.High, distanceInterval: 5 },
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 1000,    // update at least once per second
+          distanceInterval: 1,   // and on every 1 m of movement
+        },
         ({ coords }) => {
+          lastCoordsRef.current = coords;
           setTargetCp(prev => {
             if (!prev) return prev;
             const radius = prev.type === 'photo' ? PHOTO_VISIT_RADIUS_METERS : VISIT_RADIUS_METERS;
@@ -172,23 +173,26 @@ export default function MapPage({ navigation, route }) {
     return () => sub?.remove?.();
   }, [fromGame]);
 
+  // ── Immediate proximity check when the target checkpoint changes ────────────
+  // Handles the case where the user is already standing within range of the
+  // next checkpoint before the watcher fires its next update.
+  useEffect(() => {
+    if (!targetCp || !fromGame) return;
+    const coords = lastCoordsRef.current;
+    if (!coords) return;
+    const radius = targetCp.type === 'photo' ? PHOTO_VISIT_RADIUS_METERS : VISIT_RADIUS_METERS;
+    setNearTarget(haversineMeters(coords, { latitude: targetCp.latitude, longitude: targetCp.longitude }) <= radius);
+  }, [targetCp, fromGame]);
+
   // ── Fetch zones + checkpoints ───────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-    const base = process.env.EXPO_PUBLIC_API_BASE_URL;
-    if (!base) return;
     (async () => {
-      try {
-        const [zr, cr, br] = await Promise.all([
-          apiFetch(`${base}/api/game/map/zones`),
-          apiFetch(`${base}/api/game/map/checkpoints`),
-          apiFetch(`${base}/api/game/map/boundaries`),
-        ]);
-        if (cancelled) return;
-        if (zr.ok) { const j = await zr.json(); if (!cancelled) setZones(Array.isArray(j) ? j : []); }
-        if (cr.ok) { const j = await cr.json(); if (!cancelled) setCheckpoints(Array.isArray(j) ? j : []); }
-        if (br.ok) { const j = await br.json(); if (!cancelled) setBoundaries(Array.isArray(j) ? j : []); }
-      } catch {}
+      const [zr, cr, br] = await Promise.all([getZones(), getCheckpoints(), getBoundaries()]);
+      if (cancelled) return;
+      if (zr.success) setZones(Array.isArray(zr.data) ? zr.data : []);
+      if (cr.success) setCheckpoints(Array.isArray(cr.data) ? cr.data : []);
+      if (br.success) setBoundaries(Array.isArray(br.data) ? br.data : []);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -247,7 +251,19 @@ export default function MapPage({ navigation, route }) {
     const bid = gameConfig?.boundaryId;
     const scoped = bid ? zones.filter(z => z.boundaryId === bid) : zones;
     const cap = gameConfig?.zoneCount;
-    return cap ? scoped.slice(0, cap) : scoped;
+    if (!cap) return scoped;
+    // Sort by proximity to the user so the cap keeps the nearest zones, not DB-order zones.
+    if (userLocation) {
+      const sorted = [...scoped].sort((a, b) => {
+        const ca = zoneCentroid(a), cb = zoneCentroid(b);
+        if (!ca && !cb) return 0;
+        if (!ca) return 1;
+        if (!cb) return -1;
+        return haversineMeters(userLocation, ca) - haversineMeters(userLocation, cb);
+      });
+      return sorted.slice(0, cap);
+    }
+    return scoped.slice(0, cap);
   }, [fromGame, zones, boundaries, gameConfig, userLocation]);
 
   // ── Photo-spot fallback ─────────────────────────────────────────────────────
@@ -366,6 +382,12 @@ export default function MapPage({ navigation, route }) {
       />
 
       <View style={styles.mapWrap}>
+        {/* Tile loading overlay — prevents the black mapType="none" canvas from showing */}
+        {!mapReady && (
+          <View style={styles.mapPlaceholder}>
+            <ActivityIndicator size="large" color="#1CB0F6" />
+          </View>
+        )}
         {fromGame && totalZones > 0 && (
           <MapHud
             targetCp={targetCp}
@@ -507,9 +529,16 @@ export default function MapPage({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#111' },
-  mapWrap: { flex: 1 },
+  safe:    { flex: 1, backgroundColor: '#e8ede8' },
+  mapWrap: { flex: 1, backgroundColor: '#e8ede8' },
   map:     { flex: 1 },
+  mapPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    backgroundColor: '#e8ede8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   actionBtnWrap: { position: 'absolute', bottom: 20, left: 0, right: 0, zIndex: 15, alignItems: 'center' },
   actionBtn: {
