@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, Touchable, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 
 export default function QuizCountdownPage({ navigation }) {
     const [countdown, setCountdown] = useState(5);
