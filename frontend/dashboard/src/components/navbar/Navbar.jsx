@@ -50,11 +50,11 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             </div>
 
             <div>
-              <h1 className="font text-md font-bold text-white">Humber</h1>
-              <h2 className="font text-sm text-light-green italic">
+              <h1 className="text-md font-bold text-white">Humber</h1>
+              <h2 className="text-sm text-light-green italic">
                 Sustainability
               </h2>
-              <h3 className="font text-[10px] italic text-light-green">
+              <h3 className="text-[10px] italic text-light-green">
                 Arboretum dashboard
               </h3>
             </div>

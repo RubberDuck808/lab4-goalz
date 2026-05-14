@@ -15,7 +15,7 @@ export default function CheckBox({name, onChange, checked}) {
             }`}>
               {checked && <i className="fa-solid fa-check text-white text-xs"></i>}
             </span>
-            <span className="ml-2 text-black font">{name}</span>
+            <span className="ml-2 text-black">{name}</span>
         </label>
     </div>
   )

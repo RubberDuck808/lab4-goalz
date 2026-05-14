@@ -40,20 +40,20 @@ export default function Login() {
             <i className="fa-solid fa-leaf text-white text-3xl"></i>
           </div>
           <div>
-            <h1 className='font text-4xl font-bold text-white'>Arboretum</h1>
-            <h3 className='font text-light-green text-4xl font-bold'>Dasboard</h3>
-            <p className='font text-light-green italic text-sm mt-3'>Humber College Office of Sustainability</p>
+            <h1 className='text-4xl font-bold text-white'>Arboretum</h1>
+            <h3 className='text-light-green text-4xl font-bold'>Dasboard</h3>
+            <p className='text-light-green italic text-sm mt-3'>Humber College Office of Sustainability</p>
           </div>
 
         </div>
         <div className='w-full md:w-1/2 bg-white flex items-center justify-center'>
           <div className='w-[75%]'>
-            <h1 className='font text-3xl font-bold'>Welcome back!</h1>
-            <p className='font text-sm text-gray-500 mt-2'>Sign in to the Office of Sustainability Portal</p>
+            <h1 className='text-3xl font-bold'>Welcome back!</h1>
+            <p className='text-sm text-gray-500 mt-2'>Sign in to the Office of Sustainability Portal</p>
 
             <div className='flex flex-col mt-5 gap-5'>
               <div>
-                <label htmlFor="email" className='font'>Email</label>
+                <label htmlFor="email">Email</label>
                 <input 
                   type="email" 
                   id='email' 
@@ -64,7 +64,7 @@ export default function Login() {
                 />
               </div>
               <div>
-                <label htmlFor="password" className='font'>Password</label>
+                <label htmlFor="password">Password</label>
                 <input 
                   type="password" 
                   id='password' 

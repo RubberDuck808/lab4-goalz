@@ -73,14 +73,14 @@ export default function ImportData() {
                     <i className="fa-solid fa-upload text-white text-4xl"></i>
                 </div>
                 <div className='grow-1 h-full'>
-                    <h1 className='font font-bold text-3xl text-black'>Upload Dataset</h1>
-                    <p className='font text-gray-500 font-light mt-1'>
+                    <h1 className='font-bold text-3xl text-black'>Upload Dataset</h1>
+                    <p className='text-gray-500 font-light mt-1'>
                         {selectedFiles.length > 0 
                           ? `${selectedFiles.length} CSV file(s) selected: ${selectedFiles.map(f => f.name).join(', ')}`
                           : 'Upload your dataset in CSV format to visualize and analyze it on the map.'
                         }
                     </p>
-                    <p className='font text-gray-400 text-sm mt-2'>Accepted file type: CSV</p>
+                    <p className='text-gray-400 text-sm mt-2'>Accepted file type: CSV</p>
                 </div>
             </div>
             <input

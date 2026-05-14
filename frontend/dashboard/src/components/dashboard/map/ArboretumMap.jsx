@@ -769,8 +769,8 @@ export default function ArboretumMap() {
       {/* Header */}
       <div className='h-[70px] bg-white w-full border-b border-gray-300 shadow flex items-center justify-between px-[20px] shrink-0'>
         <div>
-          <h1 className='font font-bold text-xl ps-[50px] md:ps-0'>Arboretum Map</h1>
-          <p className='font text-gray-500 font-extralight text-sm hidden md:block'>Office of Sustainability · Now updated</p>
+          <h1 className='font-bold text-xl ps-[50px] md:ps-0'>Arboretum Map</h1>
+          <p className='text-gray-500 font-extralight text-sm hidden md:block'>Office of Sustainability · Now updated</p>
         </div>
         <div className="flex items-center gap-3">
           {loading && (
@@ -804,10 +804,10 @@ export default function ArboretumMap() {
             <>
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h2 className="font text-gray-900 font-semibold">
+                  <h2 className="text-gray-900 font-semibold">
                     {createMode === 'boundary' ? 'New Boundary' : 'New Zone'}
                   </h2>
-                  <p className="font text-gray-500 text-sm mt-0.5">
+                  <p className="text-gray-500 text-sm mt-0.5">
                     {pendingGeometry ? 'Shape ready — name it and save.'
                       : vertexCount === 0 ? 'Click on the map to place the first point.'
                       : vertexCount === 1 ? 'Click to add more points.'
@@ -815,36 +815,36 @@ export default function ArboretumMap() {
                   </p>
                 </div>
                 <button onClick={handleCancelCreate}
-                  className="font flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
+                  className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
                   <i className="fa-solid fa-xmark text-xs" /> Cancel
                 </button>
               </div>
               {pendingGeometry && (
                 <form onSubmit={handleSaveCreate} className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">
+                    <label className="text-gray-500 text-sm">
                       {createMode === 'boundary' ? 'Boundary name' : 'Zone name'}
                     </label>
                     <input type="text"
                       placeholder={createMode === 'boundary' ? 'e.g. Humber Arboretum' : 'e.g. North Meadow'}
                       value={createName} onChange={(e) => setCreateName(e.target.value)} autoFocus required
-                      className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" />
+                      className="bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Color</label>
+                    <label className="text-gray-500 text-sm">Color</label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={createColor} onChange={(e) => setCreateColor(e.target.value)}
                         className="w-8 h-8 rounded cursor-pointer border border-gray-300 bg-transparent p-0" />
-                      <span className="font text-gray-500 text-xs font-mono">{createColor}</span>
+                      <span className="text-gray-500 text-xs font-mono">{createColor}</span>
                     </div>
                   </div>
                   <div className="flex items-end gap-2 ml-auto">
                     <button type="button" onClick={handleCancelCreate}
-                      className="font bg-white hover:bg-gray-50 text-gray-700 px-4 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
+                      className="bg-white hover:bg-gray-50 text-gray-700 px-4 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
                       Discard
                     </button>
                     <button type="submit" disabled={saving}
-                      className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                      className="bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
                       {saving ? 'Saving…' : createMode === 'boundary' ? 'Save Boundary' : 'Save Zone'}
                     </button>
                   </div>
@@ -860,10 +860,10 @@ export default function ArboretumMap() {
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: selectedZone.color }} />
-                    <h2 className="font text-gray-900 font-semibold">{selectedZone.name}</h2>
-                    <span className="font text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">Boundary</span>
+                    <h2 className="text-gray-900 font-semibold">{selectedZone.name}</h2>
+                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">Boundary</span>
                   </div>
-                  <p className="font text-gray-500 text-sm">
+                  <p className="text-gray-500 text-sm">
                     {editingVertices ? 'Drag handles to move points. Click a point to delete it.'
                       : editPendingGeometry ? 'New shape ready — save to apply.'
                       : 'Edit this boundary or manage its zones.'}
@@ -877,69 +877,69 @@ export default function ArboretumMap() {
 
               {editingVertices ? (
                 <div className="flex items-center gap-3">
-                  <p className="font text-gray-600 text-sm flex-1">
+                  <p className="text-gray-600 text-sm flex-1">
                     <i className="fa-solid fa-circle-info mr-1.5" />
                     Drag any white handle to move a point. Click a point to delete it.
                   </p>
                   <button onClick={handleCancelEditingVertices}
-                    className="font bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors cursor-pointer">
+                    className="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors cursor-pointer">
                     Cancel
                   </button>
                   <button onClick={handleDoneEditingVertices}
-                    className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                    className="bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
                     Done
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSaveEdit} className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Name</label>
+                    <label className="text-gray-500 text-sm">Name</label>
                     <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
-                      className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" required />
+                      className="bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" required />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Color</label>
+                    <label className="text-gray-500 text-sm">Color</label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
                         className="w-8 h-8 rounded cursor-pointer border border-gray-300 bg-transparent p-0" />
-                      <span className="font text-gray-500 text-xs font-mono">{editColor}</span>
+                      <span className="text-gray-500 text-xs font-mono">{editColor}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Points</label>
+                    <label className="text-gray-500 text-sm">Points</label>
                     <button type="button" onClick={handleEditVertices}
-                      className="font flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
+                      className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
                       <i className="fa-solid fa-pen text-xs" /> Edit points
                     </button>
                   </div>
                   {editPendingGeometry && (
-                    <span className="font text-xs text-secondary-green flex items-center gap-1 self-end pb-2">
+                    <span className="text-xs text-secondary-green flex items-center gap-1 self-end pb-2">
                       <i className="fa-solid fa-check" /> New shape ready
                     </span>
                   )}
                   <div className="flex items-end gap-2 ml-auto">
                     {confirmingDelete ? (
                       <>
-                        <span className="font text-sm text-gray-700">Delete "{selectedZone.name}"?</span>
+                        <span className="text-sm text-gray-700">Delete "{selectedZone.name}"?</span>
                         <button type="button" onClick={() => setConfirmingDelete(false)}
-                          className="font bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
+                          className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
                           Cancel
                         </button>
                         <button type="button" onClick={handleDelete} disabled={deleting}
-                          className="font flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer">
+                          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer">
                           <i className="fa-solid fa-trash text-xs" />
                           {deleting ? 'Deleting…' : 'Confirm Delete'}
                         </button>
                       </>
                     ) : (
                       <button type="button" onClick={() => setConfirmingDelete(true)} disabled={deleting || updating}
-                        className="font flex items-center gap-1.5 text-red-600 hover:text-red-700 px-3 py-1.5 rounded text-sm border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer">
+                        className="flex items-center gap-1.5 text-red-600 hover:text-red-700 px-3 py-1.5 rounded text-sm border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer">
                         <i className="fa-solid fa-trash text-xs" />
                         Delete
                       </button>
                     )}
                     <button type="submit" disabled={updating || deleting}
-                      className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                      className="bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
                       {updating ? 'Saving…' : 'Save Changes'}
                     </button>
                   </div>
@@ -953,7 +953,7 @@ export default function ArboretumMap() {
                   return (
                     <>
                       <div className="flex items-center justify-between">
-                        <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">
+                        <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
                           Zones
                           {boundaryZones.length > 0 && (
                             <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
@@ -962,12 +962,12 @@ export default function ArboretumMap() {
                           )}
                         </p>
                         <button type="button" onClick={() => handleStartDraw('section')}
-                          className="font flex items-center gap-1.5 bg-secondary-green hover:bg-[#286f3e] text-white px-3 py-1 rounded text-sm font-bold transition-colors cursor-pointer">
+                          className="flex items-center gap-1.5 bg-secondary-green hover:bg-[#286f3e] text-white px-3 py-1 rounded text-sm font-bold transition-colors cursor-pointer">
                           <i className="fa-solid fa-plus text-xs" /> Add Zone
                         </button>
                       </div>
                       {boundaryZones.length === 0 ? (
-                        <p className="font text-gray-400 text-sm">No zones yet — click Add Zone to draw one.</p>
+                        <p className="text-gray-400 text-sm">No zones yet — click Add Zone to draw one.</p>
                       ) : (
                         <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
                           {boundaryZones.map((zone) => (
@@ -975,7 +975,7 @@ export default function ArboretumMap() {
                               onClick={() => handleZoneClickRef.current(zone)}
                               className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
                               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: zone.color }} />
-                              <span className="font text-gray-800 text-sm flex-1 truncate">{zone.name}</span>
+                              <span className="text-gray-800 text-sm flex-1 truncate">{zone.name}</span>
                             </button>
                           ))}
                         </div>
@@ -987,34 +987,34 @@ export default function ArboretumMap() {
 
               {/* Generate Zones */}
               <div className="pt-3 border-t border-gray-200 mt-1 flex flex-col gap-2">
-                <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">Generate Zones</p>
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">Generate Zones</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <input
                     type="number" min="1" max="20" value={genCount}
                     onChange={(e) => setGenCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                    className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-20"
+                    className="bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-20"
                   />
-                  <span className="font text-gray-500 text-sm">zones</span>
+                  <span className="text-gray-500 text-sm">zones</span>
                   <button type="button" onClick={handleGeneratePreview} disabled={generating}
-                    className="font flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors disabled:opacity-50 cursor-pointer">
+                    className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors disabled:opacity-50 cursor-pointer">
                     <i className="fa-solid fa-wand-magic-sparkles text-xs" />
                     {generating ? 'Generating…' : 'Preview'}
                   </button>
                   {generatedZones.length > 0 && (
                     <>
                       <button type="button" onClick={clearGeneratedZones}
-                        className="font text-gray-400 hover:text-gray-600 px-2 py-1.5 text-sm transition-colors cursor-pointer">
+                        className="text-gray-400 hover:text-gray-600 px-2 py-1.5 text-sm transition-colors cursor-pointer">
                         Clear
                       </button>
                       <button type="button" onClick={handleSaveGenerated} disabled={savingGen}
-                        className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                        className="bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
                         {savingGen ? 'Saving…' : `Save ${generatedZones.length} Zones`}
                       </button>
                     </>
                   )}
                 </div>
                 {generatedZones.length > 0 && (
-                  <p className="font text-xs text-amber-600 flex items-center gap-1">
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
                     <i className="fa-solid fa-eye" />
                     {generatedZones.length} preview zones shown on map — save to keep them.
                   </p>
@@ -1030,12 +1030,12 @@ export default function ArboretumMap() {
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: selectedZone.color }} />
-                    <h2 className="font text-gray-900 font-semibold">{selectedZone.name}</h2>
-                    <span className="font text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
+                    <h2 className="text-gray-900 font-semibold">{selectedZone.name}</h2>
+                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
                       Zone
                     </span>
                   </div>
-                  <p className="font text-gray-500 text-sm">
+                  <p className="text-gray-500 text-sm">
                     {editingVertices ? 'Drag handles to move points. Click a point to delete it.'
                       : editPendingGeometry ? 'New shape ready — save to apply.'
                       : 'Edit this zone or view its sensors and elements.'}
@@ -1049,69 +1049,69 @@ export default function ArboretumMap() {
 
               {editingVertices ? (
                 <div className="flex items-center gap-3">
-                  <p className="font text-gray-600 text-sm flex-1">
+                  <p className="text-gray-600 text-sm flex-1">
                     <i className="fa-solid fa-circle-info mr-1.5" />
                     Drag any white handle to move a point. Click a point to delete it.
                   </p>
                   <button onClick={handleCancelEditingVertices}
-                    className="font bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors cursor-pointer">
+                    className="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors cursor-pointer">
                     Cancel
                   </button>
                   <button onClick={handleDoneEditingVertices}
-                    className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                    className="bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
                     Done
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSaveEdit} className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Name</label>
+                    <label className="text-gray-500 text-sm">Name</label>
                     <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
-                      className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" required />
+                      className="bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" required />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Color</label>
+                    <label className="text-gray-500 text-sm">Color</label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
                         className="w-8 h-8 rounded cursor-pointer border border-gray-300 bg-transparent p-0" />
-                      <span className="font text-gray-500 text-xs font-mono">{editColor}</span>
+                      <span className="text-gray-500 text-xs font-mono">{editColor}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Points</label>
+                    <label className="text-gray-500 text-sm">Points</label>
                     <button type="button" onClick={handleEditVertices}
-                      className="font flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
+                      className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
                       <i className="fa-solid fa-pen text-xs" /> Edit points
                     </button>
                   </div>
                   {editPendingGeometry && (
-                    <span className="font text-xs text-secondary-green flex items-center gap-1 self-end pb-2">
+                    <span className="text-xs text-secondary-green flex items-center gap-1 self-end pb-2">
                       <i className="fa-solid fa-check" /> New shape ready
                     </span>
                   )}
                   <div className="flex items-end gap-2 ml-auto">
                     {confirmingDelete ? (
                       <>
-                        <span className="font text-sm text-gray-700">Delete "{selectedZone.name}"?</span>
+                        <span className="text-sm text-gray-700">Delete "{selectedZone.name}"?</span>
                         <button type="button" onClick={() => setConfirmingDelete(false)}
-                          className="font bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
+                          className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
                           Cancel
                         </button>
                         <button type="button" onClick={handleDelete} disabled={deleting}
-                          className="font flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer">
+                          className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer">
                           <i className="fa-solid fa-trash text-xs" />
                           {deleting ? 'Deleting…' : 'Confirm Delete'}
                         </button>
                       </>
                     ) : (
                       <button type="button" onClick={() => setConfirmingDelete(true)} disabled={deleting || updating}
-                        className="font flex items-center gap-1.5 text-red-600 hover:text-red-700 px-3 py-1.5 rounded text-sm border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer">
+                        className="flex items-center gap-1.5 text-red-600 hover:text-red-700 px-3 py-1.5 rounded text-sm border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer">
                         <i className="fa-solid fa-trash text-xs" />
                         Delete
                       </button>
                     )}
                     <button type="submit" disabled={updating || deleting}
-                      className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                      className="bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
                       {updating ? 'Saving…' : 'Save Changes'}
                     </button>
                   </div>
@@ -1120,7 +1120,7 @@ export default function ArboretumMap() {
 
               {/* Sensors & Elements in this zone */}
               <div className="pt-3 border-t border-gray-200 mt-1">
-                <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
                   Sensors &amp; Elements
                   {zoneCheckpoints.length > 0 && (
                     <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
@@ -1129,15 +1129,15 @@ export default function ArboretumMap() {
                   )}
                 </p>
                 {zoneCheckpoints.length === 0 ? (
-                  <p className="font text-gray-400 text-sm">None assigned to this zone.</p>
+                  <p className="text-gray-400 text-sm">None assigned to this zone.</p>
                 ) : (
                   <div className="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1">
                     {zoneCheckpoints.map((cp) => (
                       <div key={cp.id} className="flex items-center gap-2 py-0.5">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm"
                           style={{ backgroundColor: checkpointColor(cp) }} />
-                        <span className="font text-gray-800 text-sm flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
-                        <span className="font text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0 capitalize">{cp.type}</span>
+                        <span className="text-gray-800 text-sm flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
+                        <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0 capitalize">{cp.type}</span>
                       </div>
                     ))}
                   </div>
@@ -1150,22 +1150,22 @@ export default function ArboretumMap() {
           {!drawing && !pendingGeometry && !selectedZone && (
             <>
               <div className="mb-1">
-                <h2 className="font text-gray-900 font-semibold">Zone Manager</h2>
-                <p className="font text-gray-500 text-sm mt-0.5">Click a boundary on the map to edit it or manage its zones.</p>
+                <h2 className="text-gray-900 font-semibold">Zone Manager</h2>
+                <p className="text-gray-500 text-sm mt-0.5">Click a boundary on the map to edit it or manage its zones.</p>
               </div>
               <button onClick={() => handleStartDraw('boundary')}
-                className="font flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-1.5 rounded text-sm border border-gray-300 font-bold transition-colors cursor-pointer w-fit">
+                className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-1.5 rounded text-sm border border-gray-300 font-bold transition-colors cursor-pointer w-fit">
                 <i className="fa-solid fa-border-all text-xs" /> Draw Boundary
               </button>
               <div className="pt-3 border-t border-gray-200 mt-1">
-                <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">Find sensor / element</p>
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">Find sensor / element</p>
                 <input type="text" placeholder="Search by name…" value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-full" />
+                  className="bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-full" />
                 {searchQuery.trim() && (
                   <div className="mt-2 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
                     {searchResults.length === 0 ? (
-                      <p className="font text-gray-400 text-sm px-1">No results.</p>
+                      <p className="text-gray-400 text-sm px-1">No results.</p>
                     ) : searchResults.map((cp) => {
                       const zone = zones.find((z) => z.id === cp.zoneId)
                       return (
@@ -1178,9 +1178,9 @@ export default function ArboretumMap() {
                           className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
                           <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm"
                             style={{ backgroundColor: checkpointColor(cp) }} />
-                          <span className="font text-gray-800 text-sm flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
-                          <span className="font text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded capitalize shrink-0">{cp.type}</span>
-                          <span className="font text-xs text-gray-500 shrink-0">
+                          <span className="text-gray-800 text-sm flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
+                          <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded capitalize shrink-0">{cp.type}</span>
+                          <span className="text-xs text-gray-500 shrink-0">
                             {zone
                               ? <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: zone.color }} />{zone.name}</span>
                               : <span className="text-gray-400">No zone</span>}
@@ -1204,7 +1204,7 @@ export default function ArboretumMap() {
               <div key={t.label} className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-full inline-block border border-white shadow-sm"
                   style={{ backgroundColor: t.color, opacity: t.opacity ?? 1 }} />
-                <span className="font text-gray-600 text-xs">{t.label}</span>
+                <span className="text-gray-600 text-xs">{t.label}</span>
               </div>
             ))}
             <div className="flex items-center gap-2">
@@ -1213,7 +1213,7 @@ export default function ArboretumMap() {
                   <span key={c} className="w-3.5 h-3.5 rounded-full inline-block border border-white shadow-sm" style={{ backgroundColor: c }} />
                 ))}
               </span>
-              <span className="font text-gray-600 text-xs">Element</span>
+              <span className="text-gray-600 text-xs">Element</span>
             </div>
           </div>
         </div>

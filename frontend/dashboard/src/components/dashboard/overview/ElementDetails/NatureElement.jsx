@@ -43,7 +43,7 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
         <div className='grow-1 flex gap-3 py-0 px-4'>
             <div className='flex-col gap-3 flex-1'>
               <div className='mt-2'>
-                <p className='font text-sm text-gray-500'>Element name</p>
+                <p className='text-sm text-gray-500'>Element name</p>
                 <input
                   type="text"
                   value={formData.elementName}
@@ -52,7 +52,7 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
                 />
               </div>
               <div className='mt-2'>
-                <p className='font text-sm text-gray-500'>Element type</p>
+                <p className='text-sm text-gray-500'>Element type</p>
                 <select
                   value={formData.elementType}
                   onChange={(e) => setFormData({...formData, elementType: e.target.value})}
@@ -71,12 +71,12 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
                   checked={formData.isGreen}
                   onChange={(e) => setFormData({...formData, isGreen: e.target.checked})}
                 />
-                <label htmlFor="isGreen" className='font text-sm text-gray-500'>Is Green</label>
+                <label htmlFor="isGreen" className='text-sm text-gray-500'>Is Green</label>
               </div>
             </div>
             <div className='flex-col gap-3 flex-1'>
               <div className='mt-2'>
-                <p className='font text-sm text-gray-500'>Latitude</p>
+                <p className='text-sm text-gray-500'>Latitude</p>
                 <input
                   type="text"
                   placeholder='-79.3832'
@@ -86,7 +86,7 @@ export default function NatureElement({ formData, setFormData, onSubmit, onCance
                 />
               </div>
               <div className='mt-2'>
-                <p className='font text-sm text-gray-500'>Longitude</p>
+                <p className='text-sm text-gray-500'>Longitude</p>
                 <input
                   type="text"
                   value={formData.latitude}

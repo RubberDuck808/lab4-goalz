@@ -148,7 +148,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
                 <div className='grow-1 flex gap-3 py-0 px-4 mt-4'>
                     <div className='flex-col gap-3 grow-1'>
                         <div className='mt-2'>
-                            <p className='font text-sm text-gray-500'>Element name</p>
+                            <p className='text-sm text-gray-500'>Element name</p>
                             {openEditModal ? (
                                 <input
                                     value={editedElement?.elementName ?? ''}
@@ -161,7 +161,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
                         </div>
 
                         <div className='mt-2'>
-                            <p className='font text-sm text-gray-500'>Element type</p>
+                            <p className='text-sm text-gray-500'>Element type</p>
                             {openEditModal ? (
                                 <select
                                     value={editedElement?.elementType?.id ?? editedElement?.elementType ?? ''}
@@ -182,7 +182,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
                         </div>
 
                         <div className='mt-2'>
-                            <p className='font text-sm text-gray-500'>Green element</p>
+                            <p className='text-sm text-gray-500'>Green element</p>
                             {openEditModal ? (
                                 <label className='inline-flex items-center gap-2 text-sm cursor-pointer'>
                                     <input
@@ -201,7 +201,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
 
                     <div className='flex-col gap-3 grow-1'>
                         <div className='mt-2'>
-                            <p className='font text-sm text-gray-500'>Latitude</p>
+                            <p className='text-sm text-gray-500'>Latitude</p>
                             {openEditModal ? (
                                 <input
                                     type='text'
@@ -214,7 +214,7 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
                             )}
                         </div>
                         <div className='mt-2'>
-                            <p className='font text-sm text-gray-500'>Longitude</p>
+                            <p className='text-sm text-gray-500'>Longitude</p>
                             {openEditModal ? (
                                 <input
                                     type='text'
