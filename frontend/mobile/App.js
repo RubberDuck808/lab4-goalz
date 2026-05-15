@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { GameProvider } from './context/GameContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { NavigationContainer } from '@react-navigation/native';
@@ -34,6 +34,29 @@ import AllCheckpointsCompletePage from './pages/AllCheckpointsCompletePage';
 
 const Stack = createNativeStackNavigator();
 
+class ErrorBoundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 16, color: '#3f3f46', textAlign: 'center', marginBottom: 16 }}>
+            Something went wrong. Please restart the app.
+          </Text>
+          <TouchableOpacity
+            onPress={() => this.setState({ error: null })}
+            style={{ backgroundColor: '#1CB0F6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [ready, setReady] = useState(false);
 
@@ -46,9 +69,10 @@ export default function App() {
   }
 
   return (
-    <AccessibilityProvider>
-      <GameProvider>
-        <SafeAreaProvider>
+    <ErrorBoundary>
+      <AccessibilityProvider>
+        <GameProvider>
+          <SafeAreaProvider>
           <NavigationContainer
             ref={navigationRef}
             onReady={async () => {
@@ -61,7 +85,7 @@ export default function App() {
               }
             }}
           >
-            <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none' }}>
+            <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none', contentStyle: { backgroundColor: '#fff' } }}>
               <Stack.Screen name="Login"       component={Login} />
               <Stack.Screen name="SignUp"      component={SignUp} />
               <Stack.Screen name="Home"        component={HomePage} />
@@ -87,8 +111,9 @@ export default function App() {
               <Stack.Screen name="AllCheckpointsComplete" component={AllCheckpointsCompletePage} />
             </Stack.Navigator>
           </NavigationContainer>
-        </SafeAreaProvider>
-      </GameProvider>
-    </AccessibilityProvider>
+          </SafeAreaProvider>
+        </GameProvider>
+      </AccessibilityProvider>
+    </ErrorBoundary>
   );
 }

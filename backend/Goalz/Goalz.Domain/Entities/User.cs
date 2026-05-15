@@ -14,4 +14,5 @@ public class User
     public ICollection<PartyMember> PartyMembers { get; set; } = [];
     public ICollection<Friendship> SentFriendships { get; set; } = [];
     public ICollection<Friendship> ReceivedFriendships { get; set; } = [];
+    public UserStatistics? Statistics { get; set; }
 }

@@ -22,18 +22,26 @@ export function GameProvider({ children }) {
   const [username, setUsername] = useState(null);
   const [gameConfig, setGameConfigState] = useState(null);
 
-  const usernameRef = useRef(username);
-  useEffect(() => { usernameRef.current = username; }, [username]);
+  // Update ref inline during render so it's always current by the time any
+  // event handler or effect reads it — avoids the one-render-cycle lag of useEffect.
+  const usernameRef = useRef(null);
+  usernameRef.current = username;
 
   useEffect(() => {
     getUser().then(u => { if (u) setUsername(u.username); });
   }, []);
+
+  // Cache the last received member list so the deferred role useEffect below
+  // can look up the role without an extra network call.
+  const lastServerMembersRef = useRef([]);
 
   // Applies a GameStateResponse from either a hub push or the fallback poll.
   const applyServerState = useCallback((data) => {
     if (!data) return;
     const { members: serverMembers, status, visitedCheckpointIds: visited,
             groupSize, boundaryId, zoneCount, checkpointsPerZone, allowedRoles } = data;
+
+    lastServerMembersRef.current = serverMembers ?? [];
 
     setPartyStatus(status);
     setMembersState(serverMembers.map(m => m.username));
@@ -48,6 +56,14 @@ export function GameProvider({ children }) {
     setGameConfigState({ groupSize, boundaryId, zoneCount, checkpointsPerZone,
                          allowedRoles: allowedRoles ?? [] });
   }, []);
+
+  // When username loads after a SignalR push (race condition), apply role from
+  // the cached member list immediately — no extra API call needed.
+  useEffect(() => {
+    if (!username || role) return;
+    const myRole = lastServerMembersRef.current.find(m => m.username === username)?.role;
+    if (myRole) setRoleState(myRole);
+  }, [username, role]);
 
   // Expose a stable poll trigger so pages can force an immediate refresh
   // (e.g. right after the host calls startGame as a belt-and-braces flush).

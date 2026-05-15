@@ -21,7 +21,10 @@ namespace Goalz.Data.Storage
         public DbSet<PartyGroup> PartyGroups { get; set; }
         public DbSet<PartyGroupAnswer> PartyGroupAnswers { get; set; }
         public DbSet<PartyVisitedCheckpoint> PartyVisitedCheckpoints { get; set; }
-
+        public DbSet<Quiz> Quizzes { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+        public DbSet<UserStatistics> UserStatistics { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -106,6 +109,39 @@ namespace Goalz.Data.Storage
                 entity.HasOne(pvc => pvc.Checkpoint)
                     .WithMany()
                     .HasForeignKey(pvc => pvc.CheckpointId);
+            });
+
+            modelBuilder.Entity<Question>(entity =>
+            {
+                entity.HasOne(q => q.Quiz)
+                    .WithMany(qz => qz.Questions)
+                    .HasForeignKey(q => q.QuizId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Answer>(entity =>
+            {
+                entity.HasOne(a => a.Question)
+                    .WithMany(q => q.Answers)
+                    .HasForeignKey(a => a.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Party>(entity =>
+            {
+                entity.HasOne(p => p.Quiz)
+                    .WithMany(qz => qz.Parties)
+                    .HasForeignKey(p => p.QuizId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<UserStatistics>(entity =>
+            {
+                entity.HasOne(s => s.User)
+                    .WithOne(u => u.Statistics)
+                    .HasForeignKey<UserStatistics>(s => s.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(s => s.UserId).IsUnique();
             });
 
             base.OnModelCreating(modelBuilder);

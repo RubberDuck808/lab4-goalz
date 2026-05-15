@@ -16,6 +16,7 @@ namespace Goalz.Application.Interfaces
         Task<List<long>> GetVisitedCheckpointsAsync(long partyId);
         Task VisitCheckpointAsync(long partyId, long checkpointId);
         Task<bool> IsMemberAsync(long partyId, long userId);
+        Task<bool> TryStartGameAsync(long partyId);
         Task<List<Party>> GetStaleLobbyPartiesAsync(DateTime cutoff);
         Task DeleteAsync(Party party);
         Task CompleteGameAsync(long partyId, string username, List<long> checkpointIds, int quizScore);

@@ -3,6 +3,7 @@ using System;
 using Goalz.Data.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Goalz.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260510202730_AddUserSoloScore")]
+    partial class AddUserSoloScore
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -469,6 +472,9 @@ namespace Goalz.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("SoloScore")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -476,40 +482,6 @@ namespace Goalz.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Goalz.Domain.Entities.UserStatistics", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("CheckpointsVisited")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GamesPlayed")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PartiesJoined")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PicturesTaken")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("TotalPoints")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("UserStatistics");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
@@ -693,17 +665,6 @@ namespace Goalz.Data.Migrations
                     b.Navigation("Sensor");
                 });
 
-            modelBuilder.Entity("Goalz.Domain.Entities.UserStatistics", b =>
-                {
-                    b.HasOne("Goalz.Domain.Entities.User", "User")
-                        .WithOne("Statistics")
-                        .HasForeignKey("Goalz.Domain.Entities.UserStatistics", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
                 {
                     b.HasOne("Goalz.Domain.Entities.Boundary", null)
@@ -753,8 +714,6 @@ namespace Goalz.Data.Migrations
                     b.Navigation("ReceivedFriendships");
 
                     b.Navigation("SentFriendships");
-
-                    b.Navigation("Statistics");
                 });
 #pragma warning restore 612, 618
         }

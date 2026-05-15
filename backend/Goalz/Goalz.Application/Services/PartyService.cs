@@ -1,5 +1,6 @@
 using Goalz.Application.Interfaces;
 using Goalz.Core.DTOs;
+using Goalz.Core.Exceptions;
 using Goalz.Core.Utils;
 using Goalz.Domain.Entities;
 using Goalz.Core.Interfaces;
@@ -51,9 +52,9 @@ namespace Goalz.Core.Services
             await _partyRepository.SaveChangesAsync();
 
             var creator = await _userRepository.GetByUsernameAsync(creatorUsername)
-                ?? throw new Exception("Creator user not found");
+                ?? throw new NotFoundException("Creator user not found");
             var firstGroup = await _partyRepository.GetPartyGroupByPartyIdAsync(createdParty.Id)
-                ?? throw new Exception("Party group not found");
+                ?? throw new NotFoundException("Party group not found");
 
             await _partyRepository.AddMemberAsync(new PartyMember
             {
@@ -76,7 +77,7 @@ namespace Goalz.Core.Services
             var party = await _partyRepository.GetPartyById(partyId);
             
             if (party == null)
-                throw new Exception("Party not found");
+                throw new NotFoundException("Party not found");
 
             return new PartyResponse
             {
@@ -99,13 +100,13 @@ namespace Goalz.Core.Services
             if (party.Status != "Lobby") return null;
 
             var user = await _userRepository.GetByUsernameAsync(username)
-                ?? throw new Exception("User not found");
+                ?? throw new NotFoundException("User not found");
 
             var alreadyMember = await _partyRepository.IsMemberAsync(party.Id, user.Id);
             if (!alreadyMember)
             {
                 var partyGroup = await _partyRepository.GetPartyGroupByPartyIdAsync(party.Id)
-                    ?? throw new Exception("Party group not found");
+                    ?? throw new NotFoundException("Party group not found");
 
                 await _partyRepository.AddMemberAsync(new PartyMember
                 {
@@ -113,6 +114,8 @@ namespace Goalz.Core.Services
                     PartyGroupId = partyGroup.Id,
                     PartyId = party.Id
                 });
+
+                await _userRepository.IncrementPartiesJoinedAsync(username);
             }
 
             var members = await _partyRepository.GetLobbyMembers(party.Id);
@@ -126,15 +129,21 @@ namespace Goalz.Core.Services
             };
         }
 
-        public async Task<StartGameResult> StartGame(long partyId)
+        public async Task<StartGameResult> StartGame(long partyId, string username)
         {
             var party = await _partyRepository.GetPartyById(partyId);
             if (party == null) return StartGameResult.Fail("Party not found");
 
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(partyId, user.Id))
+                return StartGameResult.Fail("Forbidden");
+
             var allowedRoles = party.GetAllowedRolesList();
             if (allowedRoles.Count == 0) return StartGameResult.Fail("No roles configured.");
 
-            party.Status = "InGame";
+            // Atomic status transition — only advance if still in Lobby to prevent double-start
+            var updated = await _partyRepository.TryStartGameAsync(partyId);
+            if (!updated) return StartGameResult.Fail("Game already started.");
 
             var members = await _partyRepository.GetPartyMembersWithUsersAsync(partyId);
             var shuffled = members.OrderBy(_ => Guid.NewGuid()).ToList();
@@ -186,17 +195,25 @@ namespace Goalz.Core.Services
             };
         }
 
-        public async Task VisitCheckpoint(long partyId, long checkpointId)
+        public async Task VisitCheckpoint(long partyId, long checkpointId, string username)
         {
-            var party = await _partyRepository.GetPartyById(partyId) ?? throw new Exception("Party not found");
+            var party = await _partyRepository.GetPartyById(partyId) ?? throw new NotFoundException("Party not found");
             if (party.Status != "InGame") return;
+
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(partyId, user.Id)) return;
+
             await _partyRepository.VisitCheckpointAsync(partyId, checkpointId);
         }
 
         public async Task CompleteGame(long partyId, string username, List<long> checkpointIds, int quizScore)
         {
-            var party = await _partyRepository.GetPartyById(partyId) ?? throw new Exception("Party not found");
+            var party = await _partyRepository.GetPartyById(partyId) ?? throw new NotFoundException("Party not found");
             if (party.Status != "InGame") return;
+
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(partyId, user.Id)) return;
+
             await _partyRepository.CompleteGameAsync(partyId, username, checkpointIds, quizScore);
         }
     }

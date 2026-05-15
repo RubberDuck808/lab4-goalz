@@ -14,6 +14,12 @@ namespace Goalz.Core.Interfaces
         Task AddAsync(User user);
         Task UpdateAsync(User user);
         Task SaveChangesAsync();
+
+        // Statistics
+        Task AddGameStatsAsync(string username, int checkpointsVisited, int quizScore);
+        Task IncrementPartiesJoinedAsync(string username);
+        Task IncrementPicturesTakenAsync(string username);
+        Task<UserStatisticsDto> GetStatsAsync(string username);
         Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(int limit = 50);
     }
 }

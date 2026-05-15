@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Text, View, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import QuizAnswerButton from '../components/QuizAnswerButton';
 import QuizSpeechBubble from '../components/QuizSpeechBubble';
 import GameButtons from '../components/GameButtons';
@@ -16,6 +17,11 @@ export default function QuizPage({ navigation, route }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useFocusEffect(useCallback(() => {
+    setSelectedAnswer(null);
+  }, []));
 
   const colors = ['red', 'yellow', 'green', 'blue'];
 
@@ -40,16 +46,17 @@ export default function QuizPage({ navigation, route }) {
   }, [countdown, loading]);
 
   async function handleSubmit() {
-    if (!selectedAnswer || !question) return;
-    const res = await submitQuizAnswer(question.id, selectedAnswer.id).catch(() => null);
-    const correct = res?.data?.correct ?? false;
-    const points  = res?.data?.points  ?? 0;
-    if (correct && fromGame) addQuizScore(points);
-    navigation.navigate('QuizResult', {
-      score: points,
-      total: 1000,
-      fromGame,
-    });
+    if (!selectedAnswer || !question || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await submitQuizAnswer(question.id, selectedAnswer.id).catch(() => null);
+      const correct = res?.data?.correct ?? false;
+      const points  = res?.data?.points  ?? 0;
+      if (correct && fromGame) addQuizScore(points);
+      navigation.navigate('QuizResult', { score: points, total: 1000, fromGame });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (loading) {
@@ -92,7 +99,7 @@ export default function QuizPage({ navigation, route }) {
         <GameButtons
           variant="accept"
           onPress={handleSubmit}
-          disabled={!selectedAnswer}
+          disabled={!selectedAnswer || submitting}
         >
           Submit
         </GameButtons>

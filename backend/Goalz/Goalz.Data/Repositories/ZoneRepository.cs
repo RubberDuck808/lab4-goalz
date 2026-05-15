@@ -22,7 +22,7 @@ namespace Goalz.Data.Repositories
 
         public async Task<Zone?> GetByIdAsync(long id)
         {
-            return await _context.Zones.FindAsync(id);
+            return await _context.Zones.AsNoTracking().FirstOrDefaultAsync(z => z.Id == id);
         }
 
         public async Task AddAsync(Zone zone)

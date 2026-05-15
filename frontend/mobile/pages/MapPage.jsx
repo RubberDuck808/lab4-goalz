@@ -48,6 +48,7 @@ export default function MapPage({ navigation, route }) {
 
   const [mapReady,    setMapReady]    = useState(false);
   const [sensorModal, setSensorModal] = useState(null);
+  const [loadError,   setLoadError]   = useState(false);
 
   const initRef = useRef(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -185,17 +186,23 @@ export default function MapPage({ navigation, route }) {
   }, [targetCp, fromGame]);
 
   // ── Fetch zones + checkpoints ───────────────────────────────────────────────
+  const [fetchKey, setFetchKey] = useState(0);
   useEffect(() => {
     let cancelled = false;
+    setLoadError(false);
     (async () => {
-      const [zr, cr, br] = await Promise.all([getZones(), getCheckpoints(), getBoundaries()]);
-      if (cancelled) return;
-      if (zr.success) setZones(Array.isArray(zr.data) ? zr.data : []);
-      if (cr.success) setCheckpoints(Array.isArray(cr.data) ? cr.data : []);
-      if (br.success) setBoundaries(Array.isArray(br.data) ? br.data : []);
+      try {
+        const [zr, cr, br] = await Promise.all([getZones(), getCheckpoints(), getBoundaries()]);
+        if (cancelled) return;
+        if (zr.success) setZones(Array.isArray(zr.data) ? zr.data : []);
+        if (cr.success) setCheckpoints(Array.isArray(cr.data) ? cr.data : []);
+        if (br.success) setBoundaries(Array.isArray(br.data) ? br.data : []);
+      } catch {
+        if (!cancelled) setLoadError(true);
+      }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [fetchKey]);
 
   // ── Fit map to loaded boundaries (non-game only — game flies to nearest zone) ─
   useEffect(() => {
@@ -371,6 +378,25 @@ export default function MapPage({ navigation, route }) {
 
   function handleLeaveGame() {
     setLeaveModal(true);
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <PageHeader title="Map" onBack={() => navigation.goBack()} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
+          <Text style={{ fontSize: 16, color: '#3f3f46', textAlign: 'center' }}>
+            Failed to load map data.
+          </Text>
+          <TouchableOpacity
+            onPress={() => setFetchKey(k => k + 1)}
+            style={{ backgroundColor: '#1CB0F6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (

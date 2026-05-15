@@ -39,15 +39,16 @@ public class QuizController(AppDbContext db) : ControllerBase
 
         if (question == null) return NotFound();
 
+        var shuffledAnswers = question.Answers
+            .Select(a => new { id = a.Id, text = a.AnswerTxt })
+            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
+
         return Ok(new
         {
             id = question.Id,
             text = question.QuestionTxt,
-            answers = question.Answers.Select(a => new
-            {
-                id = a.Id,
-                text = a.AnswerTxt,
-            }).OrderBy(_ => Random.Shared.Next()),
+            answers = shuffledAnswers,
         });
     }
 }

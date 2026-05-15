@@ -108,8 +108,18 @@ namespace Goalz.Core.Services
         }
 
         public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync()
-        {
-            return await _userRepository.GetLeaderboardAsync();
-        }
+            => await _userRepository.GetLeaderboardAsync();
+
+        public Task AddGameStatsAsync(string username, int checkpointsVisited, int quizScore)
+            => _userRepository.AddGameStatsAsync(username, checkpointsVisited, quizScore);
+
+        public Task IncrementPartiesJoinedAsync(string username)
+            => _userRepository.IncrementPartiesJoinedAsync(username);
+
+        public Task IncrementPicturesTakenAsync(string username)
+            => _userRepository.IncrementPicturesTakenAsync(username);
+
+        public Task<UserStatisticsDto> GetStatsAsync(string username)
+            => _userRepository.GetStatsAsync(username);
     }
 }

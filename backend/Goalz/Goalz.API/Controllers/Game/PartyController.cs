@@ -30,6 +30,7 @@ namespace Goalz.Api.Controllers.Game
             return Ok(await _partyService.CreateParty(request, username));
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetParty(int id)
         {
@@ -55,9 +56,14 @@ namespace Goalz.Api.Controllers.Game
         [HttpPost("{id}/start")]
         public async Task<IActionResult> StartGame(long id)
         {
-            var result = await _partyService.StartGame(id);
+            var username = User.Identity!.Name!;
+            var result = await _partyService.StartGame(id, username);
             if (!result.Success)
-                return result.Error == "Party not found" ? NotFound(result.Error) : BadRequest(result.Error);
+            {
+                if (result.Error == "Party not found") return NotFound(result.Error);
+                if (result.Error == "Forbidden") return Forbid();
+                return BadRequest(result.Error);
+            }
 
             var state = await _partyService.GetGameState(id);
             await _hub.Clients.Group(id.ToString()).SendAsync("GameStarted", state);
@@ -78,7 +84,8 @@ namespace Goalz.Api.Controllers.Game
         [HttpPost("{id}/visit")]
         public async Task<IActionResult> VisitCheckpoint(long id, [FromBody] VisitCheckpointRequest request)
         {
-            await _partyService.VisitCheckpoint(id, request.CheckpointId);
+            var username = User.Identity!.Name!;
+            await _partyService.VisitCheckpoint(id, request.CheckpointId, username);
 
             var state = await _partyService.GetGameState(id);
             await _hub.Clients.Group(id.ToString()).SendAsync("CheckpointVisited", state);

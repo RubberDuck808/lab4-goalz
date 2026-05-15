@@ -2,8 +2,59 @@
 
 ## Table of Contents
 
+1. [Security & Flow Audit — full mobile + backend hardening](#security--flow-audit--2026-05-15)
+1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+---
+
+## Security & Flow Audit — 2026-05-15
+
+### Security
+- `PartyController.cs`: Added `[Authorize]` to `GetParty` — was fully public, leaking party codes and member lists
+- `FriendshipController.cs`: Removed `[AllowAnonymous]` from `GetConnections` — was exposing full friend graphs without auth
+- `PartyService.cs` + `PartyController.cs`: Added party-membership check to `StartGame`, `VisitCheckpoint`, and `CompleteGame` — any authenticated user could previously manipulate any party
+- `JwtService.cs` + `Program.cs` + `appsettings.json`: Enabled JWT issuer and audience validation (`goalz-api` / `goalz-mobile`) — validation was disabled, allowing tokens from other systems to be accepted
+
+### Flow Breaks (Backend)
+- `Goalz.Application/Exceptions/NotFoundException.cs` (new): Introduced `NotFoundException`; updated `PartyService` to throw it instead of raw `Exception`
+- `Program.cs`: Global exception handler now maps `NotFoundException` → 404 in all environments (previously only caught 500s in production, Swagger showed raw errors in dev)
+- `PartyRepository.cs` + `IPartyRepository.cs`: Added `TryStartGameAsync` using `ExecuteUpdateAsync WHERE Status='Lobby'` — prevents two concurrent requests from both advancing the party to `InGame`
+- `PartyRepository.cs`: `VisitCheckpointAsync` now uses `INSERT … ON CONFLICT DO NOTHING` — eliminates the TOCTOU race between `AnyAsync` + `AddAsync`
+- `PartyRepository.cs`: `CompleteGameAsync` wrapped in `BeginTransactionAsync` / `CommitAsync` — partial saves (checkpoint rows saved, stats not) are now rolled back atomically
+- `QuizController.cs`: Materialise answers list before `.OrderBy(_ => Random.Shared.Next())` — shuffle now runs in memory, not inside an EF LINQ provider where ordering is non-deterministic
+
+### Flow Breaks (Mobile)
+- `MapPage.jsx`: Data fetch wrapped in `try/catch`; `loadError` state added; render now shows a "Failed to load" message with a Retry button instead of a blank map on API failure
+- `App.js`: Added `ErrorBoundary` class component wrapping the entire navigator — a single page crash no longer kills the whole app
+- `QuizPage.jsx`: Added `submitting` state; Submit button disabled while request is in-flight — prevents double-submission
+- `signalr.js`: `accessTokenFactory` now checks JWT expiry before returning the token; clears session and redirects to Login if expired
+
+### State Bugs (Mobile)
+- `QuizPage.jsx`: Added `useFocusEffect` to reset `selectedAnswer` to null on screen focus — previous answer was retained if user navigated back into the quiz screen
+
+### Rationale
+- The party IDOR and missing-auth issues were the highest-risk findings — any user could start, manipulate, or complete another party's game without being a member
+- The `NotFoundException` global handler stops raw `Exception` throws from surfacing as opaque 500s, which confused the mobile app into generic retry loops
+- Atomic DB operations (`ExecuteUpdateAsync`, `ON CONFLICT DO NOTHING`, transactions) prevent subtle score/state corruption under concurrent play
+
+> Issue closed after 75 min
+
+---
+
+## Fix: User 2 stuck in infinite role screen — 2026-05-13
+
+### Changed
+- `Program.cs`: Added `.AddJsonProtocol(camelCase)` to `AddSignalR()` — SignalR's `JsonHubProtocol` was serialising with PascalCase defaults, so `GameStarted` arrived as `{ "Status": "InGame", "Members": [...] }` while `applyServerState` destructured camelCase keys; both `status` and `members` were `undefined`, silently no-oping every hub push for non-owner players
+- `context/GameContext.jsx`: Added `lastServerMembersRef` to cache the most recently received member list; added `useEffect([username, role])` that applies the role from cache the moment `getUser()` resolves — fixes the race condition where `usernameRef.current` is still `null` when the `GameStarted` hub event fires
+
+### Rationale
+- The party owner was unaffected because `handleStart()` calls `triggerPoll()` immediately after `startGame()`, hitting the REST endpoint (which correctly returns camelCase via `AddControllers().AddJsonOptions()`) — no dependency on the SignalR push
+- The 30-second REST fallback eventually fixed user 2 (~30 s delay), making the bug look "infinite" during testing
+- The `lastServerMembersRef` approach avoids an extra network round-trip and resolves the role within milliseconds of username loading (typically < 100 ms after mount)
+
+> Issue closed after 30 min
+
 ---
 
 ## Feat: SignalR real-time push — 2026-05-13

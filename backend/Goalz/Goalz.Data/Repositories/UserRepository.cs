@@ -16,19 +16,13 @@ namespace Goalz.Data.Repositories
         }
 
         public async Task<User?> GetByIdAsync(long id)
-        {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
-        }
+            => await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
 
         public async Task<User?> GetByEmailAsync(string email)
-        {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        }
+            => await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
         public async Task<User?> GetByUsernameAsync(string username)
-        {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-        }
+            => await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
         public async Task<IEnumerable<User>> SearchByUsernameAsync(string query, string excludeUsername, int limit = 10)
         {
@@ -41,19 +35,13 @@ namespace Goalz.Data.Repositories
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
-        {
-            return await _context.Users.AnyAsync(u => u.Email == email);
-        }
+            => await _context.Users.AnyAsync(u => u.Email == email);
 
         public async Task<bool> ExistsByUsernameAsync(string username)
-        {
-            return await _context.Users.AnyAsync(u => u.Username == username);
-        }
+            => await _context.Users.AnyAsync(u => u.Username == username);
 
         public async Task AddAsync(User user)
-        {
-            await _context.Users.AddAsync(user);
-        }
+            => await _context.Users.AddAsync(user);
 
         public Task UpdateAsync(User user)
         {
@@ -62,32 +50,90 @@ namespace Goalz.Data.Repositories
         }
 
         public async Task SaveChangesAsync()
+            => await _context.SaveChangesAsync();
+
+        // ── UserStatistics ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Returns the stats row for the user, creating it if it doesn't exist yet.
+        /// Caller is responsible for calling SaveChangesAsync.
+        /// </summary>
+        private async Task<UserStatistics> GetOrCreateStatsAsync(long userId)
         {
+            var stats = await _context.UserStatistics.FirstOrDefaultAsync(s => s.UserId == userId);
+            if (stats != null) return stats;
+            stats = new UserStatistics { UserId = userId };
+            _context.UserStatistics.Add(stats);
+            return stats;
+        }
+
+        public async Task AddGameStatsAsync(string username, int checkpointsVisited, int quizScore)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return;
+            var stats = await GetOrCreateStatsAsync(user.Id);
+            stats.CheckpointsVisited += checkpointsVisited;
+            stats.GamesPlayed        += 1;
+            stats.TotalPoints        += (long)(checkpointsVisited * 10) + quizScore;
             await _context.SaveChangesAsync();
+        }
+
+        public async Task IncrementPartiesJoinedAsync(string username)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return;
+            var stats = await GetOrCreateStatsAsync(user.Id);
+            stats.PartiesJoined += 1;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task IncrementPicturesTakenAsync(string username)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return;
+            var stats = await GetOrCreateStatsAsync(user.Id);
+            stats.PicturesTaken += 1;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<UserStatisticsDto> GetStatsAsync(string username)
+        {
+            var stats = await _context.UserStatistics
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.User.Username == username);
+
+            return stats == null
+                ? new UserStatisticsDto()
+                : new UserStatisticsDto
+                {
+                    CheckpointsVisited = stats.CheckpointsVisited,
+                    PicturesTaken      = stats.PicturesTaken,
+                    PartiesJoined      = stats.PartiesJoined,
+                    GamesPlayed        = stats.GamesPlayed,
+                    TotalPoints        = stats.TotalPoints,
+                };
         }
 
         public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(int limit = 50)
         {
-            var scores = await _context.Users
+            // Join Users with their stats; users with no stats row sort to 0 points.
+            var rows = await _context.Users
                 .Where(u => u.Role == Role.Player)
                 .Select(u => new
                 {
-                    Username = u.Username,
-                    AvatarId = u.AvatarId,
-                    TotalPoints =
-                        (u.PartyMembers.SelectMany(pm => pm.PartyGroup.PartyGroupAnswers)
-                            .Sum(pga => (long?)pga.ReceivedPoints) ?? 0L)
-                        + (u.PartyMembers.Sum(pm => (long?)pm.Score) ?? 0L),
+                    u.Username,
+                    u.AvatarId,
+                    TotalPoints = (long?)(u.Statistics == null ? 0 : u.Statistics.TotalPoints) ?? 0L,
                 })
                 .OrderByDescending(x => x.TotalPoints)
                 .Take(limit)
                 .ToListAsync();
 
-            return scores.Select((x, i) => new LeaderboardEntryDto
+            return rows.Select((x, i) => new LeaderboardEntryDto
             {
-                Rank = i + 1,
-                Username = x.Username,
-                AvatarId = x.AvatarId,
+                Rank        = i + 1,
+                Username    = x.Username,
+                AvatarId    = x.AvatarId,
                 TotalPoints = x.TotalPoints,
             });
         }

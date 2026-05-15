@@ -27,8 +27,15 @@ export default function YourRolePage({ navigation, route }) {
   const assignedRef = useRef(singlePlayer ? pickRandom(availableRoles) : null);
   const assignedRole = singlePlayer ? assignedRef.current : role;
 
+  // Keep polling every 3 s until the server-assigned role arrives.
+  // A single triggerPoll() on mount isn't enough — if usernameRef hasn't
+  // resolved yet when the first response lands, applyServerState skips the
+  // role assignment and the page stalls until the 30-second fallback fires.
   useEffect(() => {
-    if (!singlePlayer && !role) triggerPoll();
+    if (singlePlayer || role) return;
+    triggerPoll();
+    const t = setInterval(triggerPoll, 3000);
+    return () => clearInterval(t);
   }, [singlePlayer, role, triggerPoll]);
 
   const colors = assignedRole ? (ROLE_COLORS[assignedRole] ?? ROLE_COLORS.Explorer) : null;

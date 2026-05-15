@@ -31,7 +31,6 @@ namespace Goalz.Api.Controllers.Game
             return Ok(users.Select(u => new UserSearchDto { Username = u.Username }));
         }
 
-        [AllowAnonymous]
         [HttpGet("connections/{username}")]
         public async Task<IActionResult> GetConnections(string username)
         {

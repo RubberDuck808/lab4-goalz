@@ -12,11 +12,14 @@ import GameButtons from '../components/GameButtons';
 import SettingsIcon from '../assets/Settings.svg';
 import { getUser } from '../services/session';
 import { acceptFriendRequest, declineFriendRequest, getConnections, removeConnection } from '../services/api';
+import { getUserStats } from '../services/api/partyApi';
 import { getAvatar } from '../utils/avatars';
 
 export default function ProfilePage({ navigation, route }) {
   const [user, setUser] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useFocusEffect(useCallback(() => {
     let cancelled = false;
@@ -25,6 +28,15 @@ export default function ProfilePage({ navigation, route }) {
   }, []));
 
   const viewedUsername = route?.params?.username;
+  // Fetch stats whenever the profile subject is known
+  useEffect(() => {
+    const target = viewedUsername || user?.username;
+    if (!target) return;
+    setStatsLoading(true);
+    getUserStats(viewedUsername || undefined)
+      .then(res => { if (res.success) setStats(res.data); })
+      .finally(() => setStatsLoading(false));
+  }, [viewedUsername, user?.username]);
   const incomingRequest = route?.params?.incomingRequest === true;
   const viewedAvatarId = route?.params?.avatarId ?? 1;
   const isOther = !!viewedUsername && viewedUsername !== user?.username;
@@ -104,7 +116,7 @@ export default function ProfilePage({ navigation, route }) {
 
       <View style={styles.content}>
         <AppText style={styles.sectionTitle}>Statistics</AppText>
-        <StatisticsCard />
+        <StatisticsCard stats={stats} loading={statsLoading} />
 
         <AppText style={styles.sectionTitle}>Friends</AppText>
         {!isOther && <PlayerSearch currentUsername={user?.username} />}
