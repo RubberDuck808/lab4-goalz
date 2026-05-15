@@ -52,6 +52,8 @@ export default function MapPage({ navigation, route }) {
 
   const initRef = useRef(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const cameraActiveRef = useRef(false);
+  useEffect(() => { cameraActiveRef.current = cameraActive; }, [cameraActive]);
   const [leaveModal, setLeaveModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   // Tracks the most-recent GPS fix so we can immediately check proximity
@@ -64,7 +66,7 @@ export default function MapPage({ navigation, route }) {
   useEffect(() => { checkpointsRef.current = checkpoints; }, [checkpoints]);
   const roleRef = useRef(role);
   useEffect(() => { roleRef.current = role; }, [role]);
-  const gameZonesRef = useRef(gameZones);
+  const gameZonesRef = useRef([]);
   useEffect(() => { gameZonesRef.current = gameZones; }, [gameZones]);
   // Ref so the useFocusEffect callback can read the latest value without stale closure
   const postQuizZoneIdRef = useRef(postQuizZoneId);
@@ -79,9 +81,19 @@ export default function MapPage({ navigation, route }) {
   // Map never regains focus in that path.
   useFocusEffect(
     useCallback(() => {
+      const wasCamera = cameraActiveRef.current;
       setCameraActive(false);
       const zoneId = postQuizZoneIdRef.current;
       if (!zoneId) return; // null or 0 — nothing to advance
+
+      if (wasCamera) {
+        // Returning from camera/upload: photo zone is complete, now show quiz
+        // (quiz was intentionally skipped when the camera was opened)
+        setTimeout(() => navigation.navigate('Quiz', { fromGame: true }), 500);
+        return;
+      }
+
+      // Returning from Quiz/QuizResult: advance to the next zone
       clearPostQuizZone();
       const nextZone = gameZonesRef.current.find(z => z.id === zoneId);
       if (!nextZone) return;
@@ -106,7 +118,7 @@ export default function MapPage({ navigation, route }) {
           }, 400);
         }
       }
-    }, [clearPostQuizZone])
+    }, [clearPostQuizZone, navigation])
   );
 
   // ── Flash helper ────────────────────────────────────────────────────────────
@@ -320,7 +332,7 @@ export default function MapPage({ navigation, route }) {
   }, [gameZones, checkpoints, fromGame, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
-  function completeCheckpoint(cp, zone) {
+  function completeCheckpoint(cp, zone, skipQuizTimer = false) {
     markVisited(cp.id);
     addPendingVisit(cp.id); // deferred — only sent to backend on full game completion
     setNearTarget(false);
@@ -340,8 +352,10 @@ export default function MapPage({ navigation, route }) {
     // Store in context (survives remount): 0 = all done, N = advance to zone N
     setPostQuizZoneId(nextZone ? nextZone.id : 0);
     showFlash('Zone Complete! 🎉');
-    // Brief delay so the flash is visible before quiz opens
-    setTimeout(() => navigation.navigate('Quiz', { fromGame: true }), 900);
+    // Photo tasks open the camera first; quiz is triggered via useFocusEffect on return
+    if (!skipQuizTimer) {
+      setTimeout(() => navigation.navigate('Quiz', { fromGame: true }), 900);
+    }
   }
 
   async function handleVisit() {
@@ -350,8 +364,13 @@ export default function MapPage({ navigation, route }) {
     if (targetCp.type === 'sensor') {
       setSensorModal({ cp: targetCp, zone: activeZone, sensorId: targetCp.referenceId, sensorName: targetCp.name });
     } else if (targetCp.type === 'photo') {
-      // Complete the zone progress immediately (arrived at spot), then open camera
-      await completeCheckpoint(targetCp, activeZone);
+      // Complete the zone progress immediately (arrived at spot), then open camera.
+      // skipQuizTimer=true: quiz is shown via useFocusEffect when returning from camera.
+      completeCheckpoint(targetCp, activeZone, true);
+      // Set the ref directly — setCameraActive triggers an async effect that won't
+      // run while MapPage is backgrounded behind the Camera screen, so the ref
+      // must be stamped synchronously here before we navigate away.
+      cameraActiveRef.current = true;
       setCameraActive(true);
       navigation.navigate('Camera', { gps: null });
     } else {
