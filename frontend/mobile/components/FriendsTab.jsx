@@ -58,7 +58,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="small" color="#3b82f6" />
+          <ActivityIndicator size="small" color="#1CB0F6" />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.center}>
@@ -107,14 +107,14 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabText: { fontSize: 15, color: '#71717a', fontWeight: '500' },
-  tabTextActive: { color: '#3b82f6', fontWeight: '600' },
+  tabTextActive: { color: '#1CB0F6', fontWeight: '600' },
   tabUnderline: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1CB0F6',
     borderRadius: 1,
   },
 

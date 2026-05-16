@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#3b82f6',
+    color: '#1CB0F6',
   },
   badge: {
     fontSize: 13,

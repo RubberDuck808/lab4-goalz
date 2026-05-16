@@ -116,6 +116,6 @@ const styles = StyleSheet.create({
   logo: { marginTop: 24, alignSelf: 'center' },
   form: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: -60 },
   heading: { fontSize: 32, fontWeight: 'bold', textTransform: 'uppercase', color: '#27272a', marginBottom: 8 },
-  link: { fontSize: 13, color: '#71717a', textDecorationLine: 'underline', marginTop: 4 },
+  link: { fontSize: 13, color: '#1CB0F6', textDecorationLine: 'underline', marginTop: 4 },
   error: { fontSize: 13, color: '#ef4444', textAlign: 'center', maxWidth: 300 },
 });

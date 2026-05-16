@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   radioSelected: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#3b82f6',
+    borderColor: '#1CB0F6',
+    backgroundColor: '#1CB0F6',
   },
 
   logoutWrap: { alignItems: 'center', marginTop: 32 },

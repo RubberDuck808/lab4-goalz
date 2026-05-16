@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1CB0F6',
   },
   addBtnSent: {
     backgroundColor: '#f4f4f5',

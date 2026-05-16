@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   avatarSelected: {
-    borderColor: '#3b82f6',
+    borderColor: '#1CB0F6',
   },
   avatarImage: {
     width: 64,

@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import { View, Image, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import BottomNavBar from '../components/BottomNavBar';
 import AppText from '../components/AppText';
@@ -32,18 +31,23 @@ export default function HomePage({ navigation }) {
   }, []));
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <PageHeader title="Home" />
-
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.infoRow}>
-          <View style={styles.greetingBlock}>
-            <AppText style={styles.greeting}>Hey, {user?.username ?? '…'}!</AppText>
-            <AppText style={styles.subtitle}>Ready to explore?</AppText>
-          </View>
-          <Image source={MASCOT} style={styles.mascot} resizeMode="contain" />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Hero */}
+      <View style={styles.hero}>
+        <View style={styles.greetingBlock}>
+          <AppText style={styles.greeting}>Hey, {user?.username ?? '…'}!</AppText>
+          <AppText style={styles.subtitle}>Ready to explore?</AppText>
         </View>
+        <Image source={MASCOT} style={styles.mascot} resizeMode="contain" />
+      </View>
 
+      {/* Content card */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <AppText style={styles.sectionTitle}>Your Stats</AppText>
         <StatisticsCard stats={stats} loading={statsLoading} />
 
         <View style={styles.actions}>
@@ -64,20 +68,36 @@ export default function HomePage({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: '#1CB0F6' },
 
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32, gap: 20 },
-
-  infoRow: {
+  hero: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+    backgroundColor: '#1CB0F6',
   },
-  greetingBlock: { flex: 1, gap: 4 },
-  greeting: { fontSize: 28, fontWeight: 'bold', color: '#27272a' },
-  subtitle: { fontSize: 15, color: '#71717a' },
+  greetingBlock: { flex: 1, gap: 6 },
+  greeting: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  subtitle: { fontSize: 15, color: 'rgba(255,255,255,0.82)' },
   mascot: { width: 120, height: 120 },
 
+  scroll: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -16,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 32,
+    gap: 16,
+  },
+
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#27272a' },
   actions: { alignItems: 'center', marginTop: 8 },
 });

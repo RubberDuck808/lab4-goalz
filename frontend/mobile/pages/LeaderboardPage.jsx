@@ -37,7 +37,7 @@ export default function LeaderboardPage({ navigation }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color="#1CB0F6" />
         </View>
       ) : error ? (
         <View style={styles.center}>
