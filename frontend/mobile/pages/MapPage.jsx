@@ -8,7 +8,7 @@ import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import { useGameContext } from '../context/GameContext';
-import { getZones, getBoundaries, getCheckpoints } from '../services/api/partyApi';
+import { getZones, getCheckpoints } from '../services/api/partyApi';
 import {
   ARBORETUM_REGION,
   VISIT_RADIUS_METERS,
@@ -23,7 +23,6 @@ import {
   nearestLocked,
   checkpointColor,
   zoneCentroid,
-  boundaryDistanceMeters,
 } from './map/mapHelpers';
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
@@ -31,12 +30,10 @@ import SensorModal from './map/SensorModal';
 
 export default function MapPage({ navigation, route }) {
   const completedRef = React.useRef(false);
-  const fromGame = route?.params?.fromGame ?? false;
-  const mapRef   = useRef(null);
+  const mapRef = useRef(null);
 
   const [zones,       setZones]       = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
-  const [boundaries,  setBoundaries]  = useState([]);
 
   const [activeZone,       setActiveZone]       = useState(null);
   const [completedZoneIds, setCompletedZoneIds] = useState(new Set());
@@ -54,12 +51,14 @@ export default function MapPage({ navigation, route }) {
   const [cameraActive, setCameraActive] = useState(false);
   const cameraActiveRef = useRef(false);
   useEffect(() => { cameraActiveRef.current = cameraActive; }, [cameraActive]);
+  const pendingPhotoCpRef = useRef(null);
   const [leaveModal, setLeaveModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   // Tracks the most-recent GPS fix so we can immediately check proximity
   // when targetCp changes (e.g. user is already standing next to the next checkpoint)
   const lastCoordsRef = useRef(null);
-  const { partyId, markVisited, addPendingVisit, postQuizZoneId, setPostQuizZoneId, clearPostQuizZone, role, gameConfig } = useGameContext();
+  const { partyId, markVisited, addPendingVisit, postQuizZoneId, setPostQuizZoneId, clearPostQuizZone, role, gameConfig,
+          pendingPhotoCompletion, setPendingPhotoCompletion } = useGameContext();
 
   // Keep refs so effects can read current values without stale closures
   const checkpointsRef = useRef(checkpoints);
@@ -71,32 +70,35 @@ export default function MapPage({ navigation, route }) {
   // Ref so the useFocusEffect callback can read the latest value without stale closure
   const postQuizZoneIdRef = useRef(postQuizZoneId);
   useEffect(() => { postQuizZoneIdRef.current = postQuizZoneId; }, [postQuizZoneId]);
+  const targetCpRef = useRef(null);
+  useEffect(() => { targetCpRef.current = targetCp; }, [targetCp]);
+  const completedZoneIdsRef = useRef(completedZoneIds);
+  useEffect(() => { completedZoneIdsRef.current = completedZoneIds; }, [completedZoneIds]);
 
-  // When the map regains focus after returning from Quiz/QuizResult:
-  // - reset camera lock (returned from Camera)
-  // - advance to the next zone if postQuizZoneId is set
-  // Using useFocusEffect (not useEffect) so this only fires on screen-focus,
-  // never synchronously when setPostQuizZoneId is called — that was the timing bug.
-  // The zoneId===0 (all done) case is handled by QuizResultPage directly;
-  // Map never regains focus in that path.
+  // Returning from Quiz/QuizResult: reset camera state and advance to the next zone.
   useFocusEffect(
     useCallback(() => {
-      const wasCamera = cameraActiveRef.current;
       setCameraActive(false);
-      const zoneId = postQuizZoneIdRef.current;
-      if (!zoneId) return; // null or 0 — nothing to advance
+      cameraActiveRef.current = false;
 
-      if (wasCamera) {
-        // Returning from camera/upload: photo zone is complete, now show quiz
-        // (quiz was intentionally skipped when the camera was opened)
-        setTimeout(() => navigation.navigate('Quiz', { fromGame: true }), 500);
-        return;
+      // Re-evaluate proximity immediately — handles returning from Camera when the user
+      // hasn't moved since setNearTarget(false) was called in handleVisit.
+      const currentCp = targetCpRef.current;
+      const coords = lastCoordsRef.current;
+      if (currentCp && coords) {
+        const radius = currentCp.type === 'photo' ? PHOTO_VISIT_RADIUS_METERS : VISIT_RADIUS_METERS;
+        setNearTarget(haversineMeters(coords, { latitude: currentCp.latitude, longitude: currentCp.longitude }) <= radius);
       }
 
-      // Returning from Quiz/QuizResult: advance to the next zone
+      const zoneId = postQuizZoneIdRef.current;
+      if (!zoneId) return;
       clearPostQuizZone();
-      const nextZone = gameZonesRef.current.find(z => z.id === zoneId);
-      if (!nextZone) return;
+      let nextZone = gameZonesRef.current.find(z => z.id === zoneId);
+      if (!nextZone) {
+        // gameZones changed (e.g. SignalR config update) — fall back to nearest unlocked zone
+        nextZone = gameZonesRef.current.find(z => !completedZoneIdsRef.current.has(z.id));
+        if (!nextZone) return;
+      }
       const cps = getCpsForZone(nextZone, checkpointsRef.current, roleRef.current);
       let nextCps = cps;
       if (cps.length === 0 && (roleRef.current === 'Trailblazer' || roleRef.current === 'Explorer')) {
@@ -120,6 +122,20 @@ export default function MapPage({ navigation, route }) {
       }
     }, [clearPostQuizZone, navigation])
   );
+
+  // Photo completion: ImageUploadScreen sets pendingPhotoCompletion=true in context
+  // before navigating back. isFocused is NOT used as a gate here because the context
+  // update and the navigation focus event arrive in separate React batches — gating on
+  // both would cause one condition to always be false when the other first becomes true.
+  // pendingPhotoCpRef is the guard against spurious calls (only set in handleVisit).
+  useEffect(() => {
+    if (!pendingPhotoCompletion) return;
+    setPendingPhotoCompletion(false);
+    if (!pendingPhotoCpRef.current) return;
+    const { cp, zone } = pendingPhotoCpRef.current;
+    pendingPhotoCpRef.current = null;
+    completeCheckpoint(cp, zone); // sets postQuizZoneId + starts 900ms quiz timer
+  }, [pendingPhotoCompletion, completeCheckpoint]);
 
   // ── Flash helper ────────────────────────────────────────────────────────────
   function showFlash(msg) {
@@ -161,7 +177,6 @@ export default function MapPage({ navigation, route }) {
 
   // ── Location watcher ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!fromGame) return;
     let sub;
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync().catch(() => ({ status: 'denied' }));
@@ -184,18 +199,18 @@ export default function MapPage({ navigation, route }) {
       ).catch(() => null);
     })();
     return () => sub?.remove?.();
-  }, [fromGame]);
+  }, []);
 
   // ── Immediate proximity check when the target checkpoint changes ────────────
   // Handles the case where the user is already standing within range of the
   // next checkpoint before the watcher fires its next update.
   useEffect(() => {
-    if (!targetCp || !fromGame) return;
+    if (!targetCp) return;
     const coords = lastCoordsRef.current;
     if (!coords) return;
     const radius = targetCp.type === 'photo' ? PHOTO_VISIT_RADIUS_METERS : VISIT_RADIUS_METERS;
     setNearTarget(haversineMeters(coords, { latitude: targetCp.latitude, longitude: targetCp.longitude }) <= radius);
-  }, [targetCp, fromGame]);
+  }, [targetCp]);
 
   // ── Fetch zones + checkpoints ───────────────────────────────────────────────
   const [fetchKey, setFetchKey] = useState(0);
@@ -204,11 +219,10 @@ export default function MapPage({ navigation, route }) {
     setLoadError(false);
     (async () => {
       try {
-        const [zr, cr, br] = await Promise.all([getZones(), getCheckpoints(), getBoundaries()]);
+        const [zr, cr] = await Promise.all([getZones(), getCheckpoints()]);
         if (cancelled) return;
         if (zr.success) setZones(Array.isArray(zr.data) ? zr.data : []);
         if (cr.success) setCheckpoints(Array.isArray(cr.data) ? cr.data : []);
-        if (br.success) setBoundaries(Array.isArray(br.data) ? br.data : []);
       } catch {
         if (!cancelled) setLoadError(true);
       }
@@ -216,57 +230,8 @@ export default function MapPage({ navigation, route }) {
     return () => { cancelled = true; };
   }, [fetchKey]);
 
-  // ── Fit map to loaded boundaries (non-game only — game flies to nearest zone) ─
-  useEffect(() => {
-    if (!mapReady || fromGame) return;
-    let allCoords = boundaries.flatMap(b => {
-      const geom = safeParseGeometry(b.boundary);
-      if (!geom) return [];
-      return extractRings(geom).flatMap(coordsToLatLng);
-    });
-    if (!allCoords.length) {
-      allCoords = zones.flatMap(z => {
-        const geom = safeParseGeometry(z.boundary);
-        if (!geom) return [];
-        return extractRings(geom).flatMap(coordsToLatLng);
-      });
-    }
-    if (!allCoords.length) return;
-    // Try to include the user's position so the map centres on them
-    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      .then(loc => {
-        const userCoord = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-        setTimeout(() => {
-          mapRef.current?.fitToCoordinates([...allCoords, userCoord], {
-            edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
-            animated: true,
-          });
-        }, 200);
-      })
-      .catch(() => {
-        setTimeout(() => {
-          mapRef.current?.fitToCoordinates(allCoords, {
-            edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
-            animated: true,
-          });
-        }, 200);
-      });
-  }, [mapReady, zones, boundaries, fromGame]);
-
-  // ── Zones visible on map ────────────────────────────────────────────────────
-  // Game mode: scoped to the active boundary + zoneCount cap.
-  // Browse mode: only zones belonging to boundaries within 1 km of the user
-  //              (falls back to all zones if location not yet available).
+  // ── Zones visible on map — scoped to the active boundary + zoneCount cap ───
   const gameZones = React.useMemo(() => {
-    if (!fromGame) {
-      if (!userLocation || !boundaries.length) return zones;
-      const nearbyBoundaryIds = new Set(
-        boundaries
-          .filter(b => boundaryDistanceMeters(b, userLocation) <= 1000)
-          .map(b => b.id)
-      );
-      return zones.filter(z => nearbyBoundaryIds.has(z.boundaryId));
-    }
     const bid = gameConfig?.boundaryId;
     const scoped = bid ? zones.filter(z => z.boundaryId === bid) : zones;
     const cap = gameConfig?.zoneCount;
@@ -283,7 +248,7 @@ export default function MapPage({ navigation, route }) {
       return sorted.slice(0, cap);
     }
     return scoped.slice(0, cap);
-  }, [fromGame, zones, boundaries, gameConfig, userLocation]);
+  }, [zones, gameConfig, userLocation]);
 
   // ── Photo-spot fallback ─────────────────────────────────────────────────────
   // Returns real checkpoints for the zone, or a synthetic photo spot when
@@ -299,7 +264,7 @@ export default function MapPage({ navigation, route }) {
 
   // ── Initial zone assignment ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!fromGame || initRef.current || !gameZones.length || !checkpoints.length) return;
+    if (!role || initRef.current || !gameZones.length || !checkpoints.length) return;
     initRef.current = true;
 
     async function init() {
@@ -329,7 +294,7 @@ export default function MapPage({ navigation, route }) {
     }
 
     init();
-  }, [gameZones, checkpoints, fromGame, role]);
+  }, [gameZones, checkpoints, role]);
 
   // ── Checkpoint visit ────────────────────────────────────────────────────────
   function completeCheckpoint(cp, zone, skipQuizTimer = false) {
@@ -364,12 +329,9 @@ export default function MapPage({ navigation, route }) {
     if (targetCp.type === 'sensor') {
       setSensorModal({ cp: targetCp, zone: activeZone, sensorId: targetCp.referenceId, sensorName: targetCp.name });
     } else if (targetCp.type === 'photo') {
-      // Complete the zone progress immediately (arrived at spot), then open camera.
-      // skipQuizTimer=true: quiz is shown via useFocusEffect when returning from camera.
-      completeCheckpoint(targetCp, activeZone, true);
-      // Set the ref directly — setCameraActive triggers an async effect that won't
-      // run while MapPage is backgrounded behind the Camera screen, so the ref
-      // must be stamped synchronously here before we navigate away.
+      // Store cp/zone for completion after upload — checkpoint is only marked
+      // done once useFocusEffect sees photoUploaded=true on return from ImageUpload.
+      pendingPhotoCpRef.current = { cp: targetCp, zone: activeZone };
       cameraActiveRef.current = true;
       setCameraActive(true);
       navigation.navigate('Camera', { gps: null });
@@ -382,7 +344,6 @@ export default function MapPage({ navigation, route }) {
   const remainingCount = totalZones - completedZoneIds.size;
 
   const sensorsLeft = React.useMemo(() => {
-    if (!fromGame) return 0;
     // Sensors still pending in the current zone
     const currentSensors =
       (targetCp?.type === 'sensor' ? 1 : 0) +
@@ -393,7 +354,7 @@ export default function MapPage({ navigation, route }) {
       .flatMap(z => getCpsForZone(z, checkpoints, role))
       .filter(cp => cp.type === 'sensor').length;
     return currentSensors + futureSensors;
-  }, [fromGame, targetCp, pendingZoneCps, gameZones, completedZoneIds, activeZone, checkpoints, role]);
+  }, [targetCp, pendingZoneCps, gameZones, completedZoneIds, activeZone, checkpoints, role]);
 
   function handleLeaveGame() {
     setLeaveModal(true);
@@ -422,8 +383,8 @@ export default function MapPage({ navigation, route }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader
         title="Map"
-        onBack={fromGame ? handleLeaveGame : () => navigation.goBack()}
-        variant={fromGame ? 'cancel' : 'back'}
+        onBack={handleLeaveGame}
+        variant="cancel"
       />
 
       <View style={styles.mapWrap}>
@@ -433,7 +394,7 @@ export default function MapPage({ navigation, route }) {
             <ActivityIndicator size="large" color="#1CB0F6" />
           </View>
         )}
-        {fromGame && totalZones > 0 && (
+        {totalZones > 0 && (
           <MapHud
             targetCp={targetCp}
             remainingCount={remainingCount}
@@ -442,7 +403,7 @@ export default function MapPage({ navigation, route }) {
           />
         )}
 
-        {fromGame && targetCp && (() => {
+        {targetCp && (() => {
           const activeColor = '#1CB0F6';
           const activeBorder = '#0E8BC0';
           return (
@@ -499,13 +460,12 @@ export default function MapPage({ navigation, route }) {
           )}
 
           <ZoneLayer
-            zones={fromGame ? gameZones : zones}
+            zones={gameZones}
             completedZoneIds={completedZoneIds}
             activeZone={activeZone}
-            fromGame={fromGame}
           />
 
-          {fromGame && targetCp?.latitude != null && targetCp.type !== 'photo' && (
+          {targetCp?.latitude != null && targetCp.type !== 'photo' && (
             <Marker
               coordinate={{ latitude: targetCp.latitude, longitude: targetCp.longitude }}
               anchor={{ x: 0.5, y: 0.5 }}
@@ -514,7 +474,7 @@ export default function MapPage({ navigation, route }) {
             </Marker>
           )}
 
-          {fromGame && targetCp?.type === 'photo' && targetCp.latitude != null && (
+          {targetCp?.type === 'photo' && targetCp.latitude != null && (
             <>
               <Circle
                 center={{ latitude: targetCp.latitude, longitude: targetCp.longitude }}
@@ -532,13 +492,6 @@ export default function MapPage({ navigation, route }) {
             </>
           )}
 
-          {!fromGame && checkpoints.map((cp, i) =>
-            cp.latitude != null && (
-              <Marker key={`cp-${i}`} coordinate={{ latitude: cp.latitude, longitude: cp.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
-                <View style={[styles.cpDot, { backgroundColor: checkpointColor(cp) }]} />
-              </Marker>
-            )
-          )}
         </MapView>
       </View>
 
@@ -614,16 +567,4 @@ const styles = StyleSheet.create({
     shadowColor: '#FF9600', shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
   },
 
-  floatingCameraWrap: { position: 'absolute', bottom: 80, right: 20, zIndex: 15 },
-  floatingCameraBtn: {
-    width: 69, height: 47, borderRadius: 12,
-    backgroundColor: '#1CB0F6',
-    borderBottomWidth: 4, borderBottomColor: '#1899D6',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 6,
-  },
-  floatingCameraBtnDisabled: {
-    backgroundColor: '#8dd5f5',
-    borderBottomColor: '#6bbde0',
-  },
 });

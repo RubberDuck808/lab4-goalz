@@ -13,6 +13,7 @@ export default function UserPhoto({ navigation, route }) {
     navigation.navigate('ImageUpload', {
       imageUri: imageUri,
       gps: route?.params?.gps,
+      fromGame: route?.params?.fromGame ?? false,
     });
   }
 

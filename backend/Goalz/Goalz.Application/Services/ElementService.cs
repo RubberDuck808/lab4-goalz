@@ -8,10 +8,12 @@ namespace Goalz.Core.Services;
 public class ElementService : IElementService
 {
     private readonly IElementRepository _repository;
+    private readonly IUserService _userService;
 
-    public ElementService(IElementRepository repository)
+    public ElementService(IElementRepository repository, IUserService userService)
     {
-        _repository = repository;
+        _repository  = repository;
+        _userService = userService;
     }
 
     public async Task<Element> CreateAsync(CreateElementRequest request)
@@ -44,6 +46,8 @@ public class ElementService : IElementService
             CreatedAt     = DateTime.UtcNow,
         };
         await _repository.CreateAsync(element);
+        if (request.SubmittedBy is not null)
+            await _userService.IncrementPicturesTakenAsync(request.SubmittedBy);
         return element;
     }
 

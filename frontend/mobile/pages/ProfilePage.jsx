@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AppText from '../components/AppText';
@@ -20,6 +21,7 @@ export default function ProfilePage({ navigation, route }) {
   const [isFriend, setIsFriend] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [statsExpanded, setStatsExpanded] = useState(false);
 
   useFocusEffect(useCallback(() => {
     let cancelled = false;
@@ -85,48 +87,58 @@ export default function ProfilePage({ navigation, route }) {
         </TouchableOpacity>
       )}
 
-      <View style={styles.infoRow}>
-        <View style={styles.textBlock}>
-          <AppText style={styles.username}>{viewedUsername ?? user?.username ?? '—'}</AppText>
-          <AppText style={styles.joined}>
-            {!isOther && user?.createdAt
-              ? `Joined ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
-              : 'Joined —'}
-          </AppText>
-          <AppText style={styles.badges}>Badges 0</AppText>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.infoRow}>
+          <View style={styles.textBlock}>
+            <AppText style={styles.username}>{viewedUsername ?? user?.username ?? '—'}</AppText>
+            <AppText style={styles.joined}>
+              {!isOther && user?.createdAt
+                ? `Joined ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                : 'Joined —'}
+            </AppText>
+            <AppText style={styles.badges}>Badges 0</AppText>
+          </View>
+          <Image source={getAvatar(isOther ? viewedAvatarId : user?.avatarId)} style={styles.avatar} resizeMode="contain" />
         </View>
-        <Image source={getAvatar(isOther ? viewedAvatarId : user?.avatarId)} style={styles.avatar} resizeMode="contain" />
-      </View>
 
-      {isOther && (
-        <View style={styles.btnRow}>
-          {incomingRequest ? (
-            <View style={styles.actionRow}>
-              <GameButtons variant="accept" size="half" onPress={handleAccept} style={styles.actionBtn}>✓</GameButtons>
-              <GameButtons variant="decline" size="half" onPress={handleDeny} style={styles.actionBtn}>✕</GameButtons>
-            </View>
-          ) : isFriend ? (
-            <GameButtons variant="decline" size="half" onPress={handleRemoveFriend}>Remove Friend</GameButtons>
-          ) : (
+        {isOther && (
+          <View style={styles.btnRow}>
+            {incomingRequest ? (
+              <View style={styles.actionRow}>
+                <GameButtons variant="accept" size="half" onPress={handleAccept} style={styles.actionBtn}>✓</GameButtons>
+                <GameButtons variant="decline" size="half" onPress={handleDeny} style={styles.actionBtn}>✕</GameButtons>
+              </View>
+            ) : isFriend ? (
+              <GameButtons variant="decline" size="half" onPress={handleRemoveFriend}>Remove Friend</GameButtons>
+            ) : (
+              <View style={{ width: 156 }} />
+            )}
             <View style={{ width: 156 }} />
-          )}
-          <View style={{ width: 156 }} />
+          </View>
+        )}
+
+        <View style={styles.content}>
+          <View style={styles.sectionRow}>
+            <AppText style={styles.sectionTitle}>Statistics</AppText>
+            <TouchableOpacity style={styles.seeAllBtn} onPress={() => setStatsExpanded(v => !v)}>
+              <AppText style={styles.seeAllText}>{statsExpanded ? 'Show less' : 'See all'}</AppText>
+              <Ionicons name={statsExpanded ? 'chevron-up' : 'chevron-down'} size={16} color="#71717a" />
+            </TouchableOpacity>
+          </View>
+          <StatisticsCard stats={stats} loading={statsLoading} collapsed={!statsExpanded} />
+
+          <AppText style={styles.sectionTitle}>Friends</AppText>
+          {!isOther && <PlayerSearch currentUsername={user?.username} />}
+          <FriendsTab
+            currentUsername={user?.username}
+            viewedUsername={viewedUsername}
+            connectionsOnly={isOther}
+            onViewProfile={openProfile}
+          />
         </View>
-      )}
-
-      <View style={styles.content}>
-        <AppText style={styles.sectionTitle}>Statistics</AppText>
-        <StatisticsCard stats={stats} loading={statsLoading} />
-
-        <AppText style={styles.sectionTitle}>Friends</AppText>
-        {!isOther && <PlayerSearch currentUsername={user?.username} />}
-        <FriendsTab
-          currentUsername={user?.username}
-          viewedUsername={viewedUsername}
-          connectionsOnly={isOther}
-          onViewProfile={openProfile}
-        />
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
 
       <BottomNavBar
         activeScreen="profile"
@@ -158,7 +170,12 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 16, width: 156, alignItems: 'center', justifyContent: 'center' },
   actionBtn: { width: 70 },
 
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16, gap: 12 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 24 },
+  content: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16, gap: 12 },
 
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#27272a', marginBottom: 4 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#27272a' },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  seeAllText: { fontSize: 13, color: '#71717a' },
 });

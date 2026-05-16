@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator,
+  KeyboardAvoidingView, Platform, StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import BottomNavBar from '../components/BottomNavBar';
 import { submitElement, getElementTypes } from '../services/api';
 import { uploadPhotoToSupabase } from '../services/supabase';
+import { useGameContext } from '../context/GameContext';
 
 const PLACEHOLDER_IMAGE = require('../assets/icon.png');
 
@@ -20,7 +21,9 @@ function parseGps(gpsStr) {
 }
 
 export default function ImageUploadScreenPage({ navigation, route }) {
+  const { setPendingPhotoCompletion } = useGameContext();
   const imageUri = route?.params?.imageUri ?? null;
+  const fromGame = route?.params?.fromGame ?? false;
   const imageSource = imageUri ? { uri: imageUri } : PLACEHOLDER_IMAGE;
 
   const [gps, setGps] = useState(route?.params?.gps ?? null);
@@ -81,6 +84,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Input" onBack={() => navigation.goBack()} />
 
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -168,12 +172,15 @@ export default function ImageUploadScreenPage({ navigation, route }) {
           }
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
 
-      <BottomNavBar
-        onNavigateHome={() => navigation.navigate('Home')}
-        onNavigateToProfile={() => navigation.navigate('Profile')}
-        onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
-      />
+      {!fromGame && (
+        <BottomNavBar
+          onNavigateHome={() => navigation.navigate('Home')}
+          onNavigateToProfile={() => navigation.navigate('Profile')}
+          onNavigateToLeaderboard={() => navigation.navigate('Leaderboard')}
+        />
+      )}
 
       <ConfirmModal
         visible={successModal}
@@ -183,7 +190,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
           {
             text: 'OK',
             style: 'default',
-            onPress: () => { setSuccessModal(false); navigation.navigate('Map'); },
+            onPress: () => { setSuccessModal(false); setPendingPhotoCompletion(true); navigation.navigate('Map', { fromGame: true }); },
           },
         ]}
       />

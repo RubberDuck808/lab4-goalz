@@ -11,5 +11,6 @@ namespace Goalz.Api.Hubs
 
         public async Task LeavePartyRoom(long partyId)
             => await Groups.RemoveFromGroupAsync(Context.ConnectionId, partyId.ToString());
+
     }
 }

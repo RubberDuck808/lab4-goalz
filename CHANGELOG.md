@@ -2,10 +2,45 @@
 
 ## Table of Contents
 
+1. [Fix: PicturesTaken stat never incremented](#fix-picturestaken-stat-never-incremented--2026-05-16)
+1. [Browse mode removal + photo task fix](#browse-mode-removal--photo-task-fix--2026-05-16)
 1. [Security & Flow Audit — full mobile + backend hardening](#security--flow-audit--2026-05-15)
 1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+---
+
+## Fix: PicturesTaken stat never incremented — 2026-05-16
+
+### Fixed
+- `ElementService.cs`: Injected `IUserService` and added call to `IncrementPicturesTakenAsync(request.SubmittedBy)` after a new element is persisted. The duplicate-update path (nearby pending element found) does not increment — the user was credited on first submission. Admin/seeded elements with no `SubmittedBy` are also skipped.
+
+### Rationale
+- The DB column, DTO, repository method, and service interface all existed; only the call site was missing.
+- Placed in `ElementService` rather than the controller to keep stat tracking inside the service layer and out of HTTP concerns.
+
+> Issue closed after 5 min
+
+---
+
+## Browse mode removal + photo task fix — 2026-05-16
+
+### Changed
+- `MapPage.jsx`: Removed all browse-mode (`fromGame=false`) code paths — dead code, nothing in the app navigated there without `fromGame: true`. Removed `boundaries` state, `getBoundaries()` call, `boundaryDistanceMeters` import, `useIsFocused` import, browse-mode map-fitting effect, browse-mode zone/checkpoint rendering, and all `fromGame &&` / `fromGame ?` conditionals throughout the component.
+- `ZoneLayer.jsx`: Removed `fromGame` prop — status is now always `active | done | locked` derived from `completedZoneIds` and `activeZone`.
+- `MapPage.jsx` (photo task fix): Removed `isFocused` gate from `pendingPhotoCompletion` effect — context update and navigation focus event arrive in separate React batches causing a timing race; `pendingPhotoCpRef.current` alone is a sufficient guard.
+- `GameContext.jsx`: Removed `chatMessages`, `sendChatMessage`, and `connectionRef` — party chat was decided out of scope.
+- `PartyHub.cs`: Removed `SendMessage` hub method — party chat out of scope.
+- `components/ChatOverlay.jsx`: Deleted — party chat out of scope.
+- `docs/mobile_feature_gaps.md`: Removed "In-Game Party Communication" section; renumbered remaining sections.
+
+### Rationale
+- Browse mode had no navigation entry point; keeping it added dead complexity and a second code path through every conditional in MapPage.
+- The photo task bug was a timing race between React context updates and React Navigation focus events — removing the isFocused gate resolves it cleanly without adding synchronisation complexity.
+- Party chat was descoped per product decision.
+
+> Issue closed after 0 min
+
 ---
 
 ## Security & Flow Audit — 2026-05-15

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
@@ -83,6 +83,7 @@ export default function EditProfilePage({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Edit Profile" onBack={() => navigation.goBack()} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         <AppText style={styles.sectionTitle}>Avatar</AppText>
@@ -161,6 +162,7 @@ export default function EditProfilePage({ navigation }) {
         </View>
 
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

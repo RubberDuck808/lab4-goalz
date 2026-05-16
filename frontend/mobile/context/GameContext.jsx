@@ -19,9 +19,11 @@ export function GameProvider({ children }) {
   const [quizScore, setQuizScoreState] = useState(0);
   // postQuizZoneId: null = not in quiz flow; 0 = all zones done; N = advance to zone N
   const [postQuizZoneId, setPostQuizZoneId] = useState(null);
+  // Set to true by ImageUploadScreen after a successful photo upload so MapPage
+  // knows to complete the deferred photo checkpoint on next focus.
+  const [pendingPhotoCompletion, setPendingPhotoCompletion] = useState(false);
   const [username, setUsername] = useState(null);
   const [gameConfig, setGameConfigState] = useState(null);
-
   // Update ref inline during render so it's always current by the time any
   // event handler or effect reads it — avoids the one-render-cycle lag of useEffect.
   const usernameRef = useRef(null);
@@ -164,6 +166,7 @@ export function GameProvider({ children }) {
     setPartyId(null); setPartyCode(null); setPartyName(null); setPartyStatus('Lobby');
     setMembersState([]); setRoleState(null); setVisited(new Set()); setGameConfigState(null);
     setPendingVisits([]); setQuizScoreState(0); setPostQuizZoneId(null);
+    setPendingPhotoCompletion(false);
   }, []);
 
   const completeGame = useCallback(async (capturedPartyId, capturedVisits, capturedQuizScore) => {
@@ -178,7 +181,8 @@ export function GameProvider({ children }) {
   return (
     <GameContext.Provider value={{
       partyId, partyCode, partyName, partyStatus, members, role, visitedCheckpointIds,
-      pendingVisits, quizScore, postQuizZoneId, gameConfig,
+      pendingVisits, quizScore, postQuizZoneId, gameConfig, username,
+      pendingPhotoCompletion, setPendingPhotoCompletion,
       setParty, setMembers, setRole, setGameConfig, setPostQuizZoneId,
       markVisited, addPendingVisit, addQuizScore, clearPostQuizZone,
       resetGame, completeGame, triggerPoll,

@@ -54,12 +54,11 @@ function renderZone(zone, idx, status) {
   return polys;
 }
 
-export default function ZoneLayer({ zones, completedZoneIds, activeZone, fromGame }) {
+export default function ZoneLayer({ zones, completedZoneIds, activeZone }) {
   return zones.map((zone, i) => {
     const status = completedZoneIds.has(zone.id) ? 'done'
-      : fromGame && activeZone?.id === zone.id ? 'active'
-      : fromGame ? 'locked'
-      : 'active';
+      : activeZone?.id === zone.id ? 'active'
+      : 'locked';
     return renderZone(zone, i, status);
   });
 }

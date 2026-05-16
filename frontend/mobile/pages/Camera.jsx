@@ -19,6 +19,7 @@ export default function CameraPage({ navigation, route }) {
         navigation.navigate('UserPhoto', {
           imageUri: result.uri,
           gps: route?.params?.gps ?? null,
+          fromGame: route?.params?.fromGame ?? false,
         });
       } else {
         // 'denied' shows an Alert from the hook before returning here;

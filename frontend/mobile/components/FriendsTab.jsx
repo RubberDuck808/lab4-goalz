@@ -6,8 +6,6 @@ import UserIcon from '../assets/User.svg';
 import UserRow from './UserRow';
 import { getConnections, getFriendRequests } from '../services/api';
 
-const VISIBLE_LIMIT = 3;
-
 export default function FriendsTab({ currentUsername, viewedUsername, connectionsOnly = false, onViewProfile }) {
   const targetUsername = viewedUsername ?? currentUsername;
   const tabs = connectionsOnly ? ['Connections'] : ['Connections', 'Requests'];
@@ -36,8 +34,6 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
   const isConnections = activeTab === 0;
   const items = isConnections ? connections : requests;
-  const visible = items.slice(0, VISIBLE_LIMIT);
-  const extra = items.length - VISIBLE_LIMIT;
 
   return (
     <View style={styles.container}>
@@ -64,7 +60,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
         <View style={styles.center}>
           <ActivityIndicator size="small" color="#3b82f6" />
         </View>
-      ) : visible.length === 0 ? (
+      ) : items.length === 0 ? (
         <View style={styles.center}>
           <AppText style={styles.emptyText}>
             {isConnections ? 'No connections yet' : 'No pending requests'}
@@ -72,7 +68,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
         </View>
       ) : (
         <View style={styles.list}>
-          {visible.map((item, idx) => (
+          {items.map((item, idx) => (
             <React.Fragment key={item.friendshipId}>
               <View style={styles.rowWrap}>
                 <UserRow
@@ -85,18 +81,9 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
                   }
                 />
               </View>
-              {idx < visible.length - 1 && <View style={styles.rowDivider} />}
+              {idx < items.length - 1 && <View style={styles.rowDivider} />}
             </React.Fragment>
           ))}
-
-          {extra > 0 && (
-            <>
-              <View style={styles.rowDivider} />
-              <View style={styles.moreRow}>
-                <AppText style={styles.moreText}>{extra}+</AppText>
-              </View>
-            </>
-          )}
         </View>
       )}
     </View>
@@ -105,14 +92,11 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
 const styles = StyleSheet.create({
   container: {
-    width: 361,
-    height: 215,
+    alignSelf: 'stretch',
     backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e4e4e7',
-    overflow: 'hidden',
-    alignSelf: 'center',
   },
 
   tabBar: { flexDirection: 'row' },
@@ -136,13 +120,10 @@ const styles = StyleSheet.create({
 
   divider: { height: 1, backgroundColor: '#e4e4e7' },
 
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { minHeight: 120, alignItems: 'center', justifyContent: 'center' },
   emptyText: { fontSize: 13, color: '#a1a1aa' },
 
-  list: { flex: 1 },
+  list: { paddingVertical: 4 },
   rowWrap: { paddingHorizontal: 16 },
   rowDivider: { height: 1, backgroundColor: '#f4f4f5', marginHorizontal: 16 },
-
-  moreRow: { alignItems: 'center', paddingVertical: 8 },
-  moreText: { fontSize: 14, color: '#71717a', fontWeight: '500' },
 });

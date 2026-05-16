@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import Logo from '../components/Logo';
@@ -48,6 +48,7 @@ export default function Login({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <Logo style={styles.logo} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={styles.form}>
         <AppText style={styles.heading}>Login</AppText>
         <TextInput
@@ -77,6 +78,7 @@ export default function Login({ navigation }) {
           <AppText style={styles.link}>I don't have an account yet.</AppText>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

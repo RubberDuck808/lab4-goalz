@@ -10,11 +10,19 @@ function Stat({ value, label, accent }) {
   );
 }
 
-export default function StatisticsCard({ stats, loading }) {
+export default function StatisticsCard({ stats, loading, collapsed = false }) {
   if (loading) {
     return (
       <View style={styles.loadingWrap}>
         <ActivityIndicator size="small" color="#1CB0F6" />
+      </View>
+    );
+  }
+
+  if (collapsed) {
+    return (
+      <View style={styles.grid}>
+        <Stat value={stats?.totalPoints ?? 0} label="Total points" accent />
       </View>
     );
   }

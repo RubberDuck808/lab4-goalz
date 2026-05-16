@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '../components/Logo';
 import TextInput from '../components/TextInput';
@@ -59,7 +59,8 @@ export default function SignUp({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <Logo style={styles.logo} />
-      <View style={styles.form}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <AppText style={styles.heading}>Sign Up</AppText>
         <TextInput
           placeholder="username"
@@ -104,7 +105,8 @@ export default function SignUp({ navigation }) {
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <AppText style={styles.link}>I already have an account.</AppText>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
