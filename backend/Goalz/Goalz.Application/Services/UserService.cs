@@ -86,7 +86,13 @@ namespace Goalz.Core.Services
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return (new UpdateProfileResponse { Username = user.Username, Email = user.Email, AvatarId = user.AvatarId }, null);
+            return (new UpdateProfileResponse
+            {
+                Username = user.Username,
+                Email = user.Email,
+                AvatarId = user.AvatarId,
+                Token = _jwtService.Generate(user.Username, user.Role.ToString()),
+            }, null);
         }
 
         public async Task<string?> ChangePasswordAsync(string username, ChangePasswordRequest request)

@@ -42,6 +42,10 @@ export async function clearUser() {
   ]);
 }
 
+export async function storeToken(token) {
+  if (token) await storage.setItemAsync(TOKEN_KEY, token);
+}
+
 export async function updateStoredUser(patch) {
   const existing = await getUser();
   const updated = { ...existing, ...patch };

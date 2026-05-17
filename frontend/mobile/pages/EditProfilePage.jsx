@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
 import AppText from '../components/AppText';
-import { getUser, updateStoredUser } from '../services/session';
+import { getUser, updateStoredUser, storeToken } from '../services/session';
 import { updateProfile, changePassword } from '../services/api';
 import { getAvatar, AVATAR_COUNT } from '../utils/avatars';
 
@@ -46,7 +46,10 @@ export default function EditProfilePage({ navigation }) {
     const result = await updateProfile(cleanUsername, email.trim(), avatarId);
     setSavingProfile(false);
     if (result.success) {
-      await updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId });
+      await Promise.all([
+        updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId }),
+        storeToken(result.data.token ?? result.data.Token),
+      ]);
       setProfileSuccess('Profile updated.');
     } else {
       setProfileError(result.error ?? 'Something went wrong.');
