@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { searchUsers, sendFriendRequest } from '../services/api';
+import { getAvatar } from '../utils/avatars';
 
 const DEBOUNCE_MS = 400;
 
@@ -81,7 +82,7 @@ export default function PlayerSearch({ currentUsername }) {
                 <React.Fragment key={user.username}>
                   {idx > 0 && <View style={styles.rowDivider} />}
                   <View style={styles.resultRow}>
-                    <View style={styles.avatar} />
+                    <Image source={getAvatar(user.avatarId)} style={styles.avatar} />
                     <Text style={styles.username}>{user.username}</Text>
                     <TouchableOpacity
                       style={[styles.addBtn, state === 'sent' && styles.addBtnSent]}
