@@ -110,7 +110,7 @@ mobile:eas-update:
     - cd frontend/mobile
     - npm ci
   script:
-    - eas update --branch $CI_COMMIT_REF_NAME --message "$CI_COMMIT_TITLE" --non-interactive
+    - eas update --branch $CI_COMMIT_REF_NAME --message "$CI_COMMIT_TITLE" --platform ios,android --non-interactive
   only:
     - main
     - dev
