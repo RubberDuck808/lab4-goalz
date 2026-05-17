@@ -9,6 +9,7 @@ import PageHeader from '../components/PageHeader';
 import ConfirmModal from '../components/ConfirmModal';
 import { useGameContext } from '../context/GameContext';
 import { getZones, getCheckpoints } from '../services/api/partyApi';
+import { getSensorPopUp } from '../services/api';
 import {
   ARBORETUM_REGION,
   VISIT_RADIUS_METERS,
@@ -27,6 +28,7 @@ import {
 import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
 import SensorModal from './map/SensorModal';
+import PopUp from './PopUp';
 
 export default function MapPage({ navigation, route }) {
   const completedRef = React.useRef(false);
@@ -43,9 +45,11 @@ export default function MapPage({ navigation, route }) {
   const [flashMsg,         setFlashMsg]         = useState(null);
   const flashAnim = useRef(new Animated.Value(0)).current;
 
-  const [mapReady,    setMapReady]    = useState(false);
-  const [sensorModal, setSensorModal] = useState(null);
-  const [loadError,   setLoadError]   = useState(false);
+  const [mapReady,     setMapReady]     = useState(false);
+  const [sensorModal,  setSensorModal]  = useState(null);
+  const [loadError,    setLoadError]    = useState(false);
+  const [popUpState,   setPopUpState]   = useState(null);
+  const [popUpMessage, setPopUpMessage] = useState('');
 
   const initRef = useRef(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -500,10 +504,24 @@ export default function MapPage({ navigation, route }) {
         sensorId={sensorModal?.sensorId}
         sensorName={sensorModal?.sensorName ?? 'Nearby Sensor'}
         onClose={() => {
-          const { cp, zone } = sensorModal;
+          const { cp, zone, sensorId } = sensorModal;
           setSensorModal(null);
+          setPopUpMessage('');
+          setPopUpState({ cp, zone });
+          getSensorPopUp(sensorId).then(result => {
+            if (result.success && result.data) setPopUpMessage(result.data.infoText);
+          });
+        }}
+      />
+      <PopUp
+        visible={!!popUpState}
+        message={popUpMessage}
+        onConfirm={() => {
+          const { cp, zone } = popUpState;
+          setPopUpState(null);
           completeCheckpoint(cp, zone);
         }}
+        buttonLabel="I've read the information"
       />
 
       <ConfirmModal

@@ -166,3 +166,5 @@ supabase/.temp/
 
 # LSCache files
 *.lscache
+
+hardware/sketch_may10a/secrets.h

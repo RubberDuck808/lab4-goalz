@@ -1,3 +1,4 @@
+using Goalz.API.Models;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -50,5 +51,27 @@ public class SensorController : ControllerBase
             };
         }
         return NoContent();
+    }
+
+    [HttpPost("data")]
+    public async Task<IActionResult> SensorData([FromBody] SensorDataDTO sensorDataDto)
+    {
+        try
+        {
+            await _sensorService.StoreSensorData(sensorDataDto);
+            return Ok("Data successfully stored!");
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (ArgumentNullException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
+        }
     }
 }

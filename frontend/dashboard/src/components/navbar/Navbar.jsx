@@ -82,6 +82,12 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             setSelectedItem={handleSelect}
           />
           <Navitem
+            name="Sensor Management"
+            icon="fa-wifi"
+            selectedItem={selectedItem}
+            setSelectedItem={handleSelect}
+          />
+          <Navitem
             name="Reports"
             icon="fa-file-export"
             selectedItem={selectedItem}

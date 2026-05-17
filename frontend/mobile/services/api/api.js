@@ -116,6 +116,14 @@ export async function getSensorData(sensorId) {
   return { success: false, data: [] };
 }
 
+export async function getSensorPopUp(sensorId) {
+  const response = await apiFetch(`${BASE_URL}/api/game/sensors/${sensorId}/popup`, {
+    headers: await authHeaders(),
+  });
+  if (response.ok) return { success: true, data: await response.json() };
+  return { success: false, data: null };
+}
+
 export async function removeConnection(otherUsername) {
   const response = await apiFetch(`${BASE_URL}/api/game/friends/connection`, {
     method: 'DELETE',

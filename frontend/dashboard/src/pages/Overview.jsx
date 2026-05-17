@@ -6,6 +6,7 @@ import ImportData from '../components/dashboard/import/import';
 import ArboretumMap from '../components/dashboard/map/ArboretumMap';
 import Settings from '../components/dashboard/settings/Settings';
 import PendingElements from '../components/dashboard/pending/PendingElements';
+import SensorManagement from '../components/dashboard/sensors/SensorManagement';
 
 export default function Overview() {
   const [selectedItem, setSelectedItem] = useState("Arboretum Dashboard");
@@ -16,6 +17,8 @@ export default function Overview() {
         return <DashboardOverview setSelectedItem={setSelectedItem} />;
       case "Game Map":
         return <ArboretumMap />;
+      case "Sensor Management":
+        return <SensorManagement />;
       case "Reports":
         return <Reports />;
       case "Import dataset":
