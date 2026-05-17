@@ -20,6 +20,7 @@ module.exports = {
         NSPhotoLibraryUsageDescription: 'Loggin saves photos of arboretum elements to your photo library.',
         NSBluetoothAlwaysUsageDescription: 'Loggin needs Bluetooth to detect nearby checkpoints.',
         NSBluetoothPeripheralUsageDescription: 'Loggin needs Bluetooth to detect nearby checkpoints.',
+        ITSAppUsesNonExemptEncryption: false,
         NSAppTransportSecurity: {
           NSExceptionDomains: {
             localhost: {

@@ -42,7 +42,8 @@ export default function EditProfilePage({ navigation }) {
       return;
     }
     setSavingProfile(true);
-    const result = await updateProfile(username.trim(), email.trim(), avatarId);
+    const cleanUsername = username.replace(/\p{C}/gu, '').trim();
+    const result = await updateProfile(cleanUsername, email.trim(), avatarId);
     setSavingProfile(false);
     if (result.success) {
       await updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId });

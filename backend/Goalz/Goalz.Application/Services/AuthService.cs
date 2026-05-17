@@ -27,9 +27,8 @@ namespace Goalz.Core.Services
                 {
                     return new DashboardLoginResponse
                     {
-                        Token = _jwtService.Generate(user.Email, user.Role.ToString(), user.Name),
+                        Token = _jwtService.Generate(user.Email, user.Role.ToString()),
                         Email = user.Email,
-                        Name = user.Name,
                         Role = user.Role.ToString()
                     };
                 }
@@ -51,7 +50,6 @@ namespace Goalz.Core.Services
             var user = new User
             {
                 Username = request.Email,
-                Name = request.Name,
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Staff
@@ -59,7 +57,7 @@ namespace Goalz.Core.Services
 
             await _authRepository.CreateUserAsync(user);
 
-            return (new DashboardLoginResponse { Email = user.Email, Name = user.Name, Role = user.Role.ToString() }, null);
+            return (new DashboardLoginResponse { Email = user.Email, Role = user.Role.ToString() }, null);
         }
 
         public async Task<(IEnumerable<StaffUserDto>? Users, string? Error)> GetStaffUsersAsync(string adminEmail)
@@ -69,7 +67,7 @@ namespace Goalz.Core.Services
                 return (null, "unauthorized");
 
             var users = await _authRepository.GetAllStaffAndAdminAsync();
-            return (users.Select(u => new StaffUserDto { Id = u.Id, Name = u.Name, Email = u.Email, Role = u.Role.ToString() }), null);
+            return (users.Select(u => new StaffUserDto { Id = u.Id, Email = u.Email, Role = u.Role.ToString() }), null);
         }
 
         public async Task<(bool Success, string? Error)> ChangeUserRoleAsync(string adminEmail, long userId, string newRole)

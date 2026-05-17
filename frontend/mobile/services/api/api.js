@@ -38,11 +38,11 @@ export async function login(email, password) {
   return { success: false, error: 'Something went wrong. Try again.' };
 }
 
-export async function signUp(username, name, email, password) {
+export async function signUp(username, email, password) {
   const response = await fetch(`${BASE_URL}/api/game/auth/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, name, email, password }),
+    body: JSON.stringify({ username, email, password }),
   });
 
   if (response.status === 201) return { success: true, data: await response.json() };

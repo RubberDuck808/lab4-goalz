@@ -27,7 +27,6 @@ namespace Goalz.Core.Services
             {
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
-                Name = user.Name,
                 Email = user.Email,
                 CreatedAt = user.CreatedAt,
                 AvatarId = user.AvatarId,
@@ -45,7 +44,6 @@ namespace Goalz.Core.Services
             var user = new User
             {
                 Username = request.Username,
-                Name = request.Name,
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Player
@@ -58,7 +56,6 @@ namespace Goalz.Core.Services
             {
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
-                Name = user.Name,
                 Email = user.Email,
                 AvatarId = user.AvatarId,
             }, null);

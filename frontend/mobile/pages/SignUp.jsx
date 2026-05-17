@@ -10,7 +10,6 @@ import { getToken, storeUser } from '../services/session';
 
 export default function SignUp({ navigation }) {
   const [username, setUsername] = useState('');
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
@@ -20,7 +19,7 @@ export default function SignUp({ navigation }) {
   async function handleSignUp() {
     setError('');
 
-    if (!username || !name || !email || !password || !repeatPassword) {
+    if (!username || !email || !password || !repeatPassword) {
       setError('Please fill in all fields.');
       return;
     }
@@ -37,7 +36,7 @@ export default function SignUp({ navigation }) {
 
     setLoading(true);
     try {
-      const result = await signUp(username, name, email, password);
+      const result = await signUp(username, email, password);
       if (result.success) {
         await storeUser(result.data);
         const token = await getToken();
@@ -70,11 +69,6 @@ export default function SignUp({ navigation }) {
             autoCapitalize="none"
             value={username}
             onChangeText={setUsername}
-          />
-          <TextInput
-            placeholder="full name"
-            value={name}
-            onChangeText={setName}
           />
           <TextInput
             placeholder="email"
