@@ -47,7 +47,7 @@ export default function EditProfilePage({ navigation }) {
     setSavingProfile(false);
     if (result.success) {
       await Promise.all([
-        updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId }),
+        updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId, createdAt: result.data.createdAt }),
         storeToken(result.data.token ?? result.data.Token),
       ]);
       setProfileSuccess('Profile updated.');

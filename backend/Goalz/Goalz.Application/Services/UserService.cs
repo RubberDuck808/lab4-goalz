@@ -57,6 +57,7 @@ namespace Goalz.Core.Services
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
                 Email = user.Email,
+                CreatedAt = user.CreatedAt,
                 AvatarId = user.AvatarId,
             }, null);
         }
@@ -90,6 +91,7 @@ namespace Goalz.Core.Services
             {
                 Username = user.Username,
                 Email = user.Email,
+                CreatedAt = user.CreatedAt,
                 AvatarId = user.AvatarId,
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
             }, null);

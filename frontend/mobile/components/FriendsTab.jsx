@@ -46,9 +46,16 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
             onPress={() => setActiveTab(i)}
             activeOpacity={0.7}
           >
-            <AppText style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
-              {tab}
-            </AppText>
+            <View style={styles.tabLabelRow}>
+              <AppText style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
+                {tab}
+              </AppText>
+              {tab === 'Requests' && requests.length > 0 && (
+                <View style={styles.badge}>
+                  <AppText style={styles.badgeText}>{requests.length}</AppText>
+                </View>
+              )}
+            </View>
             {activeTab === i && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
         ))}
@@ -106,8 +113,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     position: 'relative',
   },
+  tabLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tabText: { fontSize: 15, color: '#71717a', fontWeight: '500' },
   tabTextActive: { color: '#1CB0F6', fontWeight: '600' },
+  badge: {
+    backgroundColor: '#FF4B4B',
+    borderRadius: 9999,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
   tabUnderline: {
     position: 'absolute',
     bottom: 0,

@@ -106,19 +106,16 @@ export default function ProfilePage({ navigation, route }) {
           <Image source={getAvatar(isOther ? viewedAvatarId : user?.avatarId)} style={styles.avatar} resizeMode="contain" />
         </View>
 
-        {isOther && (
+        {isOther && (incomingRequest || isFriend) && (
           <View style={styles.btnRow}>
             {incomingRequest ? (
-              <View style={styles.actionRow}>
-                <GameButtons variant="accept" size="half" onPress={handleAccept} style={styles.actionBtn}>✓</GameButtons>
-                <GameButtons variant="decline" size="half" onPress={handleDeny} style={styles.actionBtn}>✕</GameButtons>
-              </View>
-            ) : isFriend ? (
-              <GameButtons variant="decline" size="half" onPress={handleRemoveFriend}>Remove Friend</GameButtons>
+              <>
+                <GameButtons variant="accept" size="half" onPress={handleAccept}>Accept</GameButtons>
+                <GameButtons variant="decline" size="half" onPress={handleDeny}>Decline</GameButtons>
+              </>
             ) : (
-              <View style={{ width: 156 }} />
+              <GameButtons variant="decline" size="half" onPress={handleRemoveFriend}>Remove Friend</GameButtons>
             )}
-            <View style={{ width: 156 }} />
           </View>
         )}
       </View>
@@ -178,9 +175,7 @@ const styles = StyleSheet.create({
   badgesEmpty: { fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
   avatar: { width: 120, height: 120, borderRadius: 9999, overflow: 'hidden', backgroundColor: '#2D6A4F' },
 
-  btnRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 12, marginBottom: -20 },
-  actionRow: { flexDirection: 'row', gap: 16, width: 156, alignItems: 'center', justifyContent: 'center' },
-  actionBtn: { width: 70 },
+  btnRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 16, marginBottom: -20 },
 
   cardWrap: { flex: 1, backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -16 },
   scroll: { flex: 1 },
