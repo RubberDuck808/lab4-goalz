@@ -25,6 +25,7 @@ namespace Goalz.Data.Storage
         public DbSet<Question> Questions { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<UserStatistics> UserStatistics { get; set; }
+        public DbSet<UserPointsLog> UserPointsLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -142,6 +143,15 @@ namespace Goalz.Data.Storage
                     .HasForeignKey<UserStatistics>(s => s.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(s => s.UserId).IsUnique();
+            });
+
+            modelBuilder.Entity<UserPointsLog>(entity =>
+            {
+                entity.HasOne(l => l.User)
+                    .WithMany()
+                    .HasForeignKey(l => l.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(l => new { l.UserId, l.EarnedAt });
             });
 
             base.OnModelCreating(modelBuilder);

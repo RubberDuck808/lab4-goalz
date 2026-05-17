@@ -107,8 +107,8 @@ namespace Goalz.Core.Services
             return null;
         }
 
-        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync()
-            => await _userRepository.GetLeaderboardAsync();
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string? period = null)
+            => await _userRepository.GetLeaderboardAsync(period);
 
         public Task AddGameStatsAsync(string username, int checkpointsVisited, int quizScore)
             => _userRepository.AddGameStatsAsync(username, checkpointsVisited, quizScore);

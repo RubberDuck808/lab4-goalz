@@ -35,7 +35,7 @@ export async function login(email, password) {
   if (response.ok) return { success: true, data: await response.json() };
   if (response.status === 401) return { success: false, error: 'Invalid email or password.' };
   if (response.status === 429) return { success: false, error: 'Too many attempts. Please wait a minute.' };
-  return { success: false, error: 'Something went wrong. Please try again.' };
+  return { success: false, error: 'Something went wrong. Try again.' };
 }
 
 export async function signUp(username, name, email, password) {
@@ -48,7 +48,7 @@ export async function signUp(username, name, email, password) {
   if (response.status === 201) return { success: true, data: await response.json() };
   if (response.status === 409) return { success: false, error: await response.text() };
   if (response.status === 429) return { success: false, error: 'Too many attempts. Please wait a minute.' };
-  return { success: false, error: 'Something went wrong. Please try again.' };
+  return { success: false, error: 'Something went wrong. Try again.' };
 }
 
 // ── Friends ──────────────────────────────────────────────────────────────────
@@ -152,8 +152,11 @@ export async function changePassword(currentPassword, newPassword) {
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
-export async function getLeaderboard() {
-  const response = await fetch(`${BASE_URL}/api/game/leaderboard`);
+export async function getLeaderboard(period = null) {
+  const url = period
+    ? `${BASE_URL}/api/game/leaderboard?period=${period}`
+    : `${BASE_URL}/api/game/leaderboard`;
+  const response = await fetch(url);
   if (response.ok) return { success: true, data: await response.json() };
   return { success: false, data: [] };
 }

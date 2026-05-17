@@ -135,6 +135,7 @@ namespace Goalz.Data.Repositories
                     stats.CheckpointsVisited += checkpointIds.Count;
                     stats.GamesPlayed        += 1;
                     stats.TotalPoints        += memberScore;
+                    _context.UserPointsLogs.Add(new UserPointsLog { UserId = user.Id, PointsEarned = memberScore });
 
                     var member = await _context.PartyMembers
                         .FirstOrDefaultAsync(pm => pm.PartyId == partyId && pm.UserId == user.Id);

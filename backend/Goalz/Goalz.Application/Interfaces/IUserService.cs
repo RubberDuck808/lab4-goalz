@@ -8,7 +8,7 @@ namespace Goalz.Core.Interfaces
         Task<(GameSignUpResponse? User, string? Error)> SignUpAsync(GameSignUpRequest request);
         Task<(UpdateProfileResponse? Profile, string? Error)> UpdateProfileAsync(string currentUsername, UpdateProfileRequest request);
         Task<string?> ChangePasswordAsync(string username, ChangePasswordRequest request);
-        Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync();
+        Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string? period = null);
 
         // Statistics
         Task AddGameStatsAsync(string username, int checkpointsVisited, int quizScore);

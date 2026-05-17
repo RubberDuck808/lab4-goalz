@@ -72,9 +72,11 @@ namespace Goalz.Data.Repositories
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null) return;
             var stats = await GetOrCreateStatsAsync(user.Id);
+            var points = (long)(checkpointsVisited * 10) + quizScore;
             stats.CheckpointsVisited += checkpointsVisited;
             stats.GamesPlayed        += 1;
-            stats.TotalPoints        += (long)(checkpointsVisited * 10) + quizScore;
+            stats.TotalPoints        += points;
+            _context.UserPointsLogs.Add(new UserPointsLog { UserId = user.Id, PointsEarned = points });
             await _context.SaveChangesAsync();
         }
 
@@ -114,9 +116,38 @@ namespace Goalz.Data.Repositories
                 };
         }
 
-        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(int limit = 50)
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string? period = null, int limit = 50)
         {
-            // Join Users with their stats; users with no stats row sort to 0 points.
+            if (period == "week" || period == "month")
+            {
+                var since = period == "week"
+                    ? DateTime.UtcNow.AddDays(-7)
+                    : DateTime.UtcNow.AddDays(-30);
+
+                var periodRows = await _context.Users
+                    .Where(u => u.Role == Role.Player)
+                    .Select(u => new
+                    {
+                        u.Username,
+                        u.AvatarId,
+                        TotalPoints = _context.UserPointsLogs
+                            .Where(l => l.UserId == u.Id && l.EarnedAt >= since)
+                            .Sum(l => (long?)l.PointsEarned) ?? 0L,
+                    })
+                    .OrderByDescending(x => x.TotalPoints)
+                    .Take(limit)
+                    .ToListAsync();
+
+                return periodRows.Select((x, i) => new LeaderboardEntryDto
+                {
+                    Rank        = i + 1,
+                    Username    = x.Username,
+                    AvatarId    = x.AvatarId,
+                    TotalPoints = x.TotalPoints,
+                });
+            }
+
+            // All time — sum from UserStatistics
             var rows = await _context.Users
                 .Where(u => u.Role == Role.Player)
                 .Select(u => new

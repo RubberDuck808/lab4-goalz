@@ -20,6 +20,6 @@ namespace Goalz.Core.Interfaces
         Task IncrementPartiesJoinedAsync(string username);
         Task IncrementPicturesTakenAsync(string username);
         Task<UserStatisticsDto> GetStatsAsync(string username);
-        Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(int limit = 50);
+        Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string? period = null, int limit = 50);
     }
 }

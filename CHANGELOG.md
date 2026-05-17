@@ -2,12 +2,37 @@
 
 ## Table of Contents
 
+1. [Leaderboard redesign — hero pattern, podium, filters, time-based backend](#leaderboard-redesign--hero-pattern-podium-filters--2026-05-17)
 1. [Fix: PicturesTaken stat never incremented](#fix-picturestaken-stat-never-incremented--2026-05-16)
 1. [Browse mode removal + photo task fix](#browse-mode-removal--photo-task-fix--2026-05-16)
 1. [Security & Flow Audit — full mobile + backend hardening](#security--flow-audit--2026-05-15)
 1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+---
+
+## Leaderboard redesign — hero pattern, podium, filters — 2026-05-17
+
+### Changed
+- `LeaderboardPage.jsx`: Full rewrite. Replaced flat white page with blue hero → white card overlap (matching Home/Profile). Added animated podium visual in hero (2nd left, 1st centre/gold ring, 3rd right with bar platforms). Rankings list shows all entries with top-3 cream tint and a heavier divider between rank 3 and 4. "you" pill badge on the current user's row.
+- Filter chips added: **All time**, **This month**, **This week** (each fetches from backend with `?period`), **Friends** (client-side filter using `getConnections`).
+- `api.js` `getLeaderboard`: Now accepts optional `period` argument and appends `?period=` to the URL.
+
+### Added (backend)
+- `UserPointsLog` entity (`Goalz.Domain`) — logs every point-earning event with `UserId`, `PointsEarned`, `EarnedAt`.
+- `UserPointsLogs` DbSet + EF config in `AppDbContext` (FK cascade + composite index on `UserId, EarnedAt`).
+- Migration `AddUserPointsLog` applied.
+- `UserRepository.AddGameStatsAsync` and `PartyRepository` party-complete block both insert a `UserPointsLog` row whenever points are awarded.
+- `GetLeaderboardAsync(string? period)`: for `"week"` / `"month"` sums from `UserPointsLogs` filtered by `EarnedAt`; for `null` uses `UserStatistics.TotalPoints` as before.
+- `IUserRepository`, `IUserService`, `UserService`, `LeaderboardController` all updated to thread `period` through the stack.
+
+### Rationale
+- The plain-white page with `PageHeader` was visually out of place; all other top-level pages use the hero pattern.
+- Cumulative `TotalPoints` has no timestamp, so time-based filters required a new event-log table rather than schema changes to `UserStatistics`.
+- Friends filter is intentionally client-side: the connections API is fast and avoids a custom join endpoint.
+
+> Issue closed after 0 min
+
 ---
 
 ## Fix: PicturesTaken stat never incremented — 2026-05-16
