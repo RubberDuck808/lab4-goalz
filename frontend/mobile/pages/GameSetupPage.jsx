@@ -230,11 +230,11 @@ export default function GameSetupPage({ navigation, route }) {
 
   async function handleStart() {
     if (!singlePlayer && !partyName.trim()) {
-      setError('Party name is required.');
+      setError('Enter a party name to continue.');
       return;
     }
     if (allowedRoles.size === 0) {
-      setError('At least one role must be selected.');
+      setError('Select at least one role.');
       return;
     }
     setError('');
@@ -288,7 +288,7 @@ export default function GameSetupPage({ navigation, route }) {
           ) : nearbyBoundaries.length === 0 ? (
             <Text style={styles.hint}>
               {userLocation
-                ? 'No play areas within 1 km of your location. Move closer to a play area to start a game.'
+                ? 'No play areas nearby. Move closer to get started.'
                 : 'No play areas found.'}
             </Text>
           ) : (
@@ -312,7 +312,7 @@ export default function GameSetupPage({ navigation, route }) {
         {!singlePlayer && (
           <Section title={`Zones to include: ${zoneCount}`}>
             {zonesInBoundary.length === 0 ? (
-              <Text style={styles.hint}>No zones set up for this boundary yet.</Text>
+              <Text style={styles.hint}>No zones set up here yet.</Text>
             ) : (
               <>
                 <Slider min={1} max={maxZones} value={zoneCount} onChange={setZoneCount} />
@@ -350,10 +350,11 @@ export default function GameSetupPage({ navigation, route }) {
             ))}
           </View>
           {roleWarnings.length > 0 && (
-            <Text style={styles.warning}>
-              {roleWarnings.join(' & ')} {roleWarnings.length === 1 ? 'has' : 'have'} 0 checkpoints
-              in at least one zone — players with {roleWarnings.length === 1 ? 'this role' : 'these roles'} would have nothing to visit.
-            </Text>
+            <View style={styles.warningCard}>
+              <Text style={styles.warningText}>
+                ⚠ {roleWarnings.join(' & ')} {roleWarnings.length === 1 ? 'has' : 'have'} 0 checkpoints in at least one zone — those players would have nothing to visit.
+              </Text>
+            </View>
           )}
         </Section>
 
@@ -442,7 +443,7 @@ const styles = StyleSheet.create({
 
   // boundary chips
   chipRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip:            { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: '#e4e4e7', backgroundColor: '#fafafa' },
+  chip:            { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: '#e4e4e7', backgroundColor: '#f4f4f5' },
   chipActive:      { borderColor: GREEN, backgroundColor: '#e8f5ed' },
   chipText:        { fontSize: 14, color: '#71717a' },
   chipTextActive:  { color: GREEN, fontWeight: 'bold' },
@@ -456,6 +457,14 @@ const styles = StyleSheet.create({
 
   hint:     { fontSize: 14, color: '#71717a', marginBottom: 8 },
   hintBold: { fontWeight: 'bold', color: '#27272a' },
-  warning:  { fontSize: 13, color: '#B45309', marginTop: 6 },
+  warningCard: {
+    backgroundColor: '#FFF3D4',
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#F5A623',
+    marginTop: 6,
+  },
+  warningText: { fontSize: 13, color: '#CC8B00', fontWeight: '500', lineHeight: 18 },
   error:    { color: '#ef4444', fontSize: 13, textAlign: 'center', marginBottom: 8 },
 });

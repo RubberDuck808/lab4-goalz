@@ -67,13 +67,13 @@ export default function PlayerSearch({ currentUsername }) {
       </View>
 
       {showHint && (
-        <Text style={styles.hintText}>Enter at least 2 characters</Text>
+        <Text style={styles.hintText}>Type 2 or more characters to search.</Text>
       )}
 
       {showDropdown && (
         <View style={styles.dropdown}>
           {results.length === 0 && !loading ? (
-            <Text style={styles.emptyText}>No players found</Text>
+            <Text style={styles.emptyText}>No players found.</Text>
           ) : (
             results.map((user, idx) => {
               const state = sent[user.username];
@@ -89,7 +89,7 @@ export default function PlayerSearch({ currentUsername }) {
                       disabled={state === 'sent' || state === 'sending'}
                     >
                       <Text style={[styles.addBtnText, state === 'sent' && styles.addBtnTextSent]}>
-                        {state === 'sent' ? 'Sent' : state === 'error' ? 'Retry' : 'Add'}
+                        {state === 'sent' ? 'Sent' : state === 'error' ? 'Try again' : 'Add'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#f4f4f5',
   },
   input: {
     flex: 1,

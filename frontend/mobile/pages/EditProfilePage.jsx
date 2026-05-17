@@ -38,7 +38,7 @@ export default function EditProfilePage({ navigation }) {
     setProfileError('');
     setProfileSuccess('');
     if (!username.trim() || !email.trim()) {
-      setProfileError('Username and email cannot be empty.');
+      setProfileError('Fill in your username and email.');
       return;
     }
     setSavingProfile(true);
@@ -56,7 +56,7 @@ export default function EditProfilePage({ navigation }) {
     setPasswordError('');
     setPasswordSuccess('');
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError('All password fields are required.');
+      setPasswordError('Fill in all password fields.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -74,7 +74,7 @@ export default function EditProfilePage({ navigation }) {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setPasswordSuccess('Password changed successfully.');
+      setPasswordSuccess('Password updated.');
     } else {
       setPasswordError(result.error ?? 'Something went wrong.');
     }
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     fontSize: 14,
     fontWeight: '600',
-    color: '#3f3f46',
+    color: '#27272a',
     marginBottom: -4,
   },
   avatarGrid: {

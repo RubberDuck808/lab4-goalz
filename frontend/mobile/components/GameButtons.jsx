@@ -3,16 +3,16 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import AppText from './AppText';
 
 const SIZES = {
-  default: { width: 328, height: 48, borderRadius: 13 },
-  half:    { width: 156, height: 48, borderRadius: 13 },
-  square:  { width: 328, height: 280, borderRadius: 20 },
+  default: { alignSelf: 'center', width: '100%', maxWidth: 328, height: 48, borderRadius: 13 },
+  half:    { width: 156,                          height: 48,    borderRadius: 13 },
+  square:  { alignSelf: 'center', width: '100%', maxWidth: 328, height: 280, borderRadius: 20 },
 };
 
 const VARIANTS = {
   task:    { bg: '#1CB0F6', border: '#1899D6' },
   accept:  { bg: '#58CC02', border: '#5DA700' },
-  decline: { bg: '#FF4B4B', border: '#90461F' },
-  party:   { bg: '#FFC107', border: '#CC8F00' },
+  decline: { bg: '#FF4B4B', border: '#CC2525' },
+  party:   { bg: '#F5A623', border: '#CC8B00' },
 };
 
 export default function GameButtons({ children, onPress, variant = 'task', size = 'default', style, disabled = false }) {
@@ -27,9 +27,7 @@ export default function GameButtons({ children, onPress, variant = 'task', size 
       style={[
         styles.base,
         {
-          width: s.width,
-          height: s.height,
-          borderRadius: s.borderRadius,
+          ...s,
           backgroundColor: v.bg,
           borderBottomWidth: 4,
           borderBottomColor: v.border,

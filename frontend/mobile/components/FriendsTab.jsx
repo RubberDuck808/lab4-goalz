@@ -8,7 +8,7 @@ import { getConnections, getFriendRequests } from '../services/api';
 
 export default function FriendsTab({ currentUsername, viewedUsername, connectionsOnly = false, onViewProfile }) {
   const targetUsername = viewedUsername ?? currentUsername;
-  const tabs = connectionsOnly ? ['Connections'] : ['Connections', 'Requests'];
+  const tabs = connectionsOnly ? ['Friends'] : ['Friends', 'Requests'];
 
   const [activeTab, setActiveTab] = useState(0);
   const [connections, setConnections] = useState([]);
@@ -63,7 +63,7 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
       ) : items.length === 0 ? (
         <View style={styles.center}>
           <AppText style={styles.emptyText}>
-            {isConnections ? 'No connections yet' : 'No pending requests'}
+            {isConnections ? 'No friends yet. Search for players to add them.' : 'No pending requests.'}
           </AppText>
         </View>
       ) : (

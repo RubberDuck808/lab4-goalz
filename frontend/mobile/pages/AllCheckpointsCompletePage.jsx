@@ -14,7 +14,7 @@ function BillRow({ label, amount, points, dimmed }) {
         )}
       </View>
       <Text style={[styles.billPoints, dimmed && styles.billPointsDimmed]}>
-        +{points} pts
+        +{points} nuts
       </Text>
     </View>
   );
@@ -38,8 +38,8 @@ export default function AllCheckpointsCompletePage({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.trophy}>🏆</Text>
-        <Text style={styles.heading}>All Checkpoints{'\n'}Complete!</Text>
-        <Text style={styles.sub}>Here's what you earned today</Text>
+        <Text style={styles.heading}>All done.</Text>
+        <Text style={styles.sub}>Here's how you did.</Text>
 
         {/* ── Receipt ───────────────────────────────────────── */}
         <View style={styles.receipt}>
@@ -63,7 +63,7 @@ export default function AllCheckpointsCompletePage({ navigation }) {
 
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>TOTAL</Text>
-              <Text style={styles.totalPoints}>{totalPoints} pts</Text>
+              <Text style={styles.totalPoints}>{totalPoints} nuts</Text>
             </View>
           </View>
 
@@ -80,7 +80,7 @@ export default function AllCheckpointsCompletePage({ navigation }) {
             <ActivityIndicator size="large" color="#1CB0F6" />
           ) : (
             <GameButtons variant="accept" onPress={handleFinish}>
-              Save &amp; finish
+              Finish
             </GameButtons>
           )}
         </View>

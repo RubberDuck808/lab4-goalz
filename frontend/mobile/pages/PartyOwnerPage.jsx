@@ -19,11 +19,11 @@ export default function PartyOwnerPage({ navigation }) {
 
   const confirmCancel = useCallback(() => {
     Alert.alert(
-      'Cancel Party',
-      'Are you sure you want to cancel the party?',
+      'End Party',
+      'This will end the session for everyone.',
       [
         { text: 'Stay', style: 'cancel' },
-        { text: 'Cancel Party', style: 'destructive', onPress: () => { resetGame(); navigation.navigate('PartyMode'); } },
+        { text: 'End Party', style: 'destructive', onPress: () => { resetGame(); navigation.navigate('PartyMode'); } },
       ]
     );
   }, [resetGame, navigation]);
@@ -56,7 +56,7 @@ export default function PartyOwnerPage({ navigation }) {
       <PageHeader title="Party" onBack={confirmCancel} />
       <ScrollView contentContainerStyle={styles.content}>
         <TouchableOpacity style={styles.codeBox} onPress={handleShare} activeOpacity={0.75}>
-          <Text style={styles.codeLabel}>Party Code — tap to share</Text>
+          <Text style={styles.codeLabel}>Your code — tap to share</Text>
           <Text style={styles.codeValue}>{partyCode}</Text>
         </TouchableOpacity>
         <View style={styles.btnCenter}>
@@ -64,7 +64,7 @@ export default function PartyOwnerPage({ navigation }) {
             Start
           </GameButtons>
         </View>
-        <Text style={styles.sectionLabel}>Players in party</Text>
+        <Text style={styles.sectionLabel}>In the party</Text>
         {members.map((member, i) => (
           <View key={i} style={styles.playerRow}>
             <UserRow username={member} rank={i + 1} badge="Joined" />
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   codeBox: { backgroundColor: '#f4f4f5', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
   codeLabel: { fontSize: 13, color: '#71717a', textTransform: 'uppercase', fontWeight: 'bold' },
   codeValue: { fontSize: 32, fontWeight: 'bold', color: '#18181b', letterSpacing: 2, marginTop: 4 },
-  sectionLabel: { fontSize: 15, fontWeight: 'bold', textTransform: 'uppercase', color: '#3f3f46', textAlign: 'center', marginTop: 8 },
+  sectionLabel: { fontSize: 15, fontWeight: 'bold', textTransform: 'uppercase', color: '#27272a', textAlign: 'center', marginTop: 8 },
   playerRow: { borderBottomWidth: 1, borderBottomColor: '#f4f4f5' },
   extra: { backgroundColor: '#f4f4f5', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   extraText: { fontSize: 13, color: '#a1a1aa' },

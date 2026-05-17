@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 
-const PLACEHOLDER_IMAGE = require('../assets/icon.png');
+const PLACEHOLDER_IMAGE = require('../assets/icon_white.png');
 
 export default function UserPhoto({ navigation, route }) {
   const imageUri = route?.params?.imageUri ?? null;
@@ -23,7 +23,7 @@ export default function UserPhoto({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <PageHeader title="Upload" />
+      <PageHeader title="Check your shot" />
 
       {/* Full-bleed photo */}
       <View style={styles.imageWrap}>
@@ -40,7 +40,7 @@ export default function UserPhoto({ navigation, route }) {
           <Text style={styles.btnText}>NEXT</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.retryBtn} onPress={handleRetry} activeOpacity={0.85}>
-          <Text style={styles.btnText}>RETRY</Text>
+          <Text style={styles.btnText}>TRY AGAIN</Text>
         </TouchableOpacity>
       </View>
 
@@ -73,10 +73,10 @@ const styles = StyleSheet.create({
   uploadBtn: {
     flex: 1,
     height: 48,
-    backgroundColor: '#58cc02',
+    backgroundColor: '#52B788',
     borderRadius: 13,
     borderBottomWidth: 4,
-    borderBottomColor: '#5da700',
+    borderBottomColor: '#2D6A4F',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff4b4b',
     borderRadius: 13,
     borderBottomWidth: 4,
-    borderBottomColor: '#90461f',
+    borderBottomColor: '#CC2525',
     alignItems: 'center',
     justifyContent: 'center',
   },

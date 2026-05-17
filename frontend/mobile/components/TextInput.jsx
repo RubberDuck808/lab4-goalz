@@ -13,7 +13,9 @@ export default function TextInput({ style, ...props }) {
 
 const styles = StyleSheet.create({
   input: {
-    width: 325,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 325,
     height: 48,
     paddingHorizontal: 16,
     borderRadius: 8,

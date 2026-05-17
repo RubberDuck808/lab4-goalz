@@ -163,3 +163,6 @@ backend/Goalz/.sonarqube/
 
 supabase/.branches/
 supabase/.temp/
+
+# LSCache files
+*.lscache

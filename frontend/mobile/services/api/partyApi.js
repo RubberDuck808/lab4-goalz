@@ -10,7 +10,7 @@ export async function getZones() {
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, error: 'Could not fetch zones.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -22,7 +22,7 @@ export async function getBoundaries() {
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, error: 'Could not fetch boundaries.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -40,7 +40,7 @@ export async function createParty(name, config = {}) {
     if (response.status === 401) return { success: false, error: 'You are not logged in. Please log in again.' };
     return { success: false, error: text || 'Could not create party.' };
   } catch {
-    return { success: false, error: 'Could not reach the server. Check your connection.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -125,7 +125,7 @@ export async function completeSoloGame(checkpointCount, quizScore = 0) {
     if (response.ok) return { success: true };
     return { success: false, error: 'Could not save solo game.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -139,7 +139,7 @@ export async function submitQuizAnswer(questionId, answerId) {
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, error: 'Could not submit answer.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -153,6 +153,6 @@ export async function completeGame(partyId, checkpointIds, quizScore = 0) {
     if (response.ok) return { success: true };
     return { success: false, error: 'Could not save game.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }

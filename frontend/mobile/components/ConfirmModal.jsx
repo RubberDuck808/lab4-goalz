@@ -8,10 +8,10 @@ const BUTTON_STYLES = {
   },
   cancel: {
     bg: '#e4e4e7', border: '#a1a1aa',
-    text: '#3f3f46',
+    text: '#27272a',
   },
   destructive: {
-    bg: '#FF4B4B', border: '#90461F',
+    bg: '#FF4B4B', border: '#CC2525',
     text: '#fff',
   },
 };
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#3f3f46',
+    color: '#27272a',
     textAlign: 'center',
     marginBottom: 8,
     textTransform: 'uppercase',

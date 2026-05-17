@@ -3,6 +3,9 @@ import {
   View, Text, Image, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native';
+import GameButtons from '../components/GameButtons';
+import AppText from '../components/AppText';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
@@ -12,7 +15,7 @@ import { submitElement, getElementTypes } from '../services/api';
 import { uploadPhotoToSupabase } from '../services/supabase';
 import { useGameContext } from '../context/GameContext';
 
-const PLACEHOLDER_IMAGE = require('../assets/icon.png');
+const PLACEHOLDER_IMAGE = require('../assets/icon_white.png');
 
 function parseGps(gpsStr) {
   const match = gpsStr?.match(/([-\d.]+),\s*([-\d.]+)/);
@@ -68,12 +71,12 @@ export default function ImageUploadScreenPage({ navigation, route }) {
         isGreen: true,
       });
       if (!result.success) {
-        setError(result.error ?? 'Upload failed. Please try again.');
+        setError(result.error ?? "Upload didn't go through. Try again.");
         return;
       }
       setSuccessModal(true);
     } catch (err) {
-      setError(err?.message ?? 'Could not reach the server. Check your connection.');
+      setError(err?.message ?? "Can't connect right now. Try again in a moment.");
     } finally {
       setSubmitting(false);
       setUploadStep('');
@@ -82,7 +85,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <PageHeader title="Input" onBack={() => navigation.goBack()} />
+      <PageHeader title="Your Photo" onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView
@@ -95,7 +98,12 @@ export default function ImageUploadScreenPage({ navigation, route }) {
           <Image source={imageSource} style={styles.image} resizeMode="cover" />
         </View>
 
-        {gps && <Text style={styles.gps}>{gps}</Text>}
+        {gps && (
+          <View style={styles.locationRow}>
+            <Ionicons name="location-sharp" size={16} color="#52B788" />
+            <Text style={styles.gps}>Location captured</Text>
+          </View>
+        )}
 
         {/* ── "What did you take a picture of?" — expandable toggle ── */}
         <Text style={styles.label}>What did you take a picture of?</Text>
@@ -155,22 +163,18 @@ export default function ImageUploadScreenPage({ navigation, route }) {
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <TouchableOpacity
-          style={[styles.uploadBtn, !canUpload && styles.uploadBtnDisabled]}
-          onPress={handleUpload}
-          activeOpacity={0.85}
-          disabled={!canUpload || submitting}
-        >
-          {submitting
-            ? (
-              <View style={styles.submittingRow}>
-                <ActivityIndicator color="#fff" />
-                {!!uploadStep && <Text style={styles.uploadStepText}>{uploadStep}</Text>}
-              </View>
-            )
-            : <Text style={styles.uploadText}>UPLOAD</Text>
-          }
-        </TouchableOpacity>
+        <View style={{ marginTop: 36, alignSelf: 'stretch' }}>
+          {submitting ? (
+            <View style={styles.submittingRow}>
+              <ActivityIndicator color="#1CB0F6" size="large" />
+              {!!uploadStep && <AppText style={styles.uploadStepText}>{uploadStep}</AppText>}
+            </View>
+          ) : (
+            <GameButtons variant="task" onPress={handleUpload} disabled={!canUpload}>
+              Upload
+            </GameButtons>
+          )}
+        </View>
       </ScrollView>
       </KeyboardAvoidingView>
 
@@ -184,11 +188,11 @@ export default function ImageUploadScreenPage({ navigation, route }) {
 
       <ConfirmModal
         visible={successModal}
-        title="Element Added!"
-        message="Your photo and element have been saved."
+        title="Element logged."
+        message="Saved to the map."
         buttons={[
           {
-            text: 'OK',
+            text: 'Continue',
             style: 'default',
             onPress: () => { setSuccessModal(false); setPendingPhotoCompletion(true); navigation.navigate('Map', { fromGame: true }); },
           },
@@ -213,8 +217,9 @@ const styles = StyleSheet.create({
   image: { width: 210, height: 294 },
   imageFallback: { backgroundColor: '#e4e4e7' },
 
-  // gps
-  gps: { marginTop: 12, fontSize: 14, color: '#4b4b4b', textAlign: 'center' },
+  // location
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  gps: { fontSize: 14, color: '#52B788', fontWeight: '600' },
 
   // labels
   label: {
@@ -301,18 +306,6 @@ const styles = StyleSheet.create({
   // error
   errorText: { marginTop: 12, color: '#ef4444', fontSize: 13, textAlign: 'center' },
 
-  // upload
-  uploadBtn: {
-    marginTop: 36,
-    width: '100%',
-    height: 48,
-    backgroundColor: '#1cb0f6',
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  uploadBtnDisabled: { backgroundColor: '#a0d8f5' },
-  uploadText: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
-  submittingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  uploadStepText: { color: '#fff', fontSize: 13 },
+  submittingRow: { alignItems: 'center', gap: 8, paddingVertical: 12 },
+  uploadStepText: { color: '#71717a', fontSize: 13, marginTop: 4 },
 });

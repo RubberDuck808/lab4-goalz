@@ -22,7 +22,7 @@ export default function StatisticsCard({ stats, loading, collapsed = false }) {
   if (collapsed) {
     return (
       <View style={styles.grid}>
-        <Stat value={stats?.totalPoints ?? 0} label="Total points" accent />
+        <Stat value={stats?.totalPoints ?? 0} label="Total nuts" accent />
       </View>
     );
   }
@@ -33,7 +33,7 @@ export default function StatisticsCard({ stats, loading, collapsed = false }) {
       <Stat value={stats?.picturesTaken      ?? 0} label="Pictures" />
       <Stat value={stats?.partiesJoined      ?? 0} label="Parties" />
       <Stat value={stats?.gamesPlayed        ?? 0} label="Games played" />
-      <Stat value={stats?.totalPoints        ?? 0} label="Total points" accent />
+      <Stat value={stats?.totalPoints        ?? 0} label="Total nuts" accent />
     </View>
   );
 }
@@ -43,10 +43,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    justifyContent: 'center',
   },
   statBox: {
     width: '47%',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f4f4f5',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,

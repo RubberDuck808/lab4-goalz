@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import AppText from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import GameButtons from '../components/GameButtons';
 import { useGameContext } from '../context/GameContext';
+
+const ROLE_DESC = {
+  Scout:       'Find the sensor stations. Collect the data. Help unlock the box.',
+  Trailblazer: 'Navigate to preset spots. Photograph nature elements. Unlock the box.',
+  Explorer:    'Do it all — sensors, photos, every checkpoint.',
+};
 
 const ROLE_COLORS = {
   Scout:       { bg: '#F0FBE7', border: '#46A302', text: '#46A302' },
@@ -61,7 +68,11 @@ export default function YourRolePage({ navigation, route }) {
           <View style={styles.card}>
             {revealed ? (
               <View style={[styles.revealedInner, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                <Text style={[styles.roleText, { color: colors.text }]}>{assignedRole}</Text>
+                <Text
+                  style={[styles.roleText, { color: colors.text }]}
+                  adjustsFontSizeToFit
+                  numberOfLines={1}
+                >{assignedRole}</Text>
               </View>
             ) : (
               <View style={styles.hiddenInner}>
@@ -86,6 +97,9 @@ export default function YourRolePage({ navigation, route }) {
             Continue
           </GameButtons>
         )}
+        {revealed && assignedRole && (
+          <AppText style={styles.roleDesc}>{ROLE_DESC[assignedRole] ?? ''}</AppText>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -101,14 +115,15 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
   },
   hiddenInner: {
-    width: 110, height: 160, backgroundColor: '#d4d4d8', borderRadius: 14,
+    width: 110, height: 160, backgroundColor: '#1CB0F6', borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
   },
   revealedInner: {
     width: 110, height: 160, borderRadius: 14, borderWidth: 2,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8,
   },
   questionMark: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
   roleText:     { fontSize: 22, fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' },
-  tapLabel:     { fontSize: 22, fontWeight: 'bold', color: '#3f3f46', textTransform: 'uppercase', textAlign: 'center', lineHeight: 30 },
+  tapLabel:     { fontSize: 22, fontWeight: '500', color: '#27272a', textTransform: 'uppercase', textAlign: 'center', lineHeight: 30 },
+  roleDesc:     { fontSize: 14, color: '#71717a', textAlign: 'center', paddingHorizontal: 24, lineHeight: 20 },
 });

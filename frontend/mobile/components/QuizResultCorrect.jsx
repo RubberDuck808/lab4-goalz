@@ -25,16 +25,16 @@ export default function QuizResultCorrect({ score, streak, onContinue }) {
                     style={{backgroundColor: "#5DA700", width: 320}}
                     className="p-3 rounded-xl justify-center items-center mt-5"
                 >
-                    <Text className="text-white text-center font-extrabold text-4xl">+100</Text>
+                    <Text className="text-white text-center font-extrabold text-4xl">+{score ?? 100}</Text>
                 </View>
-                <View 
+                <View
                     className="mt-4 flex-row justify-center items-center gap-2"
                 >
                     <Text className="text-white text-center text-2xl">ANSWER STREAK</Text>
                     <View
                         className="w-12 h-12 bg-purple-500 rounded-full justify-center items-center ms-2"
                     >
-                        <Text className="text-white font-extrabold text-2xl">2</Text>
+                        <Text className="text-white font-extrabold text-2xl">{streak ?? 0}</Text>
                     </View>
                 </View>
             </View>
@@ -42,7 +42,7 @@ export default function QuizResultCorrect({ score, streak, onContinue }) {
                 <Text
                     className="text-white text-center text-xl font-bold m-auto"
                     style={{ width: '80%' }}
-                >Tip: Keep your answer streak going, to get more bonus points!</Text>
+                >{(streak ?? 0) > 1 ? `${streak} in a row. Loggy's impressed.` : 'Off to a great start.'}</Text>
             </View>
             {onContinue && (
                 <TouchableOpacity onPress={onContinue} style={styles.continueBtn}>
@@ -66,11 +66,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderBottomColor: '#3d7300',
     borderRadius: 13,
-    width: 328,
+    alignSelf: 'stretch',
+    maxWidth: 328,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    marginHorizontal: 24,
   },
   continueBtnText: {
     color: '#fff',

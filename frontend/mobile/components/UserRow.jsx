@@ -9,7 +9,11 @@ export default function UserRow({ username, rank, score, badge, onPress, avatarI
       {rank != null && <AppText style={styles.rank}>{rank}</AppText>}
       <Image source={getAvatar(avatarId)} style={styles.avatar} />
       <AppText style={styles.name}>{username}</AppText>
-      {score != null && <AppText style={styles.score}>{score} pts</AppText>}
+      {score != null && (
+        <AppText style={[styles.score, score === 0 && styles.scoreDim]}>
+          {score === 0 ? '—' : `${score} nuts`}
+        </AppText>
+      )}
       {badge != null && <AppText style={styles.badge}>{badge}</AppText>}
     </View>
   );
@@ -55,7 +59,11 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#1CB0F6',
+    color: '#F5A623',
+  },
+  scoreDim: {
+    color: '#a1a1aa',
+    fontWeight: '400',
   },
   badge: {
     fontSize: 13,

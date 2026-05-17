@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LessThanIcon from '../assets/lessthan.svg';
 import AppText from './AppText';
 
+
 export default function PageHeader({ title = '', onBack, variant = 'back' }) {
   return (
     <View style={styles.container}>
@@ -11,7 +12,8 @@ export default function PageHeader({ title = '', onBack, variant = 'back' }) {
         variant === 'cancel' ? (
           <TouchableOpacity onPress={onBack} style={styles.cancelBtn} activeOpacity={0.85}>
             <View style={styles.cancelBtnInner}>
-              <Ionicons name="close" size={28} color="#fff" />
+              <Ionicons name="close" size={20} color="#fff" />
+              <AppText style={styles.cancelLabel}>EXIT</AppText>
             </View>
           </TouchableOpacity>
         ) : (
@@ -50,15 +52,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FF4B4B',
     borderBottomWidth: 4,
-    borderBottomColor: '#90461F',
+    borderBottomColor: '#CC2525',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 1,
+  },
+  cancelLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   title: {
     flex: 1,
     textAlign: 'center',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#3f3f46',
+    color: '#27272a',
   },
 });

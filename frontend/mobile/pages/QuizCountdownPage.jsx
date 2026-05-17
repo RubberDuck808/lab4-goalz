@@ -29,7 +29,7 @@ export default function QuizCountdownPage({ navigation }) {
             <Text style={styles.countText}>{countdown}</Text>
           </View>
 
-          <Text style={styles.bottomText}>PREPARE FOR QUIZ</Text>
+          <Text style={styles.bottomText}>USE THE HINTS.</Text>
         </View>
       </Pressable>
     </SafeAreaView>

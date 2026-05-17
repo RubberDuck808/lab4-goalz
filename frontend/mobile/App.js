@@ -41,7 +41,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <Text style={{ fontSize: 16, color: '#3f3f46', textAlign: 'center', marginBottom: 16 }}>
+          <Text style={{ fontSize: 16, color: '#27272a', textAlign: 'center', marginBottom: 16 }}>
             Something went wrong. Please restart the app.
           </Text>
           <TouchableOpacity

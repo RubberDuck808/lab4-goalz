@@ -30,14 +30,14 @@ return (
                 <View 
                     className="mt-4"
                 >
-                    <Text className="text-white text-center text-2xl">YOU LOST YOUR STREAK...</Text>
+                    <Text className="text-white text-center text-2xl">Not quite. Streak reset.</Text>
                 </View>
             </View>
             <View className="mt-4 w-full py-5 justify-center items-center">
                 <Text
                     className="text-white text-center text-xl font-bold m-auto"
                     style={{ width: '80%' }}
-                >Tip: Keep your answer streak going, to get more bonus points!</Text>
+                >Keep going.</Text>
             </View>
             {onContinue && (
                 <TouchableOpacity onPress={onContinue} style={styles.continueBtn}>
@@ -61,11 +61,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderBottomColor: '#8b2020',
     borderRadius: 13,
-    width: 328,
+    alignSelf: 'stretch',
+    maxWidth: 328,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    marginHorizontal: 24,
   },
   continueBtnText: {
     color: '#fff',

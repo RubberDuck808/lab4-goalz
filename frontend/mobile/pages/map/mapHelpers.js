@@ -119,6 +119,6 @@ export function nearestLocked(fromZone, allZones, doneIds) {
 export function checkpointColor(cp) {
   if (cp.type === 'sensor') return '#6366f1';
   if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661';
-  if (cp.elementTypeId === 2) return '#3B82F6';
+  if (cp.elementTypeId === 2) return '#1CB0F6';
   return '#EF4444';
 }

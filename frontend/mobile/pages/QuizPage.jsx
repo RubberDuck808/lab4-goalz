@@ -101,7 +101,7 @@ export default function QuizPage({ navigation, route }) {
           onPress={handleSubmit}
           disabled={!selectedAnswer || submitting}
         >
-          Submit
+          Lock In
         </GameButtons>
       </View>
     </SafeAreaView>

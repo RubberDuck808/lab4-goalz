@@ -365,14 +365,14 @@ export default function MapPage({ navigation, route }) {
       <SafeAreaView style={styles.safe}>
         <PageHeader title="Map" onBack={() => navigation.goBack()} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
-          <Text style={{ fontSize: 16, color: '#3f3f46', textAlign: 'center' }}>
-            Failed to load map data.
+          <Text style={{ fontSize: 16, color: '#27272a', textAlign: 'center' }}>
+            Couldn't load the map. Try again.
           </Text>
           <TouchableOpacity
             onPress={() => setFetchKey(k => k + 1)}
             style={{ backgroundColor: '#1CB0F6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
           >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Retry</Text>
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -509,7 +509,7 @@ export default function MapPage({ navigation, route }) {
       <ConfirmModal
         visible={leaveModal}
         title={partyId ? 'Leave Party?' : 'Leave Game?'}
-        message={partyId ? 'You will leave the current party session.' : 'Your progress will be lost.'}
+        message={partyId ? 'This will remove you from the session.' : "Your progress won't be saved."}
         buttons={[
           { text: 'Stay', style: 'cancel', onPress: () => setLeaveModal(false) },
           {
@@ -542,6 +542,8 @@ const styles = StyleSheet.create({
   actionBtn: {
     width: 69, height: 47, borderRadius: 12,
     borderBottomWidth: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 6,
   },
