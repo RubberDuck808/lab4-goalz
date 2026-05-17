@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ public class ElementController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateElementRequest request)
     {
-        var username = User.Identity?.Name;
+        var username = User.FindFirstValue(ClaimTypes.NameIdentifier)?.Trim();
         if (username == null) return Unauthorized();
         request.IsApproved  = false;
         request.SubmittedBy = username;
