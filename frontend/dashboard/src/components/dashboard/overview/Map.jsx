@@ -21,6 +21,7 @@ export default function Map({
   onCheckpointClick,
   onCoordsPick,
   pickedCoords,
+  flyTo,
 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
@@ -31,6 +32,12 @@ export default function Map({
 
   useEffect(() => { onCoordsPickRef.current = onCoordsPick }, [onCoordsPick])
   useEffect(() => { onCheckpointClickRef.current = onCheckpointClick }, [onCheckpointClick])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !flyTo) return
+    map.flyTo([flyTo.lat, flyTo.lng], 18, { animate: true, duration: 1 })
+  }, [flyTo])
 
   useEffect(() => {
     if (!mapRef.current) return

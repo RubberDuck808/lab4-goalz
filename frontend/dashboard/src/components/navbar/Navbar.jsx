@@ -76,14 +76,20 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             setSelectedItem={handleSelect}
           />
           <Navitem
-            name="Game Map"
-            icon="fa-map"
+            name="Element Management"
+            icon="fa-seedling"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />
           <Navitem
             name="Sensor Management"
             icon="fa-wifi"
+            selectedItem={selectedItem}
+            setSelectedItem={handleSelect}
+          />
+          <Navitem
+            name="Game Map"
+            icon="fa-map"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />
@@ -96,12 +102,6 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
           <Navitem
             name="Import dataset"
             icon="fa-upload"
-            selectedItem={selectedItem}
-            setSelectedItem={handleSelect}
-          />
-          <Navitem
-            name="Pending Elements"
-            icon="fa-clock"
             selectedItem={selectedItem}
             setSelectedItem={handleSelect}
           />

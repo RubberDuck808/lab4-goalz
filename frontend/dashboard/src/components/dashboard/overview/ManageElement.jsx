@@ -13,7 +13,7 @@ const defaultElementForm = {
     isGreen: false,
 };
 
-export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved }) {
+export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved, onCancel }) {
     const [elementForm, setElementForm] = useState(defaultElementForm);
     const [loading, setLoading] = useState(false);
 
@@ -47,6 +47,7 @@ export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved })
 
     const handleCancel = () => {
         setElementForm(defaultElementForm);
+        if (onCancel) onCancel();
     };
 
     return (

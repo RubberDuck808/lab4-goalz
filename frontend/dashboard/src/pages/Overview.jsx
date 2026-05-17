@@ -5,7 +5,7 @@ import Reports from '../components/dashboard/reports/reports';
 import ImportData from '../components/dashboard/import/import';
 import ArboretumMap from '../components/dashboard/map/ArboretumMap';
 import Settings from '../components/dashboard/settings/Settings';
-import PendingElements from '../components/dashboard/pending/PendingElements';
+import ElementManagement from '../components/dashboard/elements/ElementManagement';
 import SensorManagement from '../components/dashboard/sensors/SensorManagement';
 
 export default function Overview() {
@@ -23,8 +23,8 @@ export default function Overview() {
         return <Reports />;
       case "Import dataset":
         return <ImportData />;
-      case "Pending Elements":
-        return <PendingElements />;
+      case "Element Management":
+        return <ElementManagement />;
       case "Settings":
         return <Settings />;
       default:
