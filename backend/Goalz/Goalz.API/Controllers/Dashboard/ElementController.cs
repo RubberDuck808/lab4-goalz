@@ -1,26 +1,26 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Goalz.API.Controllers.Dashboard;
 
 [Route("api/dashboard/elements")]
 [ApiController]
+[Authorize]
 public class ElementController : ControllerBase
 {
     private readonly IElementService _elementService;
-    private readonly IElementRepository _elementRepository;
 
-    public ElementController(IElementService elementService, IElementRepository elementRepository)
+    public ElementController(IElementService elementService)
     {
         _elementService = elementService;
-        _elementRepository = elementRepository;
     }
 
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
     {
-        var types = await _elementRepository.GetAllElementTypesAsync();
+        var types = await _elementService.GetAllTypesAsync();
         return Ok(types);
     }
 
@@ -29,7 +29,9 @@ public class ElementController : ControllerBase
     {
         request.IsApproved  = true;
         request.SubmittedBy = null;
-        var element = await _elementService.CreateAsync(request);
+        var (element, error) = await _elementService.CreateAsync(request);
+        if (element is null)
+            return BadRequest(error);
         return CreatedAtAction(nameof(Create), new { id = element.Id }, element);
     }
 

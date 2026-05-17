@@ -10,7 +10,6 @@ export async function APICall(type = "GET", endpoint = "", value, authToken){
 
     try {
         const base = import.meta.env.VITE_API_BASE_URL;
-        console.log(base);
 
         const requestOptions = {
             method: type,

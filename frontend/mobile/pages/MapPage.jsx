@@ -338,7 +338,9 @@ export default function MapPage({ navigation, route }) {
       pendingPhotoCpRef.current = { cp: targetCp, zone: activeZone };
       cameraActiveRef.current = true;
       setCameraActive(true);
-      navigation.navigate('Camera', { gps: null });
+      const coords = lastCoordsRef.current;
+      const gps = coords ? `${coords.latitude},${coords.longitude}` : null;
+      navigation.navigate('Camera', { gps });
     } else {
       completeCheckpoint(targetCp, activeZone);
     }

@@ -7,7 +7,7 @@ export const overviewService = {
                 "GET",
                 "/overview",
                 null,
-                localStorage.getItem("jwtToken") ?? ""
+                localStorage.getItem("token") ?? ""
             );
 
             if (!response?.ok) {
@@ -29,7 +29,7 @@ export const overviewService = {
                 "GET",
                 "/checkpoints",
                 null,
-                localStorage.getItem("jwtToken") ?? ""
+                localStorage.getItem("token") ?? ""
             );
             if (!response?.ok) throw new Error('Failed to fetch checkpoints');
             return await response.json();
@@ -40,7 +40,7 @@ export const overviewService = {
     },
 
     getElementTypes: async () => {
-        const response = await APICall("GET", "/elements/types", null, localStorage.getItem("jwtToken") ?? "");
+        const response = await APICall("GET", "/elements/types", null, localStorage.getItem("token") ?? "");
         if (!response?.ok) throw new Error('Failed to fetch element types');
         return await response.json();
     },
@@ -50,7 +50,7 @@ export const overviewService = {
             "POST",
             "/elements",
             JSON.stringify(element),
-            localStorage.getItem("jwtToken") ?? ""
+            localStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to create element');
         return await response.json();
@@ -61,7 +61,7 @@ export const overviewService = {
             "PUT",
             `/elements/${id}`,
             JSON.stringify(element),
-            localStorage.getItem("jwtToken") ?? ""
+            localStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to update element');
     },
@@ -71,7 +71,7 @@ export const overviewService = {
             "DELETE",
             `/elements/${id}`,
             null,
-            localStorage.getItem("jwtToken") ?? ""
+            localStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to delete element');
     },
@@ -81,7 +81,7 @@ export const overviewService = {
             "POST",
             "/sensors",
             JSON.stringify(sensor),
-            localStorage.getItem("jwtToken") ?? ""
+            localStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to create sensor');
         return await response.json();
@@ -92,7 +92,7 @@ export const overviewService = {
             "PUT",
             `/sensors/${id}`,
             JSON.stringify(sensor),
-            localStorage.getItem("jwtToken") ?? ""
+            localStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to update sensor');
     },
@@ -102,24 +102,24 @@ export const overviewService = {
             "DELETE",
             `/sensors/${id}`,
             null,
-            localStorage.getItem("jwtToken") ?? ""
+            localStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to delete sensor');
     },
 
     getPendingElements: async () => {
-        const res = await APICall("GET", "/elements/pending", null, localStorage.getItem("jwtToken") ?? "");
+        const res = await APICall("GET", "/elements/pending", null, localStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to fetch pending elements');
         return res.json();
     },
 
     approveElement: async (id) => {
-        const res = await APICall("PUT", `/elements/${id}/approve`, null, localStorage.getItem("jwtToken") ?? "");
+        const res = await APICall("PUT", `/elements/${id}/approve`, null, localStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to approve element');
     },
 
     rejectElement: async (id) => {
-        const res = await APICall("PUT", `/elements/${id}/reject`, null, localStorage.getItem("jwtToken") ?? "");
+        const res = await APICall("PUT", `/elements/${id}/reject`, null, localStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to reject element');
     },
 }

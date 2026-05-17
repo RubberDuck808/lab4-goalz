@@ -16,21 +16,38 @@ public class ElementService : IElementService
         _userService = userService;
     }
 
-    public async Task<Element> CreateAsync(CreateElementRequest request)
-    {
-        var elementType = await _repository.GetElementTypeByNameAsync(request.ElementType)
-                          ?? await _repository.CreateElementTypeAsync(request.ElementType);
+    public Task<List<ElementType>> GetAllTypesAsync()
+        => _repository.GetAllElementTypesAsync();
 
-        if (!request.IsApproved && request.ImageUrl is not null)
+    public async Task<(Element? Element, string? Error)> CreateAsync(CreateElementRequest request)
+    {
+        ElementType? elementType;
+        if (!request.IsApproved)
         {
+            // Player submissions must use an existing type — auto-creating types from player
+            // input would pollute the catalogue used by the dashboard.
+            elementType = await _repository.GetElementTypeByNameAsync(request.ElementType);
+            if (elementType is null)
+                return (null, "unknown_type");
+        }
+        else
+        {
+            elementType = await _repository.GetElementTypeByNameAsync(request.ElementType)
+                          ?? await _repository.CreateElementTypeAsync(request.ElementType);
+        }
+
+        if (!request.IsApproved)
+        {
+            // Deduplicate: re-submissions within 5 m update the pending row instead of creating a new one.
             var existing = await _repository.FindNearbyPendingAsync(
                 request.Latitude, request.Longitude,
                 request.ElementType, request.ElementName, radiusMeters: 5.0);
             if (existing is not null)
             {
-                existing.ImageUrl = request.ImageUrl;
+                if (request.ImageUrl is not null)
+                    existing.ImageUrl = request.ImageUrl;
                 await _repository.UpdateAsync(existing);
-                return existing;
+                return (existing, null);
             }
         }
 
@@ -39,7 +56,7 @@ public class ElementService : IElementService
             ElementName   = request.ElementName,
             ElementTypeId = elementType.Id,
             Geom          = new Point(request.Longitude, request.Latitude) { SRID = 4326 },
-            ImageUrl      = request.ImageUrl ?? string.Empty,
+            ImageUrl      = request.ImageUrl,
             IsGreen       = request.IsGreen,
             IsApproved    = request.IsApproved,
             SubmittedBy   = request.SubmittedBy,
@@ -48,7 +65,7 @@ public class ElementService : IElementService
         await _repository.CreateAsync(element);
         if (request.SubmittedBy is not null)
             await _userService.IncrementPicturesTakenAsync(request.SubmittedBy);
-        return element;
+        return (element, null);
     }
 
     public async Task<(bool Success, string? Error)> UpdateAsync(long id, UpdateElementRequest request)

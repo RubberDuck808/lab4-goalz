@@ -7,6 +7,7 @@ import { overviewService } from '../../../services/overviewService';
 export default function PendingElements() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [rejectTarget, setRejectTarget] = useState(null);
 
     useEffect(() => {
         overviewService.getPendingElements()
@@ -25,8 +26,9 @@ export default function PendingElements() {
         }
     }
 
-    async function handleReject(id) {
-        if (!window.confirm('Reject and delete this submission?')) return;
+    async function confirmReject() {
+        const id = rejectTarget;
+        setRejectTarget(null);
         try {
             await overviewService.rejectElement(id);
             setItems(prev => prev.filter(el => el.id !== id));
@@ -98,7 +100,7 @@ export default function PendingElements() {
                                                     Approve
                                                 </button>
                                                 <button
-                                                    onClick={() => handleReject(el.id)}
+                                                    onClick={() => setRejectTarget(el.id)}
                                                     className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-md transition-colors"
                                                 >
                                                     Reject
@@ -113,5 +115,28 @@ export default function PendingElements() {
                 )}
             </div>
         </div>
+
+        {rejectTarget !== null && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-xl shadow-xl p-6 w-80 flex flex-col gap-4">
+                    <h3 className="text-base font-semibold text-gray-800">Reject submission?</h3>
+                    <p className="text-sm text-gray-500">This will permanently delete the submission. This action cannot be undone.</p>
+                    <div className="flex gap-3 justify-end">
+                        <button
+                            onClick={() => setRejectTarget(null)}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmReject}
+                            className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                        >
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     );
 }
