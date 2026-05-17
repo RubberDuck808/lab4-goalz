@@ -13,6 +13,7 @@ import { getUser } from '../services/session';
 import { acceptFriendRequest, declineFriendRequest, getConnections, removeConnection } from '../services/api';
 import { getUserStats } from '../services/api/partyApi';
 import { getAvatar } from '../utils/avatars';
+import { computeBadges } from '../utils/badges';
 
 export default function ProfilePage({ navigation, route }) {
   const [user, setUser] = useState(null);
@@ -101,7 +102,25 @@ export default function ProfilePage({ navigation, route }) {
                 ? `Joined ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
                 : 'Joined —'}
             </AppText>
-            <AppText style={styles.badgesEmpty}>No badges yet</AppText>
+            {(() => {
+              const earned = computeBadges(stats).filter(b => b.earned);
+              if (!earned.length || statsLoading)
+                return <AppText style={styles.badgesEmpty}>No badges yet</AppText>;
+              return (
+                <View style={styles.badgeRow}>
+                  {earned.map(b => (
+                    <View key={b.id} style={styles.badgeChip}>
+                      <AppText style={styles.badgeChipText}>{b.label}</AppText>
+                      {b.earnedAt && (
+                        <AppText style={styles.badgeChipDate}>
+                          {new Date(b.earnedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        </AppText>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
           </View>
           <Image source={getAvatar(isOther ? viewedAvatarId : user?.avatarId)} style={styles.avatar} resizeMode="contain" />
         </View>
@@ -173,6 +192,10 @@ const styles = StyleSheet.create({
   username: { fontSize: 26, fontWeight: 'bold', color: '#fff' },
   joined: { fontSize: 14, color: 'rgba(255,255,255,0.78)' },
   badgesEmpty: { fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  badgeChip: { backgroundColor: '#FFF3D4', borderWidth: 1, borderColor: '#FFC107', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeChipText: { fontSize: 11, fontWeight: 'bold', color: '#92400E' },
+  badgeChipDate: { fontSize: 10, color: '#92400E', opacity: 0.7 },
   avatar: { width: 120, height: 120, borderRadius: 9999, overflow: 'hidden', backgroundColor: '#2D6A4F' },
 
   btnRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 16, marginBottom: -20 },

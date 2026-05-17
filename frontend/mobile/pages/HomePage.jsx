@@ -8,16 +8,9 @@ import AppText from '../components/AppText';
 import { getUser } from '../services/session';
 import { getUserStats } from '../services/api/partyApi';
 import { getLeaderboard } from '../services/api';
+import { computeBadges } from '../utils/badges';
 
 const MASCOT = require('../assets/icon_white.png');
-
-// Badge definitions — derived from stats, no backend needed
-const BADGES = [
-  { id: 'first_steps',  label: 'First Steps',   earned: s => (s?.gamesPlayed   ?? 0) >= 1 },
-  { id: 'trail_blazer', label: 'Trail Blazer',   earned: s => (s?.checkpointsVisited ?? 0) >= 5 },
-  { id: 'nut_hoarder',  label: 'Nut Hoarder',    earned: s => (s?.totalPoints    ?? 0) >= 100 },
-  { id: 'party_animal', label: 'Party Animal',   earned: s => (s?.partiesJoined  ?? 0) >= 1 },
-];
 
 export default function HomePage({ navigation }) {
   const [user, setUser]         = useState(null);
@@ -48,8 +41,9 @@ export default function HomePage({ navigation }) {
     return () => { cancelled = true; };
   }, []));
 
-  const earnedCount = BADGES.filter(b => b.earned(stats)).length;
-  const lockedCount = BADGES.length - earnedCount;
+  const badges = computeBadges(stats);
+  const earnedCount = badges.filter(b => b.earned).length;
+  const lockedCount = badges.length - earnedCount;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -132,19 +126,16 @@ export default function HomePage({ navigation }) {
           </TouchableOpacity>
         </View>
         <View style={styles.badgeGrid}>
-          {BADGES.map(badge => {
-            const isEarned = badge.earned(stats);
-            return (
-              <View
-                key={badge.id}
-                style={[styles.badgeSlot, isEarned ? styles.badgeSlotEarned : styles.badgeSlotLocked]}
-              >
-                <AppText style={[styles.badgeLabel, !isEarned && styles.badgeLabelLocked]}>
-                  {badge.label}
-                </AppText>
-              </View>
-            );
-          })}
+          {badges.map(badge => (
+            <View
+              key={badge.id}
+              style={[styles.badgeSlot, badge.earned ? styles.badgeSlotEarned : styles.badgeSlotLocked]}
+            >
+              <AppText style={[styles.badgeLabel, !badge.earned && styles.badgeLabelLocked]}>
+                {badge.label}
+              </AppText>
+            </View>
+          ))}
         </View>
         {lockedCount > 0 && (
           <AppText style={styles.badgeHint}>

@@ -9,10 +9,12 @@ namespace Goalz.Data.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly AppDbContext _context;
+        private readonly IBadgeService _badgeService;
 
-        public UserRepository(AppDbContext context)
+        public UserRepository(AppDbContext context, IBadgeService badgeService)
         {
             _context = context;
+            _badgeService = badgeService;
         }
 
         public async Task<User?> GetByIdAsync(long id)
@@ -78,6 +80,7 @@ namespace Goalz.Data.Repositories
             stats.TotalPoints        += points;
             _context.UserPointsLogs.Add(new UserPointsLog { UserId = user.Id, PointsEarned = points });
             await _context.SaveChangesAsync();
+            await _badgeService.CheckAndAwardAsync(user.Id, stats);
         }
 
         public async Task IncrementPartiesJoinedAsync(string username)
@@ -87,6 +90,7 @@ namespace Goalz.Data.Repositories
             var stats = await GetOrCreateStatsAsync(user.Id);
             stats.PartiesJoined += 1;
             await _context.SaveChangesAsync();
+            await _badgeService.CheckAndAwardAsync(user.Id, stats);
         }
 
         public async Task IncrementPicturesTakenAsync(string username)
@@ -96,6 +100,7 @@ namespace Goalz.Data.Repositories
             var stats = await GetOrCreateStatsAsync(user.Id);
             stats.PicturesTaken += 1;
             await _context.SaveChangesAsync();
+            await _badgeService.CheckAndAwardAsync(user.Id, stats);
         }
 
         public async Task<UserStatisticsDto> GetStatsAsync(string username)
@@ -104,16 +109,22 @@ namespace Goalz.Data.Repositories
                 .Include(s => s.User)
                 .FirstOrDefaultAsync(s => s.User.Username == username);
 
-            return stats == null
-                ? new UserStatisticsDto()
-                : new UserStatisticsDto
-                {
-                    CheckpointsVisited = stats.CheckpointsVisited,
-                    PicturesTaken      = stats.PicturesTaken,
-                    PartiesJoined      = stats.PartiesJoined,
-                    GamesPlayed        = stats.GamesPlayed,
-                    TotalPoints        = stats.TotalPoints,
-                };
+            if (stats == null) return new UserStatisticsDto();
+
+            var badges = await _context.UserBadges
+                .Where(b => b.UserId == stats.UserId)
+                .Select(b => new UserBadgeDto { BadgeId = b.BadgeId, EarnedAt = b.EarnedAt })
+                .ToListAsync();
+
+            return new UserStatisticsDto
+            {
+                CheckpointsVisited = stats.CheckpointsVisited,
+                PicturesTaken      = stats.PicturesTaken,
+                PartiesJoined      = stats.PartiesJoined,
+                GamesPlayed        = stats.GamesPlayed,
+                TotalPoints        = stats.TotalPoints,
+                Badges             = badges,
+            };
         }
 
         public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string? period = null, int limit = 50)

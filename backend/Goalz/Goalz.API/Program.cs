@@ -116,6 +116,8 @@ builder.Services.AddScoped<IDatasetService, DatasetService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserBadgeRepository, UserBadgeRepository>();
+builder.Services.AddScoped<IBadgeService, BadgeService>();
 
 // Friendships
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
