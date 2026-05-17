@@ -1,12 +1,91 @@
 stages:
+  - build
+  - test
+  - sonarqube
   - deploy
-  - mobile
 
 variables:
   NODE_VERSION: "20"
   DOTNET_VERSION: "9.0"
   GCP_PROJECT: "goalz-loggin"
   GCP_REGION: "europe-west1"
+
+# ------------------------
+# FRONTEND BUILD
+# ------------------------
+frontend:build:
+  stage: build
+  image: node:$NODE_VERSION
+  script:
+    - echo "Building frontend/dashboard"
+    - cd frontend/dashboard
+    - npm ci
+    - npm run build
+
+# ------------------------
+# BACKEND BUILD
+# ------------------------
+backend:build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  script:
+    - echo "Restoring backend"
+    - cd backend/Goalz
+    - dotnet restore
+
+    - echo "Building backend"
+    - dotnet build --no-restore --configuration Release
+
+# ------------------------
+# BACKEND TEST WITH COVERAGE
+# ------------------------
+backend:test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  script:
+    - echo "Restoring backend"
+    - cd backend/Goalz
+    - dotnet restore
+
+    - echo "Running tests with coverage"
+    - dotnet test Goalz.Test/Goalz.Test.csproj --no-restore --configuration Release --collect:"XPlat Code Coverage"
+  artifacts:
+    when: always
+    paths:
+      - backend/Goalz/**/TestResults/
+
+# ------------------------
+# SONARCLOUD ANALYSIS
+# ------------------------
+sonarqube:analysis:
+  stage: sonarqube
+  image: mcr.microsoft.com/dotnet/sdk:$DOTNET_VERSION
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  dependencies:
+    - backend:test
+  script:
+    - dotnet tool install --global dotnet-sonarscanner
+    - export PATH="$PATH:/root/.dotnet/tools"
+
+    - cd backend/Goalz
+
+    - dotnet sonarscanner begin /k:"${SONAR_PROJECT_KEY}" /o:"${SONAR_ORGANIZATION}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${SONAR_TOKEN}" /d:sonar.cs.opencover.reportsPaths="../../**/coverage.cobertura.xml"
+    - dotnet build --configuration Release
+    - dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+
+  allow_failure: true
+  only:
+    - ci/sonarqube
+    - dev
+    - main
+
 
 # ------------------------
 # BACKEND DEPLOY
@@ -52,7 +131,6 @@ backend:deploy:
   only:
     - main
     - dev
-    - feature/pending-element-submission
 
 # ------------------------
 # DASHBOARD DEPLOY
@@ -97,13 +175,12 @@ dashboard:deploy:
   only:
     - main
     - dev
-    - feature/pending-element-submission
 
 # ------------------------
 # MOBILE EAS UPDATE
 # ------------------------
-mobile:eas-update:
-  stage: mobile
+deploy:mobile:
+  stage: deploy
   image: node:$NODE_VERSION
   before_script:
     - npm install -g eas-cli
@@ -115,4 +192,3 @@ mobile:eas-update:
   only:
     - main
     - dev
-    - feature/pending-element-submission
