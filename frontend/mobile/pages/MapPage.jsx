@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import PageHeader from '../components/PageHeader';
 import { useGameContext } from '../context/GameContext';
 import { visitCheckpoint } from '../services/api/partyApi';
+import { getSensorPopUp } from '../services/api';
 import {
   ARBORETUM_REGION,
   VISIT_RADIUS_METERS,
@@ -23,6 +24,7 @@ import ZoneLayer from './map/ZoneLayer';
 import MapHud from './map/MapHud';
 import ElementModal from './map/ElementModal';
 import SensorModal from './map/SensorModal';
+import PopUp from './PopUp';
 
 export default function MapPage({ navigation, route }) {
   // Track whether we've already navigated away so the completion fires only once.
@@ -45,6 +47,8 @@ export default function MapPage({ navigation, route }) {
   const [mapReady,      setMapReady]      = useState(false);
   const [elementModal,  setElementModal]  = useState(null); // { cp, zone } | null
   const [sensorModal,   setSensorModal]   = useState(null); // { cp, zone, sensorId, sensorName } | null
+  const [popUpState,    setPopUpState]    = useState(null); // { cp, zone } | null
+  const [popUpMessage,  setPopUpMessage]  = useState('');
 
   const initRef = useRef(false);
   const pendingCpRef = useRef(null);       // checkpoint to complete when map regains focus
@@ -339,10 +343,24 @@ export default function MapPage({ navigation, route }) {
         sensorId={sensorModal?.sensorId}
         sensorName={sensorModal?.sensorName ?? 'Nearby Sensor'}
         onClose={() => {
-          const { cp, zone } = sensorModal;
+          const { cp, zone, sensorId } = sensorModal;
           setSensorModal(null);
+          setPopUpMessage('');
+          setPopUpState({ cp, zone });
+          getSensorPopUp(sensorId).then(result => {
+            if (result.success && result.data) setPopUpMessage(result.data.infoText);
+          });
+        }}
+      />
+      <PopUp
+        visible={!!popUpState}
+        message={popUpMessage}
+        onConfirm={() => {
+          const { cp, zone } = popUpState;
+          setPopUpState(null);
           completeCheckpoint(cp, zone);
         }}
+        buttonLabel="I've read the information"
       />
     </SafeAreaView>
   );

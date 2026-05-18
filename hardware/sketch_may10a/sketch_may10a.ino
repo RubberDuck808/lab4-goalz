@@ -12,14 +12,6 @@
 #define WIND_TMP_PIN 33
 // Light sensor uses I2C: SDA → GPIO 21, SCL → GPIO 22
 
-const char* ssid = "COSMOTE_F274";
-const char* password = "17953580";
-
-// IPv4 address of your laptop
-const char* apiUrl = "http://192.168.1.116:5000/api/dashboard/sensors/data";
-
-const int sensorId = 42;
-
 const int dryValue = 3500;
 const int wetValue = 1200;
 
