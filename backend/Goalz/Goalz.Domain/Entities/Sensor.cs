@@ -9,4 +9,5 @@ public class Sensor
     public Point? Geo { get; set; }
     public long? PopUpId { get; set; }
     public PopUp? PopUp { get; set; }
+    public ICollection<SensorData> SensorData { get; set; } = new List<SensorData>();
 }

@@ -106,6 +106,12 @@ export default function Navbar({ selectedItem, setSelectedItem }) {
             setSelectedItem={handleSelect}
           />
           <Navitem
+            name="Sensor Monitor"
+            icon="fa-bluetooth"
+            selectedItem={selectedItem}
+            setSelectedItem={handleSelect}
+          />
+          <Navitem
             name="Settings"
             icon="fa-cog"
             selectedItem={selectedItem}

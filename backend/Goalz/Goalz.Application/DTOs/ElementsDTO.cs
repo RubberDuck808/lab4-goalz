@@ -4,7 +4,7 @@ namespace Goalz.Core.DTOs
 {
     public class ElementsDTO
     {
-        public List<Sensor> sensors { get; set; } = new List<Sensor>();
+        public List<SensorOverviewDto> sensors { get; set; } = new();
         public List<Element> element { get; set; } = new List<Element>();
     }
 }

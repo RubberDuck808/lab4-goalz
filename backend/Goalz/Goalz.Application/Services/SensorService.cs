@@ -60,6 +60,7 @@ public class SensorService : ISensorService
             Temp = sensorData.Temperature,
             Humidity = (long)sensorData.Humidity,
             SoilMoisture = CalculateSoilMoisture(sensorData.RawMoisture),
+            RawMoisture = sensorData.RawMoisture,
             Light = CalculateLight(sensorData.RawRed, sensorData.RawGreen, sensorData.RawBlue),
             Wind = CalculateWindSpeed(sensorData.RawWindRv, sensorData.RawWindTmp),
             Timestamp = DateTime.UtcNow
@@ -136,7 +137,7 @@ public class SensorService : ISensorService
         {
             throw new ArgumentOutOfRangeException(nameof(sensorData.Humidity), "Humidity must be between 0 and 100%.");
         }
-        else if (sensorData.RawMoisture < 0 || sensorData.RawMoisture > 1023)
+        else if (sensorData.RawMoisture < 0 || sensorData.RawMoisture > 4095)
         {
             throw new ArgumentOutOfRangeException(nameof(sensorData.RawMoisture), "Raw moisture must be between 0 and 1023.");
         }

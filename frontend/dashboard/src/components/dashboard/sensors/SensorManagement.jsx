@@ -8,7 +8,7 @@ import Loading from "../../Loading/Loading";
 
 const defaultAddForm = { sensorName: "", latitude: "", longitude: "" };
 
-export default function SensorManagement() {
+export default function SensorManagement({ setSelectedItem, setBleSelectedSensorId }) {
   const [sensors, setSensors] = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -316,6 +316,16 @@ export default function SensorManagement() {
                     ) : (
                       <>
                         <button
+                          onClick={() => {
+                            setBleSelectedSensorId?.(sensor.id);
+                            setSelectedItem?.("Sensor Monitor");
+                          }}
+                          title="Open in BLE Scanner"
+                          className="bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1 rounded hover:bg-indigo-200 transition"
+                        >
+                          <i className="fa-brands fa-bluetooth" />
+                        </button>
+                        <button
                           onClick={() => startEdit(sensor)}
                           className="bg-secondary-green text-white text-xs font-bold px-3 py-1 rounded hover:opacity-90"
                         >
@@ -368,7 +378,7 @@ export default function SensorManagement() {
                 )}
 
                 {/* Readings */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
                     <p className="text-xs text-gray-500">Temperature</p>
                     <p className="font-bold text-red-600 text-sm">
@@ -385,6 +395,12 @@ export default function SensorManagement() {
                     <p className="text-xs text-gray-500">Light</p>
                     <p className="font-bold text-yellow-600 text-sm">
                       {sensor.light != null ? `${sensor.light} lux` : "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                    <p className="text-xs text-gray-500">Soil Moisture</p>
+                    <p className="font-bold text-green-600 text-sm">
+                      {sensor.soilMoisture != null ? `${sensor.soilMoisture} %` : "N/A"}
                     </p>
                   </div>
                 </div>

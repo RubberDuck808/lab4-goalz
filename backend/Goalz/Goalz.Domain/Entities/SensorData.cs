@@ -9,6 +9,7 @@ public class SensorData
     public double Temp { get; set; }
     public int SoilMoisture { get; set; }
     public double Wind { get; set; }
+    public int RawMoisture { get; set; }
     public DateTime Timestamp { get; set; }
 
     public Sensor Sensor { get; set; } = null!;
