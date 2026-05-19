@@ -7,9 +7,11 @@ import ArboretumMap from '../components/dashboard/map/ArboretumMap';
 import Settings from '../components/dashboard/settings/Settings';
 import ElementManagement from '../components/dashboard/elements/ElementManagement';
 import SensorManagement from '../components/dashboard/sensors/SensorManagement';
+import BLEScanner from '../components/dashboard/ble/BLEScanner';
 
 export default function Overview() {
   const [selectedItem, setSelectedItem] = useState("Arboretum Dashboard");
+  const [bleSelectedSensorId, setBleSelectedSensorId] = useState(null);
 
   const renderContent = () => {
     switch (selectedItem) {
@@ -18,13 +20,15 @@ export default function Overview() {
       case "Game Map":
         return <ArboretumMap />;
       case "Sensor Management":
-        return <SensorManagement />;
+        return <SensorManagement setSelectedItem={setSelectedItem} setBleSelectedSensorId={setBleSelectedSensorId} />;
       case "Reports":
         return <Reports />;
       case "Import dataset":
         return <ImportData />;
       case "Element Management":
         return <ElementManagement />;
+      case "Sensor Monitor":
+        return <BLEScanner bleSelectedSensorId={bleSelectedSensorId} setBleSelectedSensorId={setBleSelectedSensorId} />;
       case "Settings":
         return <Settings />;
       default:

@@ -95,7 +95,7 @@ namespace Goalz.Data.Storage
             {
                 entity.Property(sd => sd.Id).HasColumnName("id");
                 entity.HasOne(sd => sd.Sensor)
-                    .WithMany()
+                    .WithMany(s => s.SensorData)
                     .HasForeignKey(sd => sd.SensorsId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

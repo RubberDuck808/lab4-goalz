@@ -1,29 +1,122 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include "DHT.h"
+#include <Wire.h>
+#include "Adafruit_SHTC3.h"
 #include "secrets.h"
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 
-#define DHTPIN 4
-#define DHTTYPE DHT11
+#define SHTC3_SDA 25
+#define SHTC3_SCL 26
 #define MOISTURE_PIN 35
+#define LED_PIN 2
 
-DHT dht(DHTPIN, DHTTYPE);
+// BLE UUIDs — match these exactly in the dashboard BLEScanner page
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+Adafruit_SHTC3 shtc3;
+BLECharacteristic *pCharacteristic;
+bool deviceConnected = false;
 
 const int dryValue = 3500;
-const int wetValue = 1200;
+const int wetValue  = 1200;
 
 struct SensorData {
-  int sensorId;
   float temperature;
   float humidity;
-  int rawMoisture;
-  int soilMoisture;
+  int   rawMoisture;
+  int   soilMoisture;
 };
+
+// ── BLE server callbacks ──────────────────────────────────────────────────────
+
+class ServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *pServer) override {
+    deviceConnected = true;
+    digitalWrite(LED_PIN, HIGH);
+    Serial.println("BLE client connected");
+  }
+  void onDisconnect(BLEServer *pServer) override {
+    deviceConnected = false;
+    Serial.println("BLE client disconnected, restarting advertising");
+    BLEDevice::startAdvertising();
+  }
+};
+
+// ── Setup helpers ─────────────────────────────────────────────────────────────
+
+void setupBLE() {
+  BLEDevice::init("Goalz-Sensor");
+  BLEServer  *pServer  = BLEDevice::createServer();
+  pServer->setCallbacks(new ServerCallbacks());
+
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(
+    CHARACTERISTIC_UUID,
+    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+  );
+  pCharacteristic->addDescriptor(new BLE2902());
+  pCharacteristic->setValue("{}");
+
+  pService->start();
+
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  BLEDevice::startAdvertising();
+
+  Serial.println("BLE advertising as 'Goalz-Sensor'");
+}
+
+void connectToWiFi() {
+  Serial.print("Connecting to WiFi");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nWiFi connected! IP: " + WiFi.localIP().toString());
+  } else {
+    Serial.println("\nWiFi unavailable — running BLE-only mode");
+  }
+}
+
+// ── LED helper ────────────────────────────────────────────────────────────────
+// Blinks LED while waiting if no BLE client; solid if connected.
+void waitWithLed(int ms) {
+  int elapsed = 0;
+  while (elapsed < ms) {
+    if (deviceConnected) {
+      digitalWrite(LED_PIN, HIGH);
+    } else {
+      digitalWrite(LED_PIN, (elapsed / 500) % 2 == 0 ? HIGH : LOW);
+    }
+    delay(100);
+    elapsed += 100;
+  }
+  if (!deviceConnected) digitalWrite(LED_PIN, LOW);
+}
+
+// ── setup / loop ──────────────────────────────────────────────────────────────
 
 void setup() {
   Serial.begin(115200);
-  dht.begin();
-
+  pinMode(LED_PIN, OUTPUT);
+  Wire.begin();
+  if (!shtc3.begin()) {
+    Serial.println("SHTC3 not found! Check wiring.");
+    while (true) delay(10);
+  }
+  Serial.println("SHTC3 ready");
+  setupBLE();
   connectToWiFi();
 }
 
@@ -31,87 +124,80 @@ void loop() {
   SensorData data;
 
   if (!readSensors(data)) {
-    Serial.println("Sensor uitlezen mislukt");
-    delay(2000);
+    Serial.println("Sensor read failed");
+    waitWithLed(2000);
     return;
   }
 
   printSensorData(data);
 
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi connection failed, try again...");
-    connectToWiFi();
+  if (deviceConnected) {
+    String bleJson = createBleJson(data);
+    pCharacteristic->setValue(bleJson.c_str());
+    pCharacteristic->notify();
+    Serial.println("BLE notified: " + bleJson);
   }
 
-  sendSensorData(data);
+  if (WiFi.status() == WL_CONNECTED) {
+    sendSensorData(data);
+  }
 
   Serial.println("----------------");
-  delay(10000);
+  waitWithLed(2000);
 }
 
-void connectToWiFi() {
-  Serial.print("Connected with WiFi");
-
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println();
-  Serial.println("Connected with WiFi!");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-}
+// ── Sensor reading ────────────────────────────────────────────────────────────
 
 bool readSensors(SensorData &data) {
-  data.temperature = dht.readTemperature();
-  data.humidity = dht.readHumidity();
+  sensors_event_t humidity, temp;
+  shtc3.getEvent(&humidity, &temp);
 
-  if (isnan(data.temperature) || isnan(data.humidity)) {
-    Serial.println("DHT sensor error!");
+  if (isnan(temp.temperature) || isnan(humidity.relative_humidity)) {
+    Serial.println("SHTC3 read error!");
     return false;
   }
 
-  data.rawMoisture = analogRead(MOISTURE_PIN);
-
+  data.temperature = temp.temperature;
+  data.humidity    = humidity.relative_humidity;
+  data.rawMoisture  = analogRead(MOISTURE_PIN);
   data.soilMoisture = map(data.rawMoisture, dryValue, wetValue, 0, 100);
   data.soilMoisture = constrain(data.soilMoisture, 0, 100);
 
   return true;
 }
 
-String createJson(SensorData data) {
-  String json = "{";
-  json += "\"sensorId\":";
+// ── JSON builders ─────────────────────────────────────────────────────────────
+
+String createBleJson(SensorData data) {
+  String json = "{\"id\":";
   json += SENSOR_ID;
-  json += ",";
-  json += "\"temperature\":";
+  json += ",\"t\":";
   json += data.temperature;
-  json += ",";
-  json += "\"light\":";
-  json += 0;
-  json += ",";
-  json += "\"humidity\":";
+  json += ",\"h\":";
   json += data.humidity;
-  json += ",";
-  json += "\"soilMoisture\":";
+  json += ",\"m\":";
   json += data.soilMoisture;
-  json += ",";
-  json += "\"rawMoisture\":";
+  json += ",\"r\":";
   json += data.rawMoisture;
   json += "}";
-
   return json;
 }
 
-void sendSensorData(SensorData data) {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Failed to send data: no WiFi connection");
-    return;
-  }
+String createJson(SensorData data) {
+  String json = "{";
+  json += "\"sensorId\":";     json += SENSOR_ID;
+  json += ",\"temperature\":"; json += data.temperature;
+  json += ",\"light\":0";
+  json += ",\"humidity\":";    json += data.humidity;
+  json += ",\"soilMoisture\":"; json += data.soilMoisture;
+  json += ",\"rawMoisture\":";  json += data.rawMoisture;
+  json += "}";
+  return json;
+}
 
+// ── HTTP send ─────────────────────────────────────────────────────────────────
+
+void sendSensorData(SensorData data) {
   WiFiClient client;
   HTTPClient http;
 
@@ -125,35 +211,23 @@ void sendSensorData(SensorData data) {
 
   Serial.print("POST response code: ");
   Serial.println(responseCode);
-
-  Serial.println("Sent JSON:");
-  Serial.println(json);
+  Serial.println("Sent JSON: " + json);
 
   if (responseCode <= 0) {
     Serial.print("HTTP error: ");
     Serial.println(http.errorToString(responseCode));
   } else {
-    String response = http.getString();
-    Serial.println("API response:");
-    Serial.println(response);
+    Serial.println("API response: " + http.getString());
   }
 
   http.end();
 }
 
+// ── Debug print ───────────────────────────────────────────────────────────────
+
 void printSensorData(SensorData data) {
-  Serial.print("Raw moisture: ");
-  Serial.println(data.rawMoisture);
-
-  Serial.print("Soil moisture: ");
-  Serial.print(data.soilMoisture);
-  Serial.println("%");
-
-  Serial.print("Temperature: ");
-  Serial.print(data.temperature);
-  Serial.println(" °C");
-
-  Serial.print("Humidity: ");
-  Serial.print(data.humidity);
-  Serial.println(" %");
+  Serial.print("Raw moisture: ");   Serial.println(data.rawMoisture);
+  Serial.print("Soil moisture: "); Serial.print(data.soilMoisture); Serial.println("%");
+  Serial.print("Temperature: ");   Serial.print(data.temperature);  Serial.println(" °C");
+  Serial.print("Humidity: ");      Serial.print(data.humidity);     Serial.println(" %");
 }
