@@ -29,9 +29,9 @@ export default function PartyModePage({ navigation }) {
       <PageHeader title="Party Mode" onBack={() => navigation.navigate('Home')} />
       <View style={styles.form}>
         {error && <Text style={styles.errorText}>{error}</Text>}
-        <TextInput placeholder="Party code" value={code} onChangeText={setCode} />
+        <TextInput placeholder="Party code" value={code} onChangeText={setCode} style={styles.inputText} />
         <View style={{ marginTop: 8 }}>
-          <GameButtons variant="task" onPress={handleJoin}>
+          <GameButtons variant="task" onPress={handleJoin} textStyle={styles.buttonText}>
             {loading ? 'Joining...' : 'Join Party'}
           </GameButtons>
         </View>
@@ -46,6 +46,9 @@ export default function PartyModePage({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   form: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: -60 },
-  link: { fontSize: 13, color: '#3f3f46', textDecorationLine: 'underline', marginTop: 4 },
+  link: { color: '#4B4B4B', fontFamily: 'Inter', fontSize: 13, fontWeight: '500', textDecorationLine: 'underline' },
   errorText: { color: 'red', marginBottom: 8 },
+  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
+  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

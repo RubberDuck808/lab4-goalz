@@ -51,7 +51,7 @@ export default function PartyLobbyPage({ navigation }) {
         </View>
       </ScrollView>
       <View style={styles.btnWrap}>
-        <GameButtons variant="decline" onPress={confirmLeave}>
+        <GameButtons variant="decline" onPress={confirmLeave} textStyle={styles.buttonText}>
           Leave Party
         </GameButtons>
       </View>
@@ -66,4 +66,5 @@ const styles = StyleSheet.create({
   waiting: { backgroundColor: '#f4f4f5', borderRadius: 10, paddingVertical: 12, marginTop: 8, alignItems: 'center' },
   waitingText: { fontSize: 13, color: '#a1a1aa' },
   btnWrap: { alignItems: 'center', paddingBottom: 40 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

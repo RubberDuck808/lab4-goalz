@@ -1,4 +1,6 @@
 import React from 'react';
+import { useFonts } from 'expo-font';
+import { View, ActivityIndicator } from 'react-native';
 import { GameProvider } from './context/GameContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { NavigationContainer } from '@react-navigation/native';
@@ -33,6 +35,19 @@ import AllCheckpointsCompletePage from './pages/AllCheckpointsCompletePage';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    'FONTSPRING DEMO - DIN 2014 Rounded Bold': require('./fonts/fontspring-demo-din-2014-rounded-bold.otf'),
+    'FONTSPRING DEMO - DIN 2014 Rounded Demi': require('./fonts/fontspring-demo-din-2014-rounded-demi.otf'),
+    'Feather Bold NC': require('./fonts/DuolingoFeatherBold_nocolor.ttf'),
+  });
+
+  if (fontError) console.error('[Fonts] Failed to load:', fontError);
+  if (fontsLoaded) console.log('[Fonts] Loaded successfully');
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>;
+  }
+
   return (
     <AccessibilityProvider>
       <GameProvider>

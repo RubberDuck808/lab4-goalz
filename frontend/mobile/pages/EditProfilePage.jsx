@@ -88,6 +88,7 @@ export default function EditProfilePage({ navigation }) {
             onChangeText={setUsername}
             autoCapitalize="none"
             autoCorrect={false}
+            style={styles.inputText}
           />
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -95,13 +96,14 @@ export default function EditProfilePage({ navigation }) {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            style={styles.inputText}
           />
           {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
           {profileSuccess ? <Text style={styles.successText}>{profileSuccess}</Text> : null}
           <GameButtons
             variant="task"
             onPress={handleSaveProfile}
-            style={savingProfile ? styles.dimmed : undefined}
+            style={savingProfile ? styles.dimmed : null} textStyle={styles.buttonText}
           >
             {savingProfile ? 'Saving...' : 'Save Profile'}
           </GameButtons>
@@ -115,6 +117,7 @@ export default function EditProfilePage({ navigation }) {
             onChangeText={setCurrentPassword}
             secureTextEntry
             autoCapitalize="none"
+            style={styles.inputText}
           />
           <Text style={styles.label}>New Password</Text>
           <TextInput
@@ -122,6 +125,7 @@ export default function EditProfilePage({ navigation }) {
             onChangeText={setNewPassword}
             secureTextEntry
             autoCapitalize="none"
+            style={styles.inputText}
           />
           <Text style={styles.label}>Confirm New Password</Text>
           <TextInput
@@ -129,13 +133,14 @@ export default function EditProfilePage({ navigation }) {
             onChangeText={setConfirmPassword}
             secureTextEntry
             autoCapitalize="none"
+            style={styles.inputText}
           />
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           {passwordSuccess ? <Text style={styles.successText}>{passwordSuccess}</Text> : null}
           <GameButtons
             variant="accept"
             onPress={handleChangePassword}
-            style={savingPassword ? styles.dimmed : undefined}
+            style={savingPassword ? styles.dimmed : null} textStyle={styles.buttonText}
           >
             {savingPassword ? 'Saving...' : 'Change Password'}
           </GameButtons>
@@ -168,4 +173,7 @@ const styles = StyleSheet.create({
   errorText: { color: '#ef4444', fontSize: 13, alignSelf: 'flex-start' },
   successText: { color: '#16a34a', fontSize: 13, alignSelf: 'flex-start' },
   dimmed: { opacity: 0.6 },
+  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
+  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

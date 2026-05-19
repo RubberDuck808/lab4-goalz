@@ -46,26 +46,27 @@ export default function Login({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <Logo style={styles.logo} />
       <View style={styles.form}>
-        <Text style={styles.heading}>Login</Text>
         <TextInput
           placeholder="email"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
+          style={styles.inputText}
         />
         <TextInput
           placeholder="password"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          style={styles.inputText}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <View style={{ marginTop: 24 }}>
           {loading ? (
             <ActivityIndicator size="large" color="#1CB0F6" />
           ) : (
-            <GameButtons variant="task" onPress={handleLogin}>
+            <GameButtons variant="task" onPress={handleLogin} textStyle={styles.buttonText}>
               Login
             </GameButtons>
           )}
@@ -82,7 +83,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   logo: { marginTop: 24, alignSelf: 'center' },
   form: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: -60 },
-  heading: { fontSize: 32, fontWeight: 'bold', textTransform: 'uppercase', color: '#27272a', marginBottom: 8 },
-  link: { fontSize: 13, color: '#1CB0F6', textDecorationLine: 'underline', marginTop: 4 },
-  error: { fontSize: 13, color: '#ef4444', textAlign: 'center', maxWidth: 300 },
+  heading: { fontSize: 40, fontWeight: '700', textTransform: 'uppercase', color: '#4B4B4B', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', marginBottom: 8 },
+  link: { color: '#4B4B4B', fontFamily: 'Inter', fontSize: 13, fontWeight: '500', textDecorationLine: 'underline' },
+  error: { color: '#ef4444', fontFamily: 'Inter', fontSize: 13, fontWeight: '500' },
+  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
+  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

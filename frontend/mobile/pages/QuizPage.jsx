@@ -78,7 +78,7 @@ export default function QuizPage({ navigation }) {
                         answers && answers.map((answer, index) => <QuizAnswerButton key={index} text={answer.answer} color={colors[index]} onPress={() => console.log('pressed')} selectedAnswer={selectedAnswer} setSelectedAnswer={() => setSelectedAnswer(answer)} />)
                     }
                 </View>
-                <GameButtons variant="accept" onPress={handleSubmit}>
+                <GameButtons variant="accept" onPress={handleSubmit} textStyle={styles.buttonText}>
                     Submit
                 </GameButtons>
             </View>
@@ -127,5 +127,6 @@ const styles = {
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 10,
-    }
+    },
+    buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 }

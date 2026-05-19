@@ -41,7 +41,7 @@ export default function SensorModal({ visible, sensorId, sensorName, onClose }) 
               <Text style={styles.title}>Sensor Detected!</Text>
               <Text style={styles.subtitle}>{sensorName} is nearby and collecting data.</Text>
               <View style={styles.btnWrap}>
-                <GameButtons variant="accept" onPress={handleCheckSensor}>Check Sensor</GameButtons>
+                <GameButtons variant="accept" onPress={handleCheckSensor} textStyle={styles.buttonText}>Check Sensor</GameButtons>
               </View>
               <TouchableOpacity onPress={handleClose} style={styles.dismiss}>
                 <Text style={styles.dismissText}>Dismiss</Text>
@@ -76,7 +76,7 @@ export default function SensorModal({ visible, sensorId, sensorName, onClose }) 
                 </ScrollView>
               )}
               <View style={styles.btnWrap}>
-                <GameButtons variant="task" onPress={handleClose}>Close</GameButtons>
+                <GameButtons variant="task" onPress={handleClose} textStyle={styles.buttonText}>Close</GameButtons>
               </View>
             </>
           )}
@@ -86,7 +86,7 @@ export default function SensorModal({ visible, sensorId, sensorName, onClose }) 
               <Text style={styles.title}>{sensorName}</Text>
               <Text style={styles.error}>Could not load sensor data.</Text>
               <View style={styles.btnWrap}>
-                <GameButtons variant="task" onPress={handleClose}>Close</GameButtons>
+                <GameButtons variant="task" onPress={handleClose} textStyle={styles.buttonText}>Close</GameButtons>
               </View>
             </>
           )}
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
   dataItem:  { alignItems: 'center', gap: 2 },
   dataValue: { fontSize: 20, fontWeight: 'bold' },
   dataLabel: { fontSize: 11, color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
-  error:     { fontSize: 14, color: '#ef4444', textAlign: 'center', marginTop: 20 },
+  error:     { color: '#ef4444', fontFamily: 'Inter', fontSize: 13, fontWeight: '500' },
   empty:     { fontSize: 14, color: '#71717a', textAlign: 'center', marginTop: 20 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

@@ -97,7 +97,7 @@ export default function SettingsPage({ navigation }) {
               onChangeText={setUsername}
               autoCapitalize="none"
               autoCorrect={false}
-              style={styles.input}
+              style={[styles.input, styles.inputText]}
             />
           </View>
           <View style={styles.fieldRow}>
@@ -107,13 +107,13 @@ export default function SettingsPage({ navigation }) {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              style={styles.input}
+              style={[styles.input, styles.inputText]}
             />
           </View>
           {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
           {profileSuccess ? <Text style={styles.successText}>{profileSuccess}</Text> : null}
           <View style={styles.saveWrap}>
-            <GameButtons variant="task" onPress={handleSaveProfile} style={savingProfile ? styles.dimmed : undefined}>
+            <GameButtons variant="task" onPress={handleSaveProfile} style={savingProfile ? styles.dimmed : null} textStyle={styles.buttonText}>
               {savingProfile ? 'Saving...' : 'Save Profile'}
             </GameButtons>
           </View>
@@ -123,20 +123,20 @@ export default function SettingsPage({ navigation }) {
         <View style={styles.card}>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Current Password</Text>
-            <TextInput value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry autoCapitalize="none" style={styles.input} />
+            <TextInput value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry autoCapitalize="none" style={[styles.input, styles.inputText]} />
           </View>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>New Password</Text>
-            <TextInput value={newPassword} onChangeText={setNewPassword} secureTextEntry autoCapitalize="none" style={styles.input} />
+            <TextInput value={newPassword} onChangeText={setNewPassword} secureTextEntry autoCapitalize="none" style={[styles.input, styles.inputText]} />
           </View>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Confirm New Password</Text>
-            <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoCapitalize="none" style={styles.input} />
+            <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry autoCapitalize="none" style={[styles.input, styles.inputText]} />
           </View>
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           {passwordSuccess ? <Text style={styles.successText}>{passwordSuccess}</Text> : null}
           <View style={styles.saveWrap}>
-            <GameButtons variant="accept" onPress={handleChangePassword} style={savingPassword ? styles.dimmed : undefined}>
+            <GameButtons variant="accept" onPress={handleChangePassword} style={savingPassword ? styles.dimmed : null} textStyle={styles.buttonText}>
               {savingPassword ? 'Saving...' : 'Change Password'}
             </GameButtons>
           </View>
@@ -174,7 +174,7 @@ export default function SettingsPage({ navigation }) {
         </View>
 
         <View style={styles.logoutWrap}>
-          <GameButtons variant="decline" onPress={handleLogout}>
+          <GameButtons variant="decline" onPress={handleLogout} style={styles.buttonText}>
             Log Out
           </GameButtons>
         </View>
@@ -256,4 +256,7 @@ const styles = StyleSheet.create({
   },
 
   logoutWrap: { alignItems: 'center', marginTop: 32 },
+  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
+  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

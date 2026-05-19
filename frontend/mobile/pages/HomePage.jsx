@@ -11,10 +11,10 @@ export default function HomePage({ navigation }) {
       <PageHeader title="Home" />
       <View style={styles.center}>
         <View style={styles.actions}>
-          <GameButtons variant="accept" onPress={() => navigation.navigate('RouteMode')}>
+          <GameButtons variant="accept" onPress={() => navigation.navigate('RouteMode')} textStyle={styles.buttonText}>
             Start Route
           </GameButtons>
-          <GameButtons variant="task" onPress={() => navigation.navigate('Map')}>
+          <GameButtons variant="task" onPress={() => navigation.navigate('Map')} textStyle={styles.buttonText}>
             View Map
           </GameButtons>
         </View>
@@ -33,4 +33,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   actions: { gap: 12, alignItems: 'center' },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

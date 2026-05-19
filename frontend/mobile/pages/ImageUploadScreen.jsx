@@ -124,7 +124,7 @@ export default function ImageUploadScreenPage({ navigation, route }) {
         <Text style={[styles.label, styles.labelSpaced]}>What species is it?</Text>
         <View style={styles.formRow}>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, styles.inputText]}
             placeholder="Species name"
             placeholderTextColor="#777"
             value={species}
@@ -288,4 +288,6 @@ const styles = StyleSheet.create({
   uploadText: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
   submittingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   uploadStepText: { color: '#fff', fontSize: 13 },
+  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
+  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
 });

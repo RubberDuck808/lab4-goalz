@@ -9,12 +9,12 @@ const SIZES = {
 
 const VARIANTS = {
   task:    { bg: '#1CB0F6', border: '#1899D6' },
-  accept:  { bg: '#58CC02', border: '#5DA700' },
+  // accept:  { bg: '#58CC02', border: '#5DA700' },
   decline: { bg: '#FF4B4B', border: '#90461F' },
   party:   { bg: '#FFC107', border: '#CC8F00' },
 };
 
-export default function GameButtons({ children, onPress, variant = 'task', size = 'default', style }) {
+export default function GameButtons({ children, onPress, variant = 'task', size = 'default', style, textStyle }) {
   const s = SIZES[size] || SIZES.default;
   const v = VARIANTS[variant] || VARIANTS.task;
 
@@ -38,7 +38,7 @@ export default function GameButtons({ children, onPress, variant = 'task', size 
         style,
       ]}
     >
-      <Text style={styles.text}>{children}</Text>
+      <Text style={[styles.text, textStyle]}>{children}</Text>
     </TouchableOpacity>
   );
 }
@@ -50,9 +50,5 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 15,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
 });

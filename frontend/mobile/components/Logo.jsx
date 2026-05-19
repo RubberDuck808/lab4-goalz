@@ -1,12 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import LogoIcon from '../assets/logo.svg';
+import LogginText from '../assets/loggin.svg';
 
 export default function Logo({ style }) {
   return (
     <View style={[styles.container, style]}>
       <LogoIcon width={55} height={55} />
-      <Text style={styles.text}>loggin</Text>
+      <LogginText width={120} height={40} />
     </View>
   );
 }
@@ -20,9 +21,4 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
-  text: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#C07F58',
-  },
 });

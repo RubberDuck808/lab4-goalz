@@ -21,7 +21,7 @@ export default function AllCheckpointsCompletePage({ navigation }) {
           Your group has visited every checkpoint.{'\n'}Great work!
         </Text>
         <View style={styles.btnWrap}>
-          <GameButtons variant="accept" onPress={handleFinish}>
+          <GameButtons variant="accept" onPress={handleFinish} textStyle={styles.buttonText}>
             Finish Game
           </GameButtons>
         </View>
@@ -42,4 +42,5 @@ const styles = StyleSheet.create({
     fontSize: 16, color: '#71717a', textAlign: 'center', lineHeight: 24,
   },
   btnWrap: { marginTop: 16 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

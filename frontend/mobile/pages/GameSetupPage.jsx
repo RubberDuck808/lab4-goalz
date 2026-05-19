@@ -78,7 +78,7 @@ function Stepper({ value, min, max, onChange }) {
         <Text style={styles.stepBtnText}>−</Text>
       </TouchableOpacity>
       <TextInput
-        style={styles.stepInput}
+        style={[styles.stepInput, styles.inputText]}
         keyboardType="number-pad"
         value={String(value)}
         onChangeText={(t) => {
@@ -218,7 +218,7 @@ export default function GameSetupPage({ navigation, route }) {
               placeholder="Enter party name"
               value={partyName}
               onChangeText={setPartyName}
-              style={{ width: '100%', alignSelf: 'stretch' }}
+              style={[{ width: '100%', alignSelf: 'stretch' }, styles.inputText]}
             />
           </Section>
         )}
@@ -314,7 +314,7 @@ export default function GameSetupPage({ navigation, route }) {
           {loading ? (
             <ActivityIndicator size="large" color="#1CB0F6" />
           ) : (
-            <GameButtons variant="accept" onPress={handleStart}>
+            <GameButtons variant="accept" onPress={handleStart} textStyle={styles.buttonText}>
               {singlePlayer ? 'Start Solo Game' : 'Create Party'}
             </GameButtons>
           )}
@@ -368,5 +368,8 @@ const styles = StyleSheet.create({
 
   hint:     { fontSize: 14, color: '#71717a', marginBottom: 8 },
   hintBold: { fontWeight: 'bold', color: '#27272a' },
-  error:    { color: '#ef4444', fontSize: 13, textAlign: 'center', marginBottom: 8 },
+  error:    { color: '#ef4444', fontFamily: 'Inter', fontSize: 13, fontWeight: '500' },
+  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
+  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

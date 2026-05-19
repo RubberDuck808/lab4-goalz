@@ -82,11 +82,11 @@ export default function ProfilePage({ navigation, route }) {
         <View style={styles.btnRow}>
           {incomingRequest ? (
             <View style={styles.actionRow}>
-              <GameButtons variant="accept" size="half" onPress={handleAccept} style={styles.actionBtn}>✓</GameButtons>
-              <GameButtons variant="decline" size="half" onPress={handleDeny} style={styles.actionBtn}>✕</GameButtons>
+              <GameButtons variant="accept" size="half" onPress={handleAccept} style={styles.actionBtn} textStyle={styles.buttonText}>✓</GameButtons>
+              <GameButtons variant="decline" size="half" onPress={handleDeny} style={styles.actionBtn} textStyle={styles.buttonText}>✕</GameButtons>
             </View>
           ) : isFriend ? (
-            <GameButtons variant="decline" size="half" onPress={handleRemoveFriend}>Remove Friend</GameButtons>
+            <GameButtons variant="decline" size="half" onPress={handleRemoveFriend} style={styles.buttonText}>Remove Friend</GameButtons>
           ) : (
             <View style={{ width: 156 }} />
           )}
@@ -141,4 +141,5 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16, gap: 12 },
 
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#27272a', marginBottom: 4 },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });
