@@ -1,34 +1,43 @@
+#include "secrets.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Wire.h>
 #include "Adafruit_SHTC3.h"
-#include "secrets.h"
+#include <APDS9250.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-#define SHTC3_SDA 25
-#define SHTC3_SCL 26
 #define MOISTURE_PIN 35
-#define LED_PIN 2
+#define WIND_RV_PIN  32
+#define WIND_TMP_PIN 33
+#define LED_PIN      2
+// SHTC3 uses I2C: SDA → GPIO 21, SCL → GPIO 22
+// APDS9250 uses I2C: SDA → GPIO 21, SCL → GPIO 22
 
 // BLE UUIDs — match these exactly in the dashboard BLEScanner page
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
-Adafruit_SHTC3 shtc3;
-BLECharacteristic *pCharacteristic;
-bool deviceConnected = false;
-
 const int dryValue = 3500;
 const int wetValue  = 1200;
+
+Adafruit_SHTC3 shtc3;
+APDS9250 lightSensor;
+BLECharacteristic *pCharacteristic;
+bool deviceConnected = false;
 
 struct SensorData {
   float temperature;
   float humidity;
   int   rawMoisture;
-  int   soilMoisture;
+  uint32_t rawRed;
+  uint32_t rawGreen;
+  uint32_t rawBlue;
+  uint32_t rawIR;
+  int rawWindRv;
+  int rawWindTmp;
 };
 
 // ── BLE server callbacks ──────────────────────────────────────────────────────
@@ -111,11 +120,21 @@ void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   Wire.begin();
+
   if (!shtc3.begin()) {
     Serial.println("SHTC3 not found! Check wiring.");
     while (true) delay(10);
   }
   Serial.println("SHTC3 ready");
+
+  if (lightSensor.begin()) {
+    Serial.println("APDS9250 found");
+  } else {
+    Serial.println("APDS9250 not found — light readings will be 0");
+  }
+  lightSensor.enable();
+  lightSensor.setModeRGB();
+
   setupBLE();
   connectToWiFi();
 }
@@ -138,6 +157,11 @@ void loop() {
     Serial.println("BLE notified: " + bleJson);
   }
 
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi lost, reconnecting...");
+    connectToWiFi();
+  }
+
   if (WiFi.status() == WL_CONNECTED) {
     sendSensorData(data);
   }
@@ -147,6 +171,13 @@ void loop() {
 }
 
 // ── Sensor reading ────────────────────────────────────────────────────────────
+
+void readLightSensor(SensorData &data) {
+  data.rawRed   = lightSensor.getRawRedData();
+  data.rawGreen = lightSensor.getRawGreenData();
+  data.rawBlue  = lightSensor.getRawBlueData();
+  data.rawIR    = lightSensor.getRawIRData();
+}
 
 bool readSensors(SensorData &data) {
   sensors_event_t humidity, temp;
@@ -159,9 +190,12 @@ bool readSensors(SensorData &data) {
 
   data.temperature = temp.temperature;
   data.humidity    = humidity.relative_humidity;
-  data.rawMoisture  = analogRead(MOISTURE_PIN);
-  data.soilMoisture = map(data.rawMoisture, dryValue, wetValue, 0, 100);
-  data.soilMoisture = constrain(data.soilMoisture, 0, 100);
+  data.rawMoisture = analogRead(MOISTURE_PIN);
+
+  readLightSensor(data);
+
+  data.rawWindRv  = analogRead(WIND_RV_PIN);
+  data.rawWindTmp = analogRead(WIND_TMP_PIN);
 
   return true;
 }
@@ -175,8 +209,6 @@ String createBleJson(SensorData data) {
   json += data.temperature;
   json += ",\"h\":";
   json += data.humidity;
-  json += ",\"m\":";
-  json += data.soilMoisture;
   json += ",\"r\":";
   json += data.rawMoisture;
   json += "}";
@@ -185,12 +217,16 @@ String createBleJson(SensorData data) {
 
 String createJson(SensorData data) {
   String json = "{";
-  json += "\"sensorId\":";     json += SENSOR_ID;
-  json += ",\"temperature\":"; json += data.temperature;
-  json += ",\"light\":0";
-  json += ",\"humidity\":";    json += data.humidity;
-  json += ",\"soilMoisture\":"; json += data.soilMoisture;
-  json += ",\"rawMoisture\":";  json += data.rawMoisture;
+  json += "\"sensorId\":"    + String(SENSOR_ID)          + ",";
+  json += "\"temperature\":" + String(data.temperature)   + ",";
+  json += "\"humidity\":"    + String(data.humidity)      + ",";
+  json += "\"rawMoisture\":" + String(data.rawMoisture)   + ",";
+  json += "\"rawRed\":"      + String(data.rawRed)        + ",";
+  json += "\"rawGreen\":"    + String(data.rawGreen)      + ",";
+  json += "\"rawBlue\":"     + String(data.rawBlue)       + ",";
+  json += "\"rawIR\":"       + String(data.rawIR)         + ",";
+  json += "\"rawWindRv\":"   + String(data.rawWindRv)     + ",";
+  json += "\"rawWindTmp\":"  + String(data.rawWindTmp);
   json += "}";
   return json;
 }
@@ -200,7 +236,6 @@ String createJson(SensorData data) {
 void sendSensorData(SensorData data) {
   WiFiClient client;
   HTTPClient http;
-
   String json = createJson(data);
 
   http.begin(client, API_URL);
@@ -226,8 +261,13 @@ void sendSensorData(SensorData data) {
 // ── Debug print ───────────────────────────────────────────────────────────────
 
 void printSensorData(SensorData data) {
-  Serial.print("Raw moisture: ");   Serial.println(data.rawMoisture);
-  Serial.print("Soil moisture: "); Serial.print(data.soilMoisture); Serial.println("%");
-  Serial.print("Temperature: ");   Serial.print(data.temperature);  Serial.println(" °C");
-  Serial.print("Humidity: ");      Serial.print(data.humidity);     Serial.println(" %");
+  Serial.print("Temperature:   "); Serial.print(data.temperature);  Serial.println(" °C");
+  Serial.print("Humidity:      "); Serial.print(data.humidity);     Serial.println(" %");
+  Serial.print("Raw moisture:  "); Serial.println(data.rawMoisture);
+  Serial.print("Raw red:       "); Serial.println(data.rawRed);
+  Serial.print("Raw green:     "); Serial.println(data.rawGreen);
+  Serial.print("Raw blue:      "); Serial.println(data.rawBlue);
+  Serial.print("Raw IR:        "); Serial.println(data.rawIR);
+  Serial.print("Raw wind RV:   "); Serial.println(data.rawWindRv);
+  Serial.print("Raw wind TMP:  "); Serial.println(data.rawWindTmp);
 }

@@ -54,7 +54,7 @@ public class SensorController : ControllerBase
     }
 
     [HttpPost("data")]
-    public async Task<IActionResult> SensorData([FromBody] SensorDataDTO sensorDataDto)
+    public async Task<IActionResult> SensorData([FromBody] SensorDataDto sensorDataDto)
     {
         try
         {
