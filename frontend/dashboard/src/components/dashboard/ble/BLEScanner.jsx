@@ -9,10 +9,19 @@ import LineChart from "../overview/charts/LineChart";
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CHAR_UUID    = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 const MAX_HISTORY  = 60;
+const DRY_VALUE    = 3500;
+const WET_VALUE    = 1200;
+
+function calcSoilMoisture(raw) {
+  if (raw == null) return null;
+  const pct = Math.round((raw - DRY_VALUE) * 100 / (WET_VALUE - DRY_VALUE));
+  return Math.max(0, Math.min(100, pct));
+}
 
 const LINE_CONFIG = [
   { dataKey: "temp",         color: "#ef4444", name: "Temp °C"        },
   { dataKey: "humidity",     color: "#3b82f6", name: "Humidity %"      },
+  { dataKey: "light",        color: "#f59e0b", name: "Light lux"       },
   { dataKey: "soilMoisture", color: "#22c55e", name: "Soil Moisture %" },
 ];
 
@@ -49,7 +58,7 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
   const [saveCount, setSaveCount]     = useState(0);
   const [readingHistory, setReadingHistory] = useState([]);
   const [visibleLines, setVisibleLines]     = useState({
-    temp: true, humidity: true, soilMoisture: true,
+    temp: true, humidity: true, light: true, soilMoisture: true,
   });
 
   const bleSupported   = !!navigator.bluetooth;
@@ -110,7 +119,8 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
       const json = new TextDecoder().decode(e.target.value);
       const data = JSON.parse(json);
       if (data.t === undefined) return;
-      const newReadings = { temp: data.t, humidity: data.h, soilMoisture: data.m, rawMoisture: data.r };
+      const soilMoisture = data.m != null ? data.m : calcSoilMoisture(data.r);
+      const newReadings = { temp: data.t, humidity: data.h, soilMoisture, rawMoisture: data.r, light: data.l ?? null };
       setReadings(newReadings);
       if (data.id != null && !sensorIdRef.current) {
         const id = String(data.id);
@@ -124,7 +134,7 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
       highlightTimer.current = setTimeout(() => setHighlight(false), 700);
       setReadingHistory((prev) => [
         ...prev.slice(-(MAX_HISTORY - 1)),
-        { name: now.toLocaleTimeString(), temp: data.t, humidity: data.h, soilMoisture: data.m },
+        { name: now.toLocaleTimeString(), temp: data.t, humidity: data.h, light: data.l ?? null, soilMoisture },
       ]);
       if (autoSaveRef.current && sensorIdRef.current) {
         handleSaveReading(newReadings, sensorIdRef.current);
@@ -391,8 +401,8 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
             </div>
 
             {!readings ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {["Temperature", "Humidity", "Soil Moisture", "Soil Health"].map((label) => (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {["Temperature", "Humidity", "Light", "Soil Moisture", "Soil Health"].map((label) => (
                   <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex flex-col items-center gap-2">
                     <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
                     <p className="text-xs text-gray-400">{label}</p>
@@ -401,8 +411,7 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {/* Temperature */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <ReadingCard
                   label="Temperature"
                   value={fmt(readings.temp) != null ? `${fmt(readings.temp)} °C` : "—"}
@@ -412,7 +421,6 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
                   highlight={highlight}
                   badge={temp ? { label: temp.label, className: `${temp.bg} ${temp.text}` } : null}
                 />
-                {/* Humidity */}
                 <ReadingCard
                   label="Humidity"
                   value={fmt(readings.humidity) != null ? `${fmt(readings.humidity)} %` : "—"}
@@ -421,7 +429,14 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
                   iconClass="text-blue-400"
                   highlight={highlight}
                 />
-                {/* Soil Moisture */}
+                <ReadingCard
+                  label="Light"
+                  value={readings.light != null ? `${readings.light} lux` : "—"}
+                  icon="fa-sun"
+                  colorClass="bg-yellow-50 border-yellow-200 text-yellow-600"
+                  iconClass="text-yellow-400"
+                  highlight={highlight}
+                />
                 <ReadingCard
                   label="Soil Moisture"
                   value={fmt(readings.soilMoisture, 0) != null ? `${fmt(readings.soilMoisture, 0)} %` : "—"}
@@ -430,7 +445,6 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
                   iconClass="text-green-400"
                   highlight={highlight}
                 />
-                {/* Soil Health — replaces Raw Moisture */}
                 <div className={`border rounded-lg p-3 flex flex-col items-center gap-1 transition-all duration-300 ${
                   soil ? `${soil.bg}` : "bg-gray-50 border-gray-200"
                 } ${highlight ? "scale-[1.03]" : "scale-100"}`}>

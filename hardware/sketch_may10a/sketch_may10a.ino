@@ -203,6 +203,7 @@ bool readSensors(SensorData &data) {
 // ── JSON builders ─────────────────────────────────────────────────────────────
 
 String createBleJson(SensorData data) {
+  long lux = (long)(0.2126 * data.rawRed + 0.7152 * data.rawGreen + 0.0722 * data.rawBlue);
   String json = "{\"id\":";
   json += SENSOR_ID;
   json += ",\"t\":";
@@ -211,6 +212,8 @@ String createBleJson(SensorData data) {
   json += data.humidity;
   json += ",\"r\":";
   json += data.rawMoisture;
+  json += ",\"l\":";
+  json += lux;
   json += "}";
   return json;
 }
