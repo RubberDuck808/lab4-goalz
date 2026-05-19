@@ -72,12 +72,10 @@ namespace Goalz.Core.Services
             };
         }
 
-        public async Task<PartyResponse> GetParty(int partyId)
+        public async Task<PartyResponse?> GetParty(int partyId)
         {
             var party = await _partyRepository.GetPartyById(partyId);
-            
-            if (party == null)
-                throw new NotFoundException("Party not found");
+            if (party == null) return null;
 
             return new PartyResponse
             {

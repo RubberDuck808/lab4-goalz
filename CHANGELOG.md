@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
 1. [Leaderboard redesign — hero pattern, podium, filters, time-based backend](#leaderboard-redesign--hero-pattern-podium-filters--2026-05-17)
 1. [Fix: PicturesTaken stat never incremented](#fix-picturestaken-stat-never-incremented--2026-05-16)
 1. [Browse mode removal + photo task fix](#browse-mode-removal--photo-task-fix--2026-05-16)
@@ -11,6 +12,23 @@
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
 ---
 
+
+## Fix: MR !66 review — MapController null checks, PartyController GetParty — 2026-05-19
+
+### Changed
+- `MapController.cs`: Added `if (zones/boundaries/checkpoints == null) return NotFound()` guard to each of the three GET endpoints (`/zones`, `/boundaries`, `/checkpoints`). Added XML doc comment clarifying the controller consolidates the deleted game-side `ZoneController` and `BoundaryController`.
+- `IPartyService.cs`: Changed `GetParty` return type from `Task<PartyResponse>` to `Task<PartyResponse?>`.
+- `PartyService.cs`: `GetParty` now returns `null` when the party is not found instead of throwing `NotFoundException`, consistent with `JoinParty`'s pattern.
+- `PartyController.cs`: `GetParty` endpoint now checks `if (result == null) return NotFound("Party not found")` before returning `Ok`.
+
+### Rationale
+- Reviewer requested explicit null/NotFound guards on map endpoints and an explanation for the deleted `ZoneController` (consolidated into `MapController` in a prior commit).
+- `PartyController.GetParty` had no visible error handling; reviewer asked for `if (id == null) return NotFound()`. Changed service to return null rather than throw so the null check is explicit in the controller, matching the style of `JoinParty`.
+- ElementController lines 36-37 were already correct — no change needed.
+
+> Issue closed after 0 min
+
+---
 
 ## Leaderboard redesign — hero pattern, podium, filters — 2026-05-17
 

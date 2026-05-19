@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Goalz.Api.Controllers.Game;
 
+/// <summary>
+/// Consolidates the game-side map data endpoints. Replaces the deleted ZoneController
+/// and BoundaryController which previously exposed separate /api/game/zones and
+/// /api/game/boundaries routes.
+/// </summary>
 [ApiController]
 [Route("api/game/map")]
 public class MapController : ControllerBase
@@ -22,6 +27,7 @@ public class MapController : ControllerBase
     public async Task<IActionResult> GetZones()
     {
         var zones = await _zoneService.GetAllAsync();
+        if (zones == null) return NotFound();
         return Ok(zones);
     }
 
@@ -29,6 +35,7 @@ public class MapController : ControllerBase
     public async Task<IActionResult> GetBoundaries()
     {
         var boundaries = await _boundaryService.GetAllAsync();
+        if (boundaries == null) return NotFound();
         return Ok(boundaries);
     }
 
@@ -36,6 +43,7 @@ public class MapController : ControllerBase
     public async Task<IActionResult> GetCheckpoints()
     {
         var checkpoints = await _checkpointService.GetAllAsync();
+        if (checkpoints == null) return NotFound();
         return Ok(checkpoints);
     }
 }

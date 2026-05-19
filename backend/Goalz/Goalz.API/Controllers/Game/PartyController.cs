@@ -35,6 +35,7 @@ namespace Goalz.Api.Controllers.Game
         public async Task<IActionResult> GetParty(int id)
         {
             var result = await _partyService.GetParty(id);
+            if (result == null) return NotFound("Party not found");
             return Ok(result);
         }
 

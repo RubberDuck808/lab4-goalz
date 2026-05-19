@@ -5,7 +5,7 @@ namespace Goalz.Core.Interfaces
     {
         Task<PartyResponse> CreateParty(PartyRequest request, string creatorUsername);
         Task<PartyResponse?> JoinParty(long Code, string username);
-        Task<PartyResponse> GetParty(int partyId);
+        Task<PartyResponse?> GetParty(int partyId);
         Task<List<string>> GetLobbyMembers(long partyId);
         Task<StartGameResult> StartGame(long partyId, string username);
         Task<GameStateResponse?> GetGameState(long partyId);
