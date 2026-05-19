@@ -1,30 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import AppText from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
+import GameButtons from '../components/GameButtons';
 import { useGameContext } from '../context/GameContext';
+
+const ROLE_DESC = {
+  Scout:       'Find the sensor stations. Collect the data. Help unlock the box.',
+  Trailblazer: 'Navigate to preset spots. Photograph nature elements. Unlock the box.',
+  Explorer:    'Do it all — sensors, photos, every checkpoint.',
+};
+
+const ROLE_COLORS = {
+  Scout:       { bg: '#F0FBE7', border: '#46A302', text: '#46A302' },
+  Trailblazer: { bg: '#FFF5E6', border: '#CC7800', text: '#CC7800' },
+  Explorer:    { bg: '#EBF8FF', border: '#1899D6', text: '#1CB0F6' },
+};
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
 export default function YourRolePage({ navigation, route }) {
   const singlePlayer = route?.params?.singlePlayer ?? false;
-  const { role, setRole, gameConfig, triggerPoll } = useGameContext();
-  const [selectedRole, setSelectedRole] = useState(null);
+  const { role, setRole, triggerPoll, gameConfig } = useGameContext();
+  const [revealed, setRevealed] = useState(false);
 
-  // If we land here without a role yet (non-host race condition), request an
-  // immediate poll so the role arrives as fast as possible.
+  // For single player: pick a random role from the allowed list on mount.
+  const availableRoles = gameConfig?.allowedRoles?.length > 0
+    ? gameConfig.allowedRoles
+    : ['Scout', 'Trailblazer', 'Explorer'];
+  const assignedRef = useRef(singlePlayer ? pickRandom(availableRoles) : null);
+  const assignedRole = singlePlayer ? assignedRef.current : role;
+
+  // Keep polling every 3 s until the server-assigned role arrives.
+  // A single triggerPoll() on mount isn't enough — if usernameRef hasn't
+  // resolved yet when the first response lands, applyServerState skips the
+  // role assignment and the page stalls until the 30-second fallback fires.
   useEffect(() => {
-    if (!singlePlayer && !role) {
-      triggerPoll();
-    }
+    if (singlePlayer || role) return;
+    triggerPoll();
+    const t = setInterval(triggerPoll, 3000);
+    return () => clearInterval(t);
   }, [singlePlayer, role, triggerPoll]);
 
-  // Party mode: wait for role from context before showing the card
-  const partyRole = singlePlayer ? null : role;
-  const singlePlayerRoles = gameConfig?.groupSize == null ? ['Explorer'] : ['Scout', 'Trailblazer'];
-  const roles = singlePlayer ? singlePlayerRoles : (partyRole ? [partyRole] : null);
+  const colors = assignedRole ? (ROLE_COLORS[assignedRole] ?? ROLE_COLORS.Explorer) : null;
 
-  const isRevealed = selectedRole !== null;
-
-  if (!singlePlayer && !partyRole) {
+  // Party: still waiting for server-assigned role
+  if (!singlePlayer && !role) {
     return (
       <SafeAreaView style={styles.safe}>
         <PageHeader title="Your Role" onBack={() => navigation.goBack()} />
@@ -40,33 +64,41 @@ export default function YourRolePage({ navigation, route }) {
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Your Role" onBack={() => navigation.goBack()} />
       <View style={styles.center}>
-        <View style={singlePlayer ? styles.rowCards : null}>
-          {roles.map((r) => (
-            <TouchableOpacity key={r} onPress={() => setSelectedRole(r)} activeOpacity={0.9}>
-              <View style={styles.card}>
-                {selectedRole === r ? (
-                  <View style={styles.revealedInner}>
-                    <Text style={styles.roleText}>{r}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.hiddenInner}>
-                    <Text style={styles.questionMark}>?</Text>
-                  </View>
-                )}
+        <TouchableOpacity onPress={() => setRevealed(true)} activeOpacity={0.9} disabled={revealed}>
+          <View style={styles.card}>
+            {revealed ? (
+              <View style={[styles.revealedInner, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                <Text
+                  style={[styles.roleText, { color: colors.text }]}
+                  adjustsFontSizeToFit
+                  numberOfLines={1}
+                >{assignedRole}</Text>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={styles.tapLabel}>
-          {isRevealed ? 'YOUR ROLE!' : 'TAP TO\nVIEW ROLE'}
-        </Text>
-        {isRevealed && (
-          <TouchableOpacity style={styles.continueBtn} onPress={() => {
-            if (singlePlayer) setRole(selectedRole);
-            navigation.navigate('Map', { fromGame: true });
-          }}>
-            <Text style={styles.continueBtnText}>Continue</Text>
-          </TouchableOpacity>
+            ) : (
+              <View style={styles.hiddenInner}>
+                <Text style={styles.questionMark}>?</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {!revealed && (
+          <Text style={styles.tapLabel}>TAP TO{'\n'}REVEAL ROLE</Text>
+        )}
+
+        {revealed && (
+          <GameButtons
+            variant="accept"
+            onPress={() => {
+              if (singlePlayer) setRole(assignedRole);
+              navigation.navigate('Map', { fromGame: true });
+            }}
+          >
+            Continue
+          </GameButtons>
+        )}
+        {revealed && assignedRole && (
+          <AppText style={styles.roleDesc}>{ROLE_DESC[assignedRole] ?? ''}</AppText>
         )}
       </View>
     </SafeAreaView>
@@ -74,44 +106,24 @@ export default function YourRolePage({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe:   { flex: 1, backgroundColor: '#fff' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24, marginTop: -60 },
-  rowCards: { flexDirection: 'row', gap: 16 },
+
   card: {
-    width: 150,
-    height: 210,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e4e4e7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    width: 150, height: 210, borderRadius: 20, backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#e4e4e7', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
   },
   hiddenInner: {
-    width: 110,
-    height: 160,
-    backgroundColor: '#d4d4d8',
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 110, height: 160, backgroundColor: '#1CB0F6', borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
   },
   revealedInner: {
-    width: 110,
-    height: 160,
-    backgroundColor: '#DDF4FF',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#63C9F9',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 110, height: 160, borderRadius: 14, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8,
   },
   questionMark: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
-  roleText: { fontSize: 22, fontWeight: 'bold', color: '#1CB0F6', textTransform: 'uppercase', textAlign: 'center' },
-  tapLabel: { fontSize: 22, fontWeight: 'bold', color: '#3f3f46', textTransform: 'uppercase', textAlign: 'center', lineHeight: 30 },
-  continueBtn: { backgroundColor: '#2D7D46', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 48 },
-  continueBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
+  roleText:     { fontSize: 22, fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' },
+  tapLabel:     { fontSize: 22, fontWeight: '500', color: '#27272a', textTransform: 'uppercase', textAlign: 'center', lineHeight: 30 },
+  roleDesc:     { fontSize: 14, color: '#71717a', textAlign: 'center', paddingHorizontal: 24, lineHeight: 20 },
 });

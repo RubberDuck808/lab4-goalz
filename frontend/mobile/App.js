@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { GameProvider } from './context/GameContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from './services/navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getToken } from './services/session';
 
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -32,13 +34,58 @@ import AllCheckpointsCompletePage from './pages/AllCheckpointsCompletePage';
 
 const Stack = createNativeStackNavigator();
 
+class ErrorBoundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 16, color: '#27272a', textAlign: 'center', marginBottom: 16 }}>
+            Something went wrong. Please restart the app.
+          </Text>
+          <TouchableOpacity
+            onPress={() => this.setState({ error: null })}
+            style={{ backgroundColor: '#1CB0F6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    getToken().then(() => setReady(true));
+  }, []);
+
+  if (!ready) {
+    return <SafeAreaProvider><View style={{ flex: 1, backgroundColor: '#fff' }} /></SafeAreaProvider>;
+  }
+
   return (
-    <AccessibilityProvider>
-      <GameProvider>
-        <SafeAreaProvider>
-          <NavigationContainer ref={navigationRef}>
-            <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none' }}>
+    <ErrorBoundary>
+      <AccessibilityProvider>
+        <GameProvider>
+          <SafeAreaProvider>
+          <NavigationContainer
+            ref={navigationRef}
+            onReady={async () => {
+              const token = await getToken();
+              if (!token) {
+                const route = navigationRef.current?.getCurrentRoute()?.name;
+                if (route && route !== 'Login' && route !== 'SignUp') {
+                  navigationRef.current.reset({ index: 0, routes: [{ name: 'Login' }] });
+                }
+              }
+            }}
+          >
+            <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation: 'none', contentStyle: { backgroundColor: '#fff' } }}>
               <Stack.Screen name="Login"       component={Login} />
               <Stack.Screen name="SignUp"      component={SignUp} />
               <Stack.Screen name="Home"        component={HomePage} />
@@ -64,8 +111,9 @@ export default function App() {
               <Stack.Screen name="AllCheckpointsComplete" component={AllCheckpointsCompletePage} />
             </Stack.Navigator>
           </NavigationContainer>
-        </SafeAreaProvider>
-      </GameProvider>
-    </AccessibilityProvider>
+          </SafeAreaProvider>
+        </GameProvider>
+      </AccessibilityProvider>
+    </ErrorBoundary>
   );
 }

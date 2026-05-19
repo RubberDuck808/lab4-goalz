@@ -1,50 +1,44 @@
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
+
+const SUPABASE_URL      = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 const BUCKET = 'Photo';
-// 1 year in seconds — long-lived so the stored URL remains usable
-const SIGNED_URL_EXPIRES_IN = 31536000;
+
+export const supabase = createClient(SUPABASE_URL ?? '', SUPABASE_ANON_KEY ?? '', {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
+
+function randomSuffix() {
+  return Math.random().toString(36).slice(2, 9);
+}
 
 export async function uploadPhotoToSupabase(imageUri) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase credentials are not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.');
+    throw new Error('Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.');
+  }
+  // usePhotoGallery always converts to JPEG before calling this function
+  const filename = `photo-${Date.now()}-${randomSuffix()}.jpg`;
+
+  const base64 = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' });
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
   }
 
-  const filename = `photo-${Date.now()}.jpg`;
-  const authHeader = { Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, bytes, { contentType: 'image/jpeg', upsert: true });
 
-  // 1. Upload
-  const formData = new FormData();
-  formData.append('file', { uri: imageUri, name: filename, type: 'image/jpeg' });
+  if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-  const uploadRes = await fetch(
-    `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filename}`,
-    {
-      method: 'POST',
-      headers: { ...authHeader, 'x-upsert': 'true' },
-      body: formData,
-    }
-  );
-
-  if (!uploadRes.ok) {
-    const body = await uploadRes.text();
-    throw new Error(`Supabase upload failed (${uploadRes.status}): ${body}`);
-  }
-
-  // 2. Generate a signed URL so the private bucket object is accessible
-  const signRes = await fetch(
-    `${SUPABASE_URL}/storage/v1/object/sign/${BUCKET}/${filename}`,
-    {
-      method: 'POST',
-      headers: { ...authHeader, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ expiresIn: SIGNED_URL_EXPIRES_IN }),
-    }
-  );
-
-  if (!signRes.ok) {
-    const body = await signRes.text();
-    throw new Error(`Supabase sign URL failed (${signRes.status}): ${body}`);
-  }
-
-  const { signedURL } = await signRes.json();
-  return `${SUPABASE_URL}${signedURL}`;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+  return data.publicUrl;
 }

@@ -1,20 +1,26 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { getAvatar } from '../utils/avatars';
+import AppText from './AppText';
 
-export default function UserRow({ username, rank, score, badge, onPress }) {
+export default function UserRow({ username, rank, score, badge, onPress, avatarId }) {
   const content = (
     <View style={styles.row}>
-      {rank != null && <Text style={styles.rank}>{rank}</Text>}
-      <View style={styles.avatar} />
-      <Text style={styles.name}>{username}</Text>
-      {score != null && <Text style={styles.score}>{score} pts</Text>}
-      {badge != null && <Text style={styles.badge}>{badge}</Text>}
+      {rank != null && <AppText style={styles.rank}>{rank}</AppText>}
+      <Image source={getAvatar(avatarId)} style={styles.avatar} />
+      <AppText style={styles.name}>{username}</AppText>
+      {score != null && (
+        <AppText style={[styles.score, score === 0 && styles.scoreDim]}>
+          {score === 0 ? '—' : `${score} nuts`}
+        </AppText>
+      )}
+      {badge != null && <AppText style={styles.badge}>{badge}</AppText>}
     </View>
   );
 
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.75}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.75} accessibilityLabel={username} accessibilityRole="button">
         {content}
       </TouchableOpacity>
     );
@@ -42,6 +48,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     backgroundColor: '#d4d4d8',
+    overflow: 'hidden',
   },
   name: {
     flex: 1,
@@ -52,7 +59,11 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#3b82f6',
+    color: '#F5A623',
+  },
+  scoreDim: {
+    color: '#a1a1aa',
+    fontWeight: '400',
   },
   badge: {
     fontSize: 13,

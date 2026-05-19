@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
-import { getUser, updateStoredUser } from '../services/session';
+import AppText from '../components/AppText';
+import { getUser, updateStoredUser, storeToken } from '../services/session';
 import { updateProfile, changePassword } from '../services/api';
+import { getAvatar, AVATAR_COUNT } from '../utils/avatars';
 
 export default function EditProfilePage({ navigation }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [avatarId, setAvatarId] = useState(1);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,26 +24,32 @@ export default function EditProfilePage({ navigation }) {
   const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     getUser().then(user => {
-      if (user) {
-        setUsername(user.username ?? '');
-        setEmail(user.email ?? '');
-      }
+      if (cancelled || !user) return;
+      setUsername(user.username ?? '');
+      setEmail(user.email ?? '');
+      setAvatarId(user.avatarId ?? 1);
     });
+    return () => { cancelled = true; };
   }, []);
 
   async function handleSaveProfile() {
     setProfileError('');
     setProfileSuccess('');
     if (!username.trim() || !email.trim()) {
-      setProfileError('Username and email cannot be empty.');
+      setProfileError('Fill in your username and email.');
       return;
     }
     setSavingProfile(true);
-    const result = await updateProfile(username.trim(), email.trim());
+    const cleanUsername = username.replace(/\p{C}/gu, '').trim();
+    const result = await updateProfile(cleanUsername, email.trim(), avatarId);
     setSavingProfile(false);
     if (result.success) {
-      await updateStoredUser({ username: result.data.username, email: result.data.email });
+      await Promise.all([
+        updateStoredUser({ username: result.data.username, email: result.data.email, avatarId: result.data.avatarId, createdAt: result.data.createdAt }),
+        storeToken(result.data.token ?? result.data.Token),
+      ]);
       setProfileSuccess('Profile updated.');
     } else {
       setProfileError(result.error ?? 'Something went wrong.');
@@ -51,7 +60,7 @@ export default function EditProfilePage({ navigation }) {
     setPasswordError('');
     setPasswordSuccess('');
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError('All password fields are required.');
+      setPasswordError('Fill in all password fields.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -69,7 +78,7 @@ export default function EditProfilePage({ navigation }) {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setPasswordSuccess('Password changed successfully.');
+      setPasswordSuccess('Password updated.');
     } else {
       setPasswordError(result.error ?? 'Something went wrong.');
     }
@@ -78,70 +87,86 @@ export default function EditProfilePage({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Edit Profile" onBack={() => navigation.goBack()} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        <Text style={styles.sectionTitle}>Profile Info</Text>
+        <AppText style={styles.sectionTitle}>Avatar</AppText>
+        <View style={styles.avatarGrid}>
+          {Array.from({ length: AVATAR_COUNT }, (_, i) => i + 1).map(id => (
+            <TouchableOpacity
+              key={id}
+              onPress={() => setAvatarId(id)}
+              style={[styles.avatarOption, avatarId === id && styles.avatarSelected]}
+              activeOpacity={0.75}
+            >
+              <Image source={getAvatar(id)} style={styles.avatarImage} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <AppText style={[styles.sectionTitle, { marginTop: 24 }]}>Profile Info</AppText>
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Username</Text>
+          <AppText style={styles.label}>Username</AppText>
           <TextInput
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <Text style={styles.label}>Email</Text>
+          <AppText style={styles.label}>Email</AppText>
           <TextInput
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
-          {profileSuccess ? <Text style={styles.successText}>{profileSuccess}</Text> : null}
+          {profileError ? <AppText style={styles.errorText}>{profileError}</AppText> : null}
+          {profileSuccess ? <AppText style={styles.successText}>{profileSuccess}</AppText> : null}
           <GameButtons
             variant="task"
             onPress={handleSaveProfile}
-            style={savingProfile ? styles.dimmed : undefined}
+            disabled={savingProfile}
           >
             {savingProfile ? 'Saving...' : 'Save Profile'}
           </GameButtons>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Change Password</Text>
+        <AppText style={[styles.sectionTitle, { marginTop: 24 }]}>Change Password</AppText>
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Current Password</Text>
+          <AppText style={styles.label}>Current Password</AppText>
           <TextInput
             value={currentPassword}
             onChangeText={setCurrentPassword}
             secureTextEntry
             autoCapitalize="none"
           />
-          <Text style={styles.label}>New Password</Text>
+          <AppText style={styles.label}>New Password</AppText>
           <TextInput
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry
             autoCapitalize="none"
           />
-          <Text style={styles.label}>Confirm New Password</Text>
+          <AppText style={styles.label}>Confirm New Password</AppText>
           <TextInput
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
             autoCapitalize="none"
           />
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-          {passwordSuccess ? <Text style={styles.successText}>{passwordSuccess}</Text> : null}
+          {passwordError ? <AppText style={styles.errorText}>{passwordError}</AppText> : null}
+          {passwordSuccess ? <AppText style={styles.successText}>{passwordSuccess}</AppText> : null}
           <GameButtons
             variant="accept"
             onPress={handleChangePassword}
-            style={savingPassword ? styles.dimmed : undefined}
+            disabled={savingPassword}
           >
             {savingPassword ? 'Saving...' : 'Change Password'}
           </GameButtons>
         </View>
 
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -162,10 +187,29 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     fontSize: 14,
     fontWeight: '600',
-    color: '#3f3f46',
+    color: '#27272a',
     marginBottom: -4,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-start',
+  },
+  avatarOption: {
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    padding: 2,
+  },
+  avatarSelected: {
+    borderColor: '#1CB0F6',
+  },
+  avatarImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   errorText: { color: '#ef4444', fontSize: 13, alignSelf: 'flex-start' },
   successText: { color: '#16a34a', fontSize: 13, alignSelf: 'flex-start' },
-  dimmed: { opacity: 0.6 },
 });

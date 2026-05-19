@@ -1,30 +1,34 @@
-import React, { useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { usePhotoGallery } from '../src/hooks/usePhotoGallery';
 
 export default function CameraPage({ navigation, route }) {
   const { takePhoto } = usePhotoGallery();
+  const didRun = useRef(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      async function launch() {
-        const uri = await takePhoto();
-        if (!active) return;
-        if (uri) {
-          navigation.navigate('UserPhoto', {
-            imageUri: uri,
-            gps: route?.params?.gps ?? null,
-          });
-        } else {
-          navigation.goBack();
-        }
+  useEffect(() => {
+    if (didRun.current) return;
+    didRun.current = true;
+
+    let cancelled = false;
+    (async () => {
+      const result = await takePhoto();
+      if (cancelled) return;
+
+      if (result.kind === 'success') {
+        navigation.navigate('UserPhoto', {
+          imageUri: result.uri,
+          gps: route?.params?.gps ?? null,
+          fromGame: route?.params?.fromGame ?? false,
+        });
+      } else {
+        // 'denied' shows an Alert from the hook before returning here;
+        // 'cancelled' is a silent back. Both cases just pop this screen.
+        navigation.goBack();
       }
-      launch();
-      return () => { active = false; };
-    }, [])
-  );
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <View style={styles.container}>

@@ -27,9 +27,9 @@ namespace Goalz.Core.Services
             {
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
-                Name = user.Name,
                 Email = user.Email,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                AvatarId = user.AvatarId,
             };
         }
 
@@ -44,7 +44,6 @@ namespace Goalz.Core.Services
             var user = new User
             {
                 Username = request.Username,
-                Name = request.Name,
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Player
@@ -57,8 +56,9 @@ namespace Goalz.Core.Services
             {
                 Token = _jwtService.Generate(user.Username, user.Role.ToString()),
                 Username = user.Username,
-                Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                CreatedAt = user.CreatedAt,
+                AvatarId = user.AvatarId,
             }, null);
         }
 
@@ -81,10 +81,20 @@ namespace Goalz.Core.Services
                 user.Email = request.Email;
             }
 
+            if (request.AvatarId.HasValue && request.AvatarId.Value >= 1 && request.AvatarId.Value <= 7)
+                user.AvatarId = request.AvatarId.Value;
+
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            return (new UpdateProfileResponse { Username = user.Username, Email = user.Email }, null);
+            return (new UpdateProfileResponse
+            {
+                Username = user.Username,
+                Email = user.Email,
+                CreatedAt = user.CreatedAt,
+                AvatarId = user.AvatarId,
+                Token = _jwtService.Generate(user.Username, user.Role.ToString()),
+            }, null);
         }
 
         public async Task<string?> ChangePasswordAsync(string username, ChangePasswordRequest request)
@@ -102,9 +112,19 @@ namespace Goalz.Core.Services
             return null;
         }
 
-        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync()
-        {
-            return await _userRepository.GetLeaderboardAsync();
-        }
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetLeaderboardAsync(string? period = null)
+            => await _userRepository.GetLeaderboardAsync(period);
+
+        public Task AddGameStatsAsync(string username, int checkpointsVisited, int quizScore)
+            => _userRepository.AddGameStatsAsync(username, checkpointsVisited, quizScore);
+
+        public Task IncrementPartiesJoinedAsync(string username)
+            => _userRepository.IncrementPartiesJoinedAsync(username);
+
+        public Task IncrementPicturesTakenAsync(string username)
+            => _userRepository.IncrementPicturesTakenAsync(username);
+
+        public Task<UserStatisticsDto> GetStatsAsync(string username)
+            => _userRepository.GetStatsAsync(username);
     }
 }

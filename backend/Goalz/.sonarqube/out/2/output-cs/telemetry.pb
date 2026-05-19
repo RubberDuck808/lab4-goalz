@@ -1,1 +1,0 @@
-`RS/Users/carmensimon/VsProjects/lab4-goalz/backend/Goalz/Goalz.Data/Goalz.Data.csprojòCSharp13

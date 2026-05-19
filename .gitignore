@@ -155,4 +155,16 @@ CLAUDE.md
 
 backend/Goalz/.sonarqube/
 
+# =========================
+
+# Supabase local dev
+
+# =========================
+
+supabase/.branches/
+supabase/.temp/
+
+# LSCache files
+*.lscache
+
 hardware/sketch_may10a/secrets.h

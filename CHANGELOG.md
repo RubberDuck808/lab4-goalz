@@ -2,10 +2,198 @@
 
 ## Table of Contents
 
+1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
+1. [Leaderboard redesign — hero pattern, podium, filters, time-based backend](#leaderboard-redesign--hero-pattern-podium-filters--2026-05-17)
+1. [Fix: PicturesTaken stat never incremented](#fix-picturestaken-stat-never-incremented--2026-05-16)
+1. [Browse mode removal + photo task fix](#browse-mode-removal--photo-task-fix--2026-05-16)
+1. [Security & Flow Audit — full mobile + backend hardening](#security--flow-audit--2026-05-15)
+1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
+1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
+1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+---
+
+
+## Fix: MR !66 review — MapController null checks, PartyController GetParty — 2026-05-19
+
+### Changed
+- `MapController.cs`: Added `if (zones/boundaries/checkpoints == null) return NotFound()` guard to each of the three GET endpoints (`/zones`, `/boundaries`, `/checkpoints`). Added XML doc comment clarifying the controller consolidates the deleted game-side `ZoneController` and `BoundaryController`.
+- `IPartyService.cs`: Changed `GetParty` return type from `Task<PartyResponse>` to `Task<PartyResponse?>`.
+- `PartyService.cs`: `GetParty` now returns `null` when the party is not found instead of throwing `NotFoundException`, consistent with `JoinParty`'s pattern.
+- `PartyController.cs`: `GetParty` endpoint now checks `if (result == null) return NotFound("Party not found")` before returning `Ok`.
+
+### Rationale
+- Reviewer requested explicit null/NotFound guards on map endpoints and an explanation for the deleted `ZoneController` (consolidated into `MapController` in a prior commit).
+- `PartyController.GetParty` had no visible error handling; reviewer asked for `if (id == null) return NotFound()`. Changed service to return null rather than throw so the null check is explicit in the controller, matching the style of `JoinParty`.
+- ElementController lines 36-37 were already correct — no change needed.
+
+> Issue closed after 0 min
+
+---
+
+## Leaderboard redesign — hero pattern, podium, filters — 2026-05-17
+
+### Changed
+- `LeaderboardPage.jsx`: Full rewrite. Replaced flat white page with blue hero → white card overlap (matching Home/Profile). Added animated podium visual in hero (2nd left, 1st centre/gold ring, 3rd right with bar platforms). Rankings list shows all entries with top-3 cream tint and a heavier divider between rank 3 and 4. "you" pill badge on the current user's row.
+- Filter chips added: **All time**, **This month**, **This week** (each fetches from backend with `?period`), **Friends** (client-side filter using `getConnections`).
+- `api.js` `getLeaderboard`: Now accepts optional `period` argument and appends `?period=` to the URL.
+
+### Added (backend)
+- `UserPointsLog` entity (`Goalz.Domain`) — logs every point-earning event with `UserId`, `PointsEarned`, `EarnedAt`.
+- `UserPointsLogs` DbSet + EF config in `AppDbContext` (FK cascade + composite index on `UserId, EarnedAt`).
+- Migration `AddUserPointsLog` applied.
+- `UserRepository.AddGameStatsAsync` and `PartyRepository` party-complete block both insert a `UserPointsLog` row whenever points are awarded.
+- `GetLeaderboardAsync(string? period)`: for `"week"` / `"month"` sums from `UserPointsLogs` filtered by `EarnedAt`; for `null` uses `UserStatistics.TotalPoints` as before.
+- `IUserRepository`, `IUserService`, `UserService`, `LeaderboardController` all updated to thread `period` through the stack.
+
+### Rationale
+- The plain-white page with `PageHeader` was visually out of place; all other top-level pages use the hero pattern.
+- Cumulative `TotalPoints` has no timestamp, so time-based filters required a new event-log table rather than schema changes to `UserStatistics`.
+- Friends filter is intentionally client-side: the connections API is fast and avoids a custom join endpoint.
+
+> Issue closed after 0 min
+
+---
+
+## Fix: PicturesTaken stat never incremented — 2026-05-16
+
+### Fixed
+- `ElementService.cs`: Injected `IUserService` and added call to `IncrementPicturesTakenAsync(request.SubmittedBy)` after a new element is persisted. The duplicate-update path (nearby pending element found) does not increment — the user was credited on first submission. Admin/seeded elements with no `SubmittedBy` are also skipped.
+
+### Rationale
+- The DB column, DTO, repository method, and service interface all existed; only the call site was missing.
+- Placed in `ElementService` rather than the controller to keep stat tracking inside the service layer and out of HTTP concerns.
+
+> Issue closed after 5 min
+
+---
+
+## Browse mode removal + photo task fix — 2026-05-16
+
+### Changed
+- `MapPage.jsx`: Removed all browse-mode (`fromGame=false`) code paths — dead code, nothing in the app navigated there without `fromGame: true`. Removed `boundaries` state, `getBoundaries()` call, `boundaryDistanceMeters` import, `useIsFocused` import, browse-mode map-fitting effect, browse-mode zone/checkpoint rendering, and all `fromGame &&` / `fromGame ?` conditionals throughout the component.
+- `ZoneLayer.jsx`: Removed `fromGame` prop — status is now always `active | done | locked` derived from `completedZoneIds` and `activeZone`.
+- `MapPage.jsx` (photo task fix): Removed `isFocused` gate from `pendingPhotoCompletion` effect — context update and navigation focus event arrive in separate React batches causing a timing race; `pendingPhotoCpRef.current` alone is a sufficient guard.
+- `GameContext.jsx`: Removed `chatMessages`, `sendChatMessage`, and `connectionRef` — party chat was decided out of scope.
+- `PartyHub.cs`: Removed `SendMessage` hub method — party chat out of scope.
+- `components/ChatOverlay.jsx`: Deleted — party chat out of scope.
+- `docs/mobile_feature_gaps.md`: Removed "In-Game Party Communication" section; renumbered remaining sections.
+
+### Rationale
+- Browse mode had no navigation entry point; keeping it added dead complexity and a second code path through every conditional in MapPage.
+- The photo task bug was a timing race between React context updates and React Navigation focus events — removing the isFocused gate resolves it cleanly without adding synchronisation complexity.
+- Party chat was descoped per product decision.
+
+> Issue closed after 0 min
+
+---
+
+## Security & Flow Audit — 2026-05-15
+
+### Security
+- `PartyController.cs`: Added `[Authorize]` to `GetParty` — was fully public, leaking party codes and member lists
+- `FriendshipController.cs`: Removed `[AllowAnonymous]` from `GetConnections` — was exposing full friend graphs without auth
+- `PartyService.cs` + `PartyController.cs`: Added party-membership check to `StartGame`, `VisitCheckpoint`, and `CompleteGame` — any authenticated user could previously manipulate any party
+- `JwtService.cs` + `Program.cs` + `appsettings.json`: Enabled JWT issuer and audience validation (`goalz-api` / `goalz-mobile`) — validation was disabled, allowing tokens from other systems to be accepted
+
+### Flow Breaks (Backend)
+- `Goalz.Application/Exceptions/NotFoundException.cs` (new): Introduced `NotFoundException`; updated `PartyService` to throw it instead of raw `Exception`
+- `Program.cs`: Global exception handler now maps `NotFoundException` → 404 in all environments (previously only caught 500s in production, Swagger showed raw errors in dev)
+- `PartyRepository.cs` + `IPartyRepository.cs`: Added `TryStartGameAsync` using `ExecuteUpdateAsync WHERE Status='Lobby'` — prevents two concurrent requests from both advancing the party to `InGame`
+- `PartyRepository.cs`: `VisitCheckpointAsync` now uses `INSERT … ON CONFLICT DO NOTHING` — eliminates the TOCTOU race between `AnyAsync` + `AddAsync`
+- `PartyRepository.cs`: `CompleteGameAsync` wrapped in `BeginTransactionAsync` / `CommitAsync` — partial saves (checkpoint rows saved, stats not) are now rolled back atomically
+- `QuizController.cs`: Materialise answers list before `.OrderBy(_ => Random.Shared.Next())` — shuffle now runs in memory, not inside an EF LINQ provider where ordering is non-deterministic
+
+### Flow Breaks (Mobile)
+- `MapPage.jsx`: Data fetch wrapped in `try/catch`; `loadError` state added; render now shows a "Failed to load" message with a Retry button instead of a blank map on API failure
+- `App.js`: Added `ErrorBoundary` class component wrapping the entire navigator — a single page crash no longer kills the whole app
+- `QuizPage.jsx`: Added `submitting` state; Submit button disabled while request is in-flight — prevents double-submission
+- `signalr.js`: `accessTokenFactory` now checks JWT expiry before returning the token; clears session and redirects to Login if expired
+
+### State Bugs (Mobile)
+- `QuizPage.jsx`: Added `useFocusEffect` to reset `selectedAnswer` to null on screen focus — previous answer was retained if user navigated back into the quiz screen
+
+### Rationale
+- The party IDOR and missing-auth issues were the highest-risk findings — any user could start, manipulate, or complete another party's game without being a member
+- The `NotFoundException` global handler stops raw `Exception` throws from surfacing as opaque 500s, which confused the mobile app into generic retry loops
+- Atomic DB operations (`ExecuteUpdateAsync`, `ON CONFLICT DO NOTHING`, transactions) prevent subtle score/state corruption under concurrent play
+
+> Issue closed after 75 min
+
+---
+
+## Fix: User 2 stuck in infinite role screen — 2026-05-13
+
+### Changed
+- `Program.cs`: Added `.AddJsonProtocol(camelCase)` to `AddSignalR()` — SignalR's `JsonHubProtocol` was serialising with PascalCase defaults, so `GameStarted` arrived as `{ "Status": "InGame", "Members": [...] }` while `applyServerState` destructured camelCase keys; both `status` and `members` were `undefined`, silently no-oping every hub push for non-owner players
+- `context/GameContext.jsx`: Added `lastServerMembersRef` to cache the most recently received member list; added `useEffect([username, role])` that applies the role from cache the moment `getUser()` resolves — fixes the race condition where `usernameRef.current` is still `null` when the `GameStarted` hub event fires
+
+### Rationale
+- The party owner was unaffected because `handleStart()` calls `triggerPoll()` immediately after `startGame()`, hitting the REST endpoint (which correctly returns camelCase via `AddControllers().AddJsonOptions()`) — no dependency on the SignalR push
+- The 30-second REST fallback eventually fixed user 2 (~30 s delay), making the bug look "infinite" during testing
+- The `lastServerMembersRef` approach avoids an extra network round-trip and resolves the role within milliseconds of username loading (typically < 100 ms after mount)
+
+> Issue closed after 30 min
+
+---
+
+## Feat: SignalR real-time push — 2026-05-13
+
+### Changed
+- `Program.cs`: Added `OnMessageReceived` JWT handler so SignalR WebSocket handshakes can authenticate via `?access_token=` query parameter (WebSockets cannot send HTTP headers)
+- `Hubs/PartyHub.cs`: Added `[Authorize]`, replaced stub client-invocation methods with `JoinPartyRoom` / `LeavePartyRoom` group management; server-side push is now via `IHubContext`
+- `Controllers/Game/PartyController.cs`: Injected `IHubContext<PartyHub>`; `JoinParty`, `StartGame`, `VisitCheckpoint`, and `CompleteGame` now push the updated `GameStateResponse` (or completion notice) to the party's SignalR group after each mutation
+- `services/signalr.js` (new): Hub connection builder — JWT token factory, automatic reconnect, warning-level logging
+- `context/GameContext.jsx`: Replaced 3-second `setInterval` poll with a SignalR hub connection; `MemberJoined`, `GameStarted`, `CheckpointVisited` events call a shared `applyServerState()` function; 30-second fallback poll retained for reconnection resilience; connection is torn down and `LeavePartyRoom` invoked on unmount
+- `package.json`: Added `@microsoft/signalr` (10 packages, Expo SDK 54 WebSocket compatible)
+
+### Rationale
+- At 10k users / 20-player parties the old 3-second poll produced ~3,300 DB round-trips per second — SignalR pushes state only on actual changes, eliminating ~95% of that load
+- The hub was already scaffolded (`AddSignalR`, `/hubs/party` mapped) but never connected end-to-end; this wires it up fully
+- Full `GameStateResponse` is pushed on each event so the client update path is identical to the former poll — no new client state shape to maintain
+- 30-second fallback poll ensures eventual consistency if the WebSocket drops on flaky mobile networks
+
+> Issue closed after 0 min
+
+---
+
+## Fix: Mobile/backend flow audit — 2026-05-13
+
+### Changed
+- `GameContext.jsx`: Party `completeGame()` guard no longer skips the API call when `pendingVisits` is empty — a party game with 0 checkpoint visits now correctly marks the party as "Completed"
+- `QuizController.cs`: Removed `isCorrect` from `GET /api/game/quiz/question` response — answer correctness is no longer visible in the network response
+- `QuizController.cs`: Added `POST /api/game/quiz/answer` — server-side answer verification returns `{ correct, points }`; quiz score is now server-validated instead of client-calculated
+- `QuizPage.jsx`: Updated to call `POST /api/game/quiz/answer` on submit instead of reading `isCorrect` locally
+- `partyApi.js`: Added `submitQuizAnswer()`; updated `getZones()` → `/api/game/map/zones` and `getBoundaries()` → `/api/game/map/boundaries` (full geometry, replaces minimal endpoints)
+- `MapPage.jsx`: Replaced three raw `apiFetch()` calls with the exported `getZones()`, `getBoundaries()`, `getCheckpoints()` helpers; removed unused `apiFetch` import
+- `MapPage.jsx`: `zoneCount` cap now sorts zones by proximity to the player before slicing, so the nearest N zones are selected instead of the first N by DB order
+- `PartyRepository.cs`: `CompleteGameAsync` now writes `PartyMember.Score` for the completing player (`checkpoints * 10 + quizScore`)
+- `ZoneController.cs` (game): Deleted — `GET /api/game/zones` was redundant with `GET /api/game/map/zones`
+- `BoundaryController.cs` (game): Deleted — `GET /api/game/boundaries` was redundant with `GET /api/game/map/boundaries`
+- `agent_docs/api_endpoints.md`: Added full documentation for map, sensor, quiz, party, and leaderboard endpoints; updated quick reference table
+
+### Rationale
+- Party completion guard bug would leave parties in "InGame" forever if a player bailed immediately after the host started
+- Exposing `isCorrect` allowed any player to cheat by reading the quiz question network response; server-side validation closes that hole
+- `MapPage` was bypassing the established API helper layer, making the code inconsistent and harder to maintain
+- Zone cap by DB order meant players could be assigned zones on the opposite side of the arboretum when a cap was configured
+- `PartyMember.Score` was an entity field that had existed but was never written — leaderboard per-party scores were always 0
+- Consolidating to the `/map/` endpoints removes two redundant controllers and one confusing endpoint split
+
+> Issue closed after 0 min
+
+---
+
+1. [Feature: UserStatistics table + completion receipt](#feature-userstatistics-table--completion-receipt--2026-05-11)
+1. [Fix: quiz timing, real questions, solo stats](#fix-quiz-timing-real-questions-solo-stats--2026-05-10)
+1. [Mobile: Performance & security hardening](#mobile-performance--security-hardening--2026-05-10)
+1. [Feature: Pending element submission & admin approval flow](#feature-pending-element-submission--admin-approval-flow--2026-05-07)
+2. [Mobile: Camera flow — iOS/Android hardening](#mobile-camera-flow--iosandroid-hardening--2026-05-07)
+2. [Mobile: Fix camera task — camera opens and full photo flow works](#mobile-fix-camera-task--2026-05-07)
+2. [Seed: Chania Old Town elements and sensors](#seed-chania-old-town-elements-and-sensors--2026-05-07)
+3. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
 1. [#64 PopUp database connection](#64-popup-database-connection--2026-05-11)
 2. [Mobile: PopUp — speech bubble pointer Rectangle 18 & 19](#58-mobile-popup--speech-bubble-pointer-rectangle-18--19--2026-05-10)
 2. [Mobile: PopUp component (mascot notification)](#58-mobile-popup-component-mascot-notification--2026-05-08)
-2. [Docs: End-user guide and deployment guide](#docs-end-user-guide-and-deployment-guide--2026-05-03)
 2. [Mobile: Supabase photo upload + SonarQube gitignore](#mobile-supabase-photo-upload--sonarqube-gitignore--2026-04-30)
 3. [Dashboard: Rename nav items — Overview → Arboretum Map Overview, Arboretum Map → Game Map](#dashboard-rename-nav-items--2026-04-29)
 4. [Dashboard: Log Out button in navbar](#dashboard-log-out-button-in-navbar--2026-04-29)
@@ -32,6 +220,197 @@
 2. [Admin User Management](#56admin-user-management--2026-04-28)
 3. [#55 SonarQube CI Stage](#55-sonarqube-ci-stage--2026-04-28)
 4. [#30 GetLobbyMembers](#30-getlobbymembers--2026-04-24)
+
+## Feature: UserStatistics table + completion receipt — 2026-05-11 09:00
+
+### Added
+- **`UserStatistics` entity** — dedicated table (1-to-1 with User) tracking `CheckpointsVisited`, `PicturesTaken`, `PartiesJoined`, `GamesPlayed`, `TotalPoints`. Migration `AddUserStatistics` creates the table; `SoloScore` removed from Users.
+- **`GET /api/game/users/stats`** — returns own stats; **`GET /api/game/users/stats/{username}`** — returns any user's stats (for viewing other profiles).
+- **Completion receipt screen** — `AllCheckpointsCompletePage` now shows a restaurant-bill breakdown: checkpoints × 10 pts, quiz bonus, total. Styled as a torn receipt card.
+- **Real stats on Profile** — `ProfilePage` fetches `getUserStats` on focus; `StatisticsCard` now renders all 5 fields in a 2-column grid with a full-width "Total points" accent row.
+
+### Changed
+- `PartyRepository.CompleteGameAsync` now upserts `UserStatistics` instead of writing to `PartyMember.Score`.
+- `PartyService.JoinParty` increments `PartiesJoined` when a new member joins a party.
+- `UserRepository.GetLeaderboardAsync` reads `UserStatistics.TotalPoints` directly — no more multi-table sum.
+- Removed `SoloScore` from `User` entity; `UserService.AddSoloScoreAsync` replaced by `AddGameStatsAsync`.
+
+### Rationale
+- Single source of truth for user stats instead of scattered columns and runtime aggregation.
+- Leaderboard query is now a simple join + single column read rather than a cross-table sum.
+
+> Issue closed after 60 min
+
+---
+
+## Fix: quiz timing, real questions, solo stats — 2026-05-10 20:30
+
+### Fixed
+- **Timing bug**: `AllCheckpointsComplete` was showing before the quiz screen because `useEffect` on `postQuizZoneId` fired synchronously when the state was set. Replaced with `useFocusEffect` + a ref so zone advancement only runs when `MapPage` regains focus after the quiz — never before. `QuizResultPage` still handles the all-zones-done case directly (navigates to `AllCheckpointsComplete` without returning to map).
+
+### Added
+- **Real quiz questions**: `Quizzes`, `Questions`, `Answers` tables created via migration `20260510202138_AddQuizQuestionAnswer`. Seeded 10 sustainability questions (4 answers each, 1 correct). `GET /api/game/quiz/question` returns a random question with shuffled answers.
+- **`QuizPage`** now fetches a real question from the API on mount; shows a loading spinner while fetching; Submit button disabled until an answer is selected; countdown pauses until question loads.
+- **Solo player stats**: `User.SoloScore` column added (`20260510202730_AddUserSoloScore`). `POST /api/game/users/solo/complete` awards `checkpointCount × 10 + quizScore` to the user's `SoloScore`. Leaderboard now sums `SoloScore` alongside party-based points. `GameContext.completeGame` calls the solo endpoint when `partyId` is null.
+
+### Rationale
+- `useFocusEffect` fires on screen focus events (navigation stack changes), not on React state changes, making it the correct hook for "do X after returning from another screen."
+- Seed data embedded in the migration so the tables are usable immediately after `dotnet ef database update` — no separate seed command needed.
+- `SoloScore` column is simpler than creating a solo party record; the leaderboard already sums multiple score sources so adding one more column is low-friction.
+
+> Issue closed after 120 min
+
+---
+
+## Mobile + Backend: Player avatars — 2026-05-10 13:00
+
+### Added
+- `User.AvatarId` (int, default 1) — migration `20260510101043_AddUserAvatarId` adds the column; existing rows default to 0, which the client maps to avatar 1.
+- `frontend/mobile/utils/avatars.js` — `AVATAR_MAP` (1–7) and `getAvatar(avatarId)` helper; `avatarId` outside the valid range falls back to avatar 1.
+
+### Changed
+- `GameLoginResponse`, `GameSignUpResponse` — include `AvatarId` so the session is populated on login/signup.
+- `UpdateProfileRequest` — accepts optional `AvatarId` (1–7); values outside range are ignored by the service.
+- `UpdateProfileResponse` — returns updated `AvatarId`.
+- `FriendDto` — includes `AvatarId` from the friend's user record.
+- `LeaderboardEntryDto` — includes `AvatarId`.
+- `UserService` — `UpdateProfileAsync` validates and saves `AvatarId`; `LoginAsync` / `SignUpAsync` populate `AvatarId` in responses.
+- `FriendshipService` — `GetConnectionsAsync` / `GetRequestsAsync` project `AvatarId` into `FriendDto`.
+- `UserRepository.GetLeaderboardAsync` — projects `AvatarId` into `LeaderboardEntryDto`.
+- `session.js` `storeUser()` — persists `avatarId` to SecureStore alongside username/email.
+- `api.js` `updateProfile()` — forwards `avatarId` to the profile endpoint.
+- `UserRow.jsx` — accepts `avatarId` prop; replaces placeholder `<View>` with `<Image source={getAvatar(avatarId)}>`.
+- `FriendsTab.jsx` — passes `avatarId` to `UserRow` and `onViewProfile`.
+- `ProfilePage.jsx` — shows own avatar from session or viewed user's avatar from route param; `openProfile` forwards `avatarId` as nav param.
+- `EditProfilePage.jsx` — loads current `avatarId` from session; renders avatar picker grid (7 options, selected highlighted in blue); saves `avatarId` on profile update.
+- `LeaderboardPage.jsx` — passes `avatarId` to each `UserRow`.
+
+### Rationale
+- Storing an integer ID (not a URL or binary) is the correct pattern for predefined avatar sets — images are bundled in the app binary, no storage or CDN needed.
+- `AvatarId` lives on `User` (not a separate table) because it's a single, always-present profile attribute with no metadata of its own.
+- The `getAvatar` fallback to avatar 1 handles both `null` / `undefined` and the legacy `0` default from the migration, keeping the display safe across all existing and new accounts.
+
+> Issue closed after 45 min
+
+---
+
+## Mobile + Backend: Game map API endpoints — 2026-05-10 13:00
+
+### Added
+- `Goalz.API/Controllers/Game/MapController.cs` — new controller at `/api/game/map` with three read-only endpoints: `GET /api/game/map/zones`, `GET /api/game/map/boundaries`, `GET /api/game/map/checkpoints`. Returns full `ZoneDto` / `BoundaryDto` / `CheckpointDto` (including geometry) using the existing services — no new repositories or migrations.
+
+### Changed
+- `frontend/mobile/pages/MapPage.jsx` — replaced three `/api/dashboard/*` fetch calls with `/api/game/map/*` equivalents. Mobile map rendering no longer depends on the staff dashboard API.
+- `frontend/mobile/services/api/partyApi.js` `getCheckpoints()` — migrated from raw `fetch('/api/dashboard/checkpoints')` to `apiFetch('/api/game/map/checkpoints')` with auth headers; consistent with the rest of the party API.
+
+### Rationale
+- MapPage was borrowing dashboard endpoints (intended for the staff web app) because the game API lacked geometry-bearing responses. The new `/api/game/map/*` endpoints are the correct mobile-facing surface: authenticated players get map data through the game API, staff manage it through the dashboard API.
+- `getCheckpoints()` was the only remaining raw `fetch()` without auth headers or 401 handling in the party API layer.
+
+> Issue closed after 30 min
+
+---
+
+## Mobile: Performance & security hardening — 2026-05-10 13:00
+
+### Changed
+- **P1 — GameContext polling** (`context/GameContext.jsx`): interval now skips ticks when the app is in the background (`AppState.currentState !== 'active'`); immediately re-polls on foreground resume via `AppState.addEventListener`. Eliminates wasted requests while the phone screen is off or another app is in focus.
+- **P4 — FriendsTab staleness** (`components/FriendsTab.jsx`): added a 30-second stale window via `lastFetchedAt` ref — repeated focus events within the window skip the fetch, preventing duplicate API calls on tab-switch.
+- **S4 — MapPage fetch wrapper** (`pages/MapPage.jsx`): replaced three raw `fetch()` calls to `/api/dashboard/*` with `apiFetch()` so 401 responses trigger auto-logout consistently.
+- **S3 — Auth guard** (`App.js`): token check on mount (blank screen while SecureStore reads); `onReady` guard resets navigation to Login if no token present and the current route is not Login/SignUp.
+- **S2 — iOS ATS** (`app.config.js`): replaced `NSAllowsArbitraryLoads: true` with a localhost-only exception — production HTTPS traffic is now enforced on iOS.
+- **S5 — Debug log** (`pages/QuizPage.jsx`): removed unused `onPress={() => console.log('pressed')}` prop.
+- **S6 — Unmount cleanup** (`pages/LeaderboardPage.jsx`, `pages/ProfilePage.jsx`, `pages/EditProfilePage.jsx`): added `cancelled` flag to all three `useEffect` data-fetch blocks to prevent stale state updates after unmount.
+
+### Rationale
+- Polling without AppState check wastes battery and generates unnecessary backend load when the phone is backgrounded.
+- Raw `fetch()` in MapPage silently bypassed the 401 auto-logout path, making it inconsistent with the rest of the codebase and leaving unauthenticated users in a broken state.
+- `NSAllowsArbitraryLoads: true` disables Apple ATS globally — any HTTP connection on public WiFi is open to MITM interception.
+- FriendsTab was re-fetching on every focus event with no debounce; 30 s staleness window eliminates redundant calls during normal navigation.
+
+> Issue closed after 60 min
+
+---
+
+## Feature: Pending element submission & admin approval flow — 2026-05-07 13:00
+
+### Added
+- `Element.cs` — `IsApproved`, `SubmittedBy`, `CreatedAt` properties; migration `AddElementApprovalFields` backfills existing rows with `IsApproved = true` and `CreatedAt = now()`
+- `IElementRepository` / `ElementRepository` — `GetAllApprovedAsync`, `GetPendingAsync`, `FindNearbyPendingAsync` (PostGIS `ST_DWithin` 5 m deduplication), `ApproveAsync`, `RejectAsync`
+- `IElementService` / `ElementService` — `GetPendingAsync`, `ApproveAsync`, `RejectAsync`; `CreateAsync` now includes deduplication logic (updates existing pending row's `ImageUrl` instead of inserting a duplicate within 5 m with the same type+name); `ICheckpointService` dependency removed — element creation no longer auto-creates checkpoints
+- `Game/ElementController` — `POST /api/game/elements` now forces `IsApproved = false` and stamps `SubmittedBy` from the JWT `sub` claim
+- `Dashboard/ElementController` — `POST /api/dashboard/elements` forces `IsApproved = true`; new endpoints `GET /elements/pending`, `PUT /elements/{id}/approve`, `PUT /elements/{id}/reject`
+- `CheckpointService` — changed orphan-element walk from `GetAllAsync()` to `GetAllApprovedAsync()` so pending elements never appear as map checkpoints
+- `MapPage.jsx` — element checkpoints now complete on proximity tap (no photo modal); floating 📷 camera button added for Trailblazer/Explorer roles during game; `ElementModal`, `pendingCpRef`, `elementModal` state, and `useFocusEffect` checkpoint-deferral logic removed
+- `ImageUploadScreen.jsx` — success navigation no longer sends `cpCompleted` param (checkpoint completion is no longer tied to photo upload)
+- `overviewService.jsx` — `getPendingElements`, `approveElement`, `rejectElement` service methods
+- `PendingElements.jsx` — new dashboard page: table of pending submissions with photo thumbnail, name, type, submitter, date, GPS; Approve (green) and Reject (red, with confirm dialog) actions
+- `Navbar.jsx` / `Overview.jsx` — "Pending Elements" nav item and route wired up
+
+### Removed
+- `ElementModal.jsx` — deleted; element checkpoints no longer require a photo to complete
+
+### Rationale
+- Decoupling photo submission from checkpoint completion removes friction for players who don't have time to photograph; volunteers can still contribute element data via the floating camera button
+- Admin approval gate ensures only validated element photos appear on the live map
+- 5 m deduplication prevents multiple rows from the same physical object when a user retries a submission
+
+> Issue closed after 180 min
+
+---
+
+## Mobile: Camera flow — iOS/Android hardening — 2026-05-07 13:00
+
+### Fixed
+- `app.config.js` — added `expo-camera` and `expo-image-picker` config plugins; without these, `NSCameraUsageDescription` was absent from iOS `Info.plist` (crash on camera launch, App Store rejection) and `android.permission.CAMERA` was absent from `AndroidManifest.xml` (permission always denied on Android 13+); also added `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` to `ios.infoPlist` and `android.permission.CAMERA` to `android.permissions`
+- `usePhotoGallery.ts` — now calls `getCameraPermissionsAsync()` before requesting; if status is `denied` shows an `Alert` with "Open Settings" deep-link (`Linking.openSettings()`) so the user has a clear path to fix it; returns a typed `TakePhotoResult` (`success | cancelled | denied`) instead of `string | null`
+- `Camera.jsx` — handles the new typed result so `denied` and `cancelled` are distinguished; adds a `didRun` ref guard to prevent the camera from re-launching if the component remounts
+- `Camera.web.jsx` — added `catch` block to `handleShutter` so a failed `takePictureAsync` shows an in-UI error banner instead of an unhandled crash; uncommented the back button so users can exit the camera without taking a photo
+- `ImageUploadScreen.jsx` — moved the success `Alert` to after both the Supabase upload and `submitElement` succeed; previously it fired before the API call, giving a false confirmation when the submission failed
+- `supabase.js` — MIME type is now detected from the URI extension (supports HEIC, HEIF, PNG, JPEG) so iOS HEIC uploads are no longer sent with a mismatched `image/jpeg` content type; filename now includes a random 7-char suffix (`photo-{timestamp}-{random}.{ext}`) to prevent concurrent uploads from overwriting each other
+- `UserPhoto.jsx`, `ImageUploadScreen.jsx` — replaced hardcoded external Brave CDN URL used as fallback image with a local `require('../assets/icon.png')` to remove the network dependency in the failure state
+
+### Rationale
+- Config plugins are the only supported way for managed Expo to inject native permissions — manual `infoPlist` entries alone are insufficient without the plugin registrations
+- Returning a typed result from `usePhotoGallery` avoids encoding two different failure modes in a single `null`, making call sites able to give accurate user feedback
+- HEIC is the default capture format on iPhone 12+ with HEVC enabled; sending it as `image/jpeg` corrupts the upload
+- `Date.now()` filenames with upsert enabled are a silent data-loss bug in multi-user sessions
+
+> Issue closed after 30 min
+
+---
+
+## Mobile: Fix camera task — 2026-05-07
+
+### Fixed
+- `usePhotoGallery.ts` — replaced deprecated `ImagePicker.MediaTypeOptions.Images` (removed in expo-image-picker v17) with `mediaTypes: ['images']`; this was silently preventing the camera from opening
+- `ElementModal.jsx` — changed `animationType` from `"fade"` to `"none"` to prevent the modal's dismiss animation from blocking `launchCameraAsync` on iOS
+- `MapPage.jsx` — passes checkpoint GPS coordinates (`gps: \`${cp.latitude},${cp.longitude}\``) when navigating to the Camera screen so the uploaded element is saved with correct location instead of 0,0
+
+### Rationale
+- `MediaTypeOptions` was the root cause — undefined at runtime in expo-image-picker v17, causing `launchCameraAsync` to reject silently
+- The modal animation fix prevents a race condition where iOS refuses to present the camera picker while a modal is still mid-dismiss
+- GPS was wired through the Camera → UserPhoto → ImageUpload params chain but never populated from MapPage
+
+> Issue closed after 10 min
+
+---
+
+## Seed: Chania Old Town elements and sensors — 2026-05-07 17:00
+
+### Added
+- `tools/seed-chania/index.js` — Node.js CLI script that seeds 22 elements (Tree, Monument, Fountain, Garden types) and 8 sensors geocoded to Chania Old Town / Venetian Harbour, Crete
+- `tools/seed-chania/package.json` — module manifest with `node-fetch` dependency
+- Supports `--url <base>` and `--dry-run` flags; mirrors the `tools/seed-zones` pattern
+
+### Rationale
+- The game needed realistic Mediterranean seed data for demo/test purposes
+- Coordinates are SRID 4326 WGS84 points, matching `Point(longitude, latitude)` used by the existing Element and Sensor services
+- Dry-run mode lets you preview the full data set without hitting the API
+
+> Issue closed after 15 min
+
+---
 
 ## [#64] PopUp database connection — 2026-05-11
 

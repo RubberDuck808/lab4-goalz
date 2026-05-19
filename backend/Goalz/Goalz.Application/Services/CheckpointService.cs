@@ -31,7 +31,9 @@ public class CheckpointService : ICheckpointService
         var elementRefIds = checkpoints.Where(c => c.Type == "element").Select(c => c.ReferenceId).ToHashSet();
         var sensorRefIds  = checkpoints.Where(c => c.Type == "sensor").Select(c => c.ReferenceId).ToList();
 
-        var elementsById = (await _elementRepository.GetByIdsAsync(elementRefIds)).ToDictionary(e => e.Id);
+        var elementsById = (await _elementRepository.GetByIdsAsync(elementRefIds))
+            .Where(e => e.IsApproved)
+            .ToDictionary(e => e.Id);
         var sensorsById  = (await _sensorRepository.GetByIdsAsync(sensorRefIds)).ToDictionary(s => s.Id);
 
         var checkpointDtos = checkpoints.Select(cp =>
@@ -61,7 +63,7 @@ public class CheckpointService : ICheckpointService
         }).ToList();
 
         // Include elements that have no checkpoint row so they appear on the map
-        var allElements = await _elementRepository.GetAllAsync();
+        var allElements = await _elementRepository.GetAllApprovedAsync();
         var orphanDtos = allElements
             .Where(e => !elementRefIds.Contains(e.Id))
             .Select(e => new CheckpointDto

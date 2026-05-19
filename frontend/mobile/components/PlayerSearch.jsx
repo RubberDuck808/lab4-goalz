@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { searchUsers, sendFriendRequest } from '../services/api';
+import { getAvatar } from '../utils/avatars';
 
 const DEBOUNCE_MS = 400;
 
@@ -45,7 +46,9 @@ export default function PlayerSearch({ currentUsername }) {
     setSent(prev => ({ ...prev, [username]: res.success ? 'sent' : 'error' }));
   }
 
-  const showDropdown = query.trim().length >= 2;
+  const trimmed = query.trim();
+  const showHint = trimmed.length > 0 && trimmed.length < 2;
+  const showDropdown = trimmed.length >= 2;
 
   return (
     <View style={styles.wrapper}>
@@ -64,10 +67,14 @@ export default function PlayerSearch({ currentUsername }) {
         {loading && <ActivityIndicator size="small" color="#a1a1aa" />}
       </View>
 
+      {showHint && (
+        <Text style={styles.hintText}>Type 2 or more characters to search.</Text>
+      )}
+
       {showDropdown && (
         <View style={styles.dropdown}>
           {results.length === 0 && !loading ? (
-            <Text style={styles.emptyText}>No players found</Text>
+            <Text style={styles.emptyText}>No players found.</Text>
           ) : (
             results.map((user, idx) => {
               const state = sent[user.username];
@@ -75,15 +82,15 @@ export default function PlayerSearch({ currentUsername }) {
                 <React.Fragment key={user.username}>
                   {idx > 0 && <View style={styles.rowDivider} />}
                   <View style={styles.resultRow}>
-                    <View style={styles.avatar} />
+                    <Image source={getAvatar(user.avatarId)} style={styles.avatar} />
                     <Text style={styles.username}>{user.username}</Text>
                     <TouchableOpacity
                       style={[styles.addBtn, state === 'sent' && styles.addBtnSent]}
                       onPress={() => handleAdd(user.username)}
-                      disabled={!!state}
+                      disabled={state === 'sent' || state === 'sending'}
                     >
                       <Text style={[styles.addBtnText, state === 'sent' && styles.addBtnTextSent]}>
-                        {state === 'sent' ? 'Sent' : state === 'error' ? 'Retry' : 'Add'}
+                        {state === 'sent' ? 'Sent' : state === 'error' ? 'Try again' : 'Add'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -110,7 +117,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#f4f4f5',
   },
   input: {
     flex: 1,
@@ -119,6 +126,12 @@ const styles = StyleSheet.create({
     padding: 0,
   },
 
+  hintText: {
+    fontSize: 12,
+    color: '#a1a1aa',
+    marginTop: 4,
+    marginLeft: 4,
+  },
   dropdown: {
     marginTop: 4,
     borderWidth: 1,
@@ -161,7 +174,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1CB0F6',
   },
   addBtnSent: {
     backgroundColor: '#f4f4f5',

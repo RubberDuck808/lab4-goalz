@@ -4,25 +4,25 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export async function getZones() {
   try {
-    const response = await apiFetch(`${BASE_URL}/api/game/zones`, {
+    const response = await apiFetch(`${BASE_URL}/api/game/map/zones`, {
       headers: await authHeaders(),
     });
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, error: 'Could not fetch zones.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
 export async function getBoundaries() {
   try {
-    const response = await apiFetch(`${BASE_URL}/api/game/boundaries`, {
+    const response = await apiFetch(`${BASE_URL}/api/game/map/boundaries`, {
       headers: await authHeaders(),
     });
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, error: 'Could not fetch boundaries.' };
   } catch {
-    return { success: false, error: 'Could not reach the server.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -40,7 +40,7 @@ export async function createParty(name, config = {}) {
     if (response.status === 401) return { success: false, error: 'You are not logged in. Please log in again.' };
     return { success: false, error: text || 'Could not create party.' };
   } catch {
-    return { success: false, error: 'Could not reach the server. Check your connection.' };
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
   }
 }
 
@@ -82,7 +82,9 @@ export async function getGameState(partyId) {
 
 export async function getCheckpoints() {
   try {
-    const response = await fetch(`${BASE_URL}/api/dashboard/checkpoints`);
+    const response = await apiFetch(`${BASE_URL}/api/game/map/checkpoints`, {
+      headers: await authHeaders(),
+    });
     if (response.ok) return { success: true, data: await response.json() };
     return { success: false, data: [] };
   } catch {
@@ -98,4 +100,59 @@ export async function visitCheckpoint(partyId, checkpointId) {
   });
   if (response.ok) return { success: true };
   return { success: false, error: 'Could not visit checkpoint.' };
+}
+
+export async function getUserStats(username) {
+  try {
+    const url = username
+      ? `${BASE_URL}/api/game/users/stats/${encodeURIComponent(username)}`
+      : `${BASE_URL}/api/game/users/stats`;
+    const response = await apiFetch(url, { headers: await authHeaders() });
+    if (response.ok) return { success: true, data: await response.json() };
+    return { success: false, data: null };
+  } catch {
+    return { success: false, data: null };
+  }
+}
+
+export async function completeSoloGame(checkpointCount, quizScore = 0) {
+  try {
+    const response = await apiFetch(`${BASE_URL}/api/game/users/solo/complete`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ checkpointCount, quizScore }),
+    });
+    if (response.ok) return { success: true };
+    return { success: false, error: 'Could not save solo game.' };
+  } catch {
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
+  }
+}
+
+export async function submitQuizAnswer(questionId, answerId) {
+  try {
+    const response = await apiFetch(`${BASE_URL}/api/game/quiz/answer`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ questionId, answerId }),
+    });
+    if (response.ok) return { success: true, data: await response.json() };
+    return { success: false, error: 'Could not submit answer.' };
+  } catch {
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
+  }
+}
+
+export async function completeGame(partyId, checkpointIds, quizScore = 0) {
+  try {
+    const response = await apiFetch(`${BASE_URL}/api/game/party/${partyId}/complete`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ checkpointIds, quizScore }),
+    });
+    if (response.ok) return { success: true };
+    return { success: false, error: 'Could not save game.' };
+  } catch {
+    return { success: false, error: "Can't connect right now. Try again in a moment." };
+  }
 }

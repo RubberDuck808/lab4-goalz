@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import LogoIcon from '../assets/logo.svg';
+import { View, Text, Image, StyleSheet } from 'react-native';
 
-export default function Logo({ style }) {
+export default function Logo({ style, white = false }) {
   return (
     <View style={[styles.container, style]}>
-      <LogoIcon width={55} height={55} />
-      <Text style={styles.text}>loggin</Text>
+      <Image
+        source={require('../assets/icon_white.png')}
+        style={[styles.icon, white && styles.iconWhite]}
+        resizeMode="contain"
+      />
+      <Text style={[styles.text, white && styles.textWhite]}>loggin</Text>
     </View>
   );
 }
@@ -19,10 +22,19 @@ const styles = StyleSheet.create({
     height: 79,
     gap: 10,
   },
-
+  icon: {
+    width: 55,
+    height: 55,
+  },
+  iconWhite: {
+    tintColor: '#ffffff',
+  },
   text: {
     fontSize: 40,
     fontWeight: 'bold',
     color: '#C07F58',
+  },
+  textWhite: {
+    color: '#ffffff',
   },
 });

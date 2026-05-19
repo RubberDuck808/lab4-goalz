@@ -30,7 +30,7 @@ namespace Goalz.Data.Repositories
         {
             return await _context.Users
                 .Where(u => u.Role == Role.Staff || u.Role == Role.Admin)
-                .OrderBy(u => u.Name)
+                .OrderBy(u => u.Username)
                 .ToListAsync();
         }
 

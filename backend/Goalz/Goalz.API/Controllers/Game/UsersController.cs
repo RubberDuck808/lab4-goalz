@@ -32,6 +32,29 @@ namespace Goalz.Api.Controllers.Game
             return Ok(profile);
         }
 
+        [HttpPost("solo/complete")]
+        public async Task<IActionResult> SoloComplete([FromBody] SoloCompleteRequest request)
+        {
+            var username = User.Identity?.Name;
+            if (username == null) return Unauthorized();
+            await _userService.AddGameStatsAsync(username, request.CheckpointCount, request.QuizScore);
+            return Ok();
+        }
+
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetStats()
+        {
+            var username = User.Identity?.Name;
+            if (username == null) return Unauthorized();
+            return Ok(await _userService.GetStatsAsync(username));
+        }
+
+        [HttpGet("stats/{username}")]
+        public async Task<IActionResult> GetStatsByUsername(string username)
+        {
+            return Ok(await _userService.GetStatsAsync(username));
+        }
+
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {

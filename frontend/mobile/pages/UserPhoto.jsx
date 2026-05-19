@@ -3,15 +3,17 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 
-const PLACEHOLDER_IMAGE = 'https://imgs.search.brave.com/hRkvl3LnUzM9OaDvHhso94cLNguVIeXnscwD_ck_6hA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tYXJr/ZXRwbGFjZS5jYW52/YS5jb20vTUFEQ0FL/MXNGS3cvMS90aHVt/Ym5haWxfbGFyZ2Ut/MS9jYW52YS1iZWVj/aC10cmVlLU1BRENB/SzFzRkt3LmpwZw';
+const PLACEHOLDER_IMAGE = require('../assets/icon_white.png');
 
 export default function UserPhoto({ navigation, route }) {
   const imageUri = route?.params?.imageUri ?? null;
+  const imageSource = imageUri ? { uri: imageUri } : PLACEHOLDER_IMAGE;
 
   function handleUpload() {
     navigation.navigate('ImageUpload', {
-      imageUri: imageUri ?? PLACEHOLDER_IMAGE,
+      imageUri: imageUri,
       gps: route?.params?.gps,
+      fromGame: route?.params?.fromGame ?? false,
     });
   }
 
@@ -21,12 +23,12 @@ export default function UserPhoto({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <PageHeader title="Upload" />
+      <PageHeader title="Check your shot" />
 
       {/* Full-bleed photo */}
       <View style={styles.imageWrap}>
         <Image
-          source={{ uri: imageUri ?? PLACEHOLDER_IMAGE }}
+          source={imageSource}
           style={styles.image}
           resizeMode="cover"
         />
@@ -38,7 +40,7 @@ export default function UserPhoto({ navigation, route }) {
           <Text style={styles.btnText}>NEXT</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.retryBtn} onPress={handleRetry} activeOpacity={0.85}>
-          <Text style={styles.btnText}>RETRY</Text>
+          <Text style={styles.btnText}>TRY AGAIN</Text>
         </TouchableOpacity>
       </View>
 
@@ -71,10 +73,10 @@ const styles = StyleSheet.create({
   uploadBtn: {
     flex: 1,
     height: 48,
-    backgroundColor: '#58cc02',
+    backgroundColor: '#52B788',
     borderRadius: 13,
     borderBottomWidth: 4,
-    borderBottomColor: '#5da700',
+    borderBottomColor: '#2D6A4F',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -84,7 +86,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff4b4b',
     borderRadius: 13,
     borderBottomWidth: 4,
-    borderBottomColor: '#90461f',
+    borderBottomColor: '#CC2525',
     alignItems: 'center',
     justifyContent: 'center',
   },

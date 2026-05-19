@@ -86,6 +86,7 @@ sonarqube:analysis:
     - dev
     - main
 
+
 # ------------------------
 # BACKEND DEPLOY
 # ------------------------
@@ -130,7 +131,6 @@ backend:deploy:
   only:
     - main
     - dev
-    - feature/mobile-supabase-photo-upload
 
 # ------------------------
 # DASHBOARD DEPLOY
@@ -175,4 +175,20 @@ dashboard:deploy:
   only:
     - main
     - dev
-    - feature/mobile-supabase-photo-upload
+
+# ------------------------
+# MOBILE EAS UPDATE
+# ------------------------
+deploy:mobile:
+  stage: deploy
+  image: node:$NODE_VERSION
+  before_script:
+    - npm install -g eas-cli
+    - cd frontend/mobile
+    - npm ci
+  script:
+    - eas update --branch $CI_COMMIT_REF_NAME --message "$CI_COMMIT_TITLE" --platform ios --non-interactive
+    - eas update --branch $CI_COMMIT_REF_NAME --message "$CI_COMMIT_TITLE" --platform android --non-interactive
+  only:
+    - main
+    - dev

@@ -17,7 +17,7 @@ export const importDatasetService = {
                 "POST",
                 `/ImportDataset`, // Match your API method name
                 formData,
-                localStorage.getItem("jwtToken") ?? ""
+                localStorage.getItem("token") ?? ""
             );
 
             if (!response?.ok) {
@@ -43,7 +43,7 @@ export const importDatasetService = {
                 "POST",
                 `/ImportDataset/store`, // Match your API method name
                 JSON.stringify(records),
-                localStorage.getItem("jwtToken") ?? ""
+                localStorage.getItem("token") ?? ""
             );
 
             if (!response?.ok) {

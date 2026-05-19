@@ -6,6 +6,9 @@ export const ARBORETUM_REGION = {
 };
 
 export const VISIT_RADIUS_METERS = 30;
+// Photo spot: trigger radius for "arrived" detection and visible area on the map
+export const PHOTO_VISIT_RADIUS_METERS  = 20;
+export const PHOTO_AREA_DISPLAY_METERS  = 3;
 
 export function haversineMeters(a, b) {
   const R = 6371000;
@@ -56,6 +59,52 @@ export function getCpsForZone(zone, allCps, role) {
   });
 }
 
+// Generates a virtual photo-spot checkpoint at the zone centroid.
+// Used when a zone has no real checkpoints for Trailblazer/Explorer.
+export function generatePhotoSpot(zone) {
+  const centroid = zoneCentroid(zone);
+  if (!centroid) return null;
+  return {
+    id: `photo-spot-${zone.id}`,
+    type: 'photo',
+    zoneId: zone.id,
+    latitude: centroid.latitude,
+    longitude: centroid.longitude,
+    name: 'Photo Spot',
+  };
+}
+
+// Minimum distance in metres from `user` to a boundary.
+// Uses the full polygon bounding box when available (dashboard response),
+// or falls back to the centroid point (game API response).
+export function boundaryDistanceMeters(boundary, user) {
+  const geom = safeParseGeometry(boundary?.boundary);
+  if (geom) {
+    const rings = extractRings(geom);
+    if (rings.length && rings[0].length) {
+      let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      for (const ring of rings) {
+        for (const [lng, lat] of ring) {
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+          if (lng < minLng) minLng = lng;
+          if (lng > maxLng) maxLng = lng;
+        }
+      }
+      const clampedLat = Math.max(minLat, Math.min(maxLat, user.latitude));
+      const clampedLng = Math.max(minLng, Math.min(maxLng, user.longitude));
+      return haversineMeters(user, { latitude: clampedLat, longitude: clampedLng });
+    }
+  }
+  // Fall back to centroid distance (game API returns centroidLatitude/centroidLongitude)
+  const cLat = boundary?.centroidLatitude;
+  const cLng = boundary?.centroidLongitude;
+  if (cLat != null && cLng != null) {
+    return haversineMeters(user, { latitude: cLat, longitude: cLng });
+  }
+  return Infinity;
+}
+
 export function nearestLocked(fromZone, allZones, doneIds) {
   const locked = allZones.filter(z => !doneIds.has(z.id) && z.id !== fromZone.id);
   if (!locked.length) return null;
@@ -70,6 +119,6 @@ export function nearestLocked(fromZone, allZones, doneIds) {
 export function checkpointColor(cp) {
   if (cp.type === 'sensor') return '#6366f1';
   if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661';
-  if (cp.elementTypeId === 2) return '#3B82F6';
+  if (cp.elementTypeId === 2) return '#1CB0F6';
   return '#EF4444';
 }

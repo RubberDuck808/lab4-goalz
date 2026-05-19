@@ -1,14 +1,6 @@
-import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// expo-secure-store is native-only; fall back to localStorage on web
-const storage = Platform.OS === 'web'
-  ? {
-      setItemAsync:    async (key, val) => { localStorage.setItem(key, val); },
-      getItemAsync:    async (key)      => localStorage.getItem(key) ?? null,
-      deleteItemAsync: async (key)      => { localStorage.removeItem(key); },
-    }
-  : SecureStore;
+const storage = SecureStore;
 
 const USER_KEY  = 'login_user';
 const TOKEN_KEY = 'login_token';
@@ -20,9 +12,9 @@ export async function storeUser(user) {
 
   const profile = {
     username: user?.username ?? user?.Username ?? '',
-    name: user?.name ?? user?.Name ?? '',
     email: user?.email ?? user?.Email ?? '',
     createdAt: user?.createdAt ?? user?.CreatedAt ?? null,
+    avatarId: user?.avatarId ?? user?.AvatarId ?? 1,
   };
 
   if (!token) {
@@ -48,6 +40,10 @@ export async function clearUser() {
     storage.deleteItemAsync(USER_KEY),
     storage.deleteItemAsync(TOKEN_KEY),
   ]);
+}
+
+export async function storeToken(token) {
+  if (token) await storage.setItemAsync(TOKEN_KEY, token);
 }
 
 export async function updateStoredUser(patch) {

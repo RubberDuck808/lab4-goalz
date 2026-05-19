@@ -201,6 +201,181 @@ Body:    { username: string }   ← friend's username
 
 ---
 
+## Game — Map (`/api/game/map/`)
+
+No auth required.
+
+### GET `/api/game/map/zones`
+**Auth:** — | **File:** `Controllers/Game/MapController.cs`
+
+```
+200 OK:  [{ id: long, name: string, color: string, boundaryId: long?, boundary: GeoJSON geometry }]
+```
+
+---
+
+### GET `/api/game/map/boundaries`
+**Auth:** — | **File:** `Controllers/Game/MapController.cs`
+
+```
+200 OK:  [{ id: long, name: string, color: string, boundary: GeoJSON geometry }]
+```
+
+---
+
+### GET `/api/game/map/checkpoints`
+**Auth:** — | **File:** `Controllers/Game/MapController.cs`
+
+```
+200 OK:  [{ id: long, type: string, referenceId: long?, zoneId: long?, latitude: float, longitude: float, elementTypeId: int?, isGreen: bool?, name: string }]
+```
+
+`type` is `"sensor"` or `"element"`. For sensors, `referenceId` is the sensor ID.
+
+---
+
+## Game — Sensors (`/api/game/sensors/`)
+
+### GET `/api/game/sensors/{id}/data`
+**Auth:** — | **File:** `Controllers/Game/SensorDataController.cs`
+
+```
+Route:   id: long (sensor ID)
+200 OK:  [{ id: long, light: long, humidity: long, temp: double, timestamp: datetime }]
+```
+
+Returns all readings for a sensor, ordered newest-first.
+
+---
+
+## Game — Quiz (`/api/game/quiz/`)
+
+Controller has `[Authorize]` — both endpoints require JWT.
+
+### GET `/api/game/quiz/question`
+**Auth:** JWT | **File:** `Controllers/Game/QuizController.cs`
+
+```
+200 OK:  { id: long, text: string, answers: [{ id: long, text: string }] }
+404:     No questions in DB
+```
+
+Answers are shuffled randomly on each call. `isCorrect` is **not** included — use `POST /answer` to verify.
+
+---
+
+### POST `/api/game/quiz/answer`
+**Auth:** JWT | **File:** `Controllers/Game/QuizController.cs`
+
+```
+Body:    { questionId: long, answerId: long }
+200 OK:  { correct: bool, points: int }
+404:     Question/answer not found
+```
+
+Server-side answer verification. Returns 100 points for a correct answer, 0 for incorrect.
+
+---
+
+## Game — Party (`/api/game/party/`)
+
+Controller has `[Authorize]` and rate limiting ("party" policy).
+
+### POST `/api/game/party/create`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Body:    { name: string, groupSize?: int, boundaryId?: long, zoneCount?: int, checkpointsPerZone?: int, allowedRoles?: string[] }
+200 OK:  { id: long, name: string, code: long, members: [] }
+```
+
+---
+
+### POST `/api/game/party/join`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Body:    { code: long }
+200 OK:  { id: long, name: string, code: long, members: [string, ...] }
+404:     Not Found
+```
+
+---
+
+### GET `/api/game/party/{id}/lobby`
+**Auth:** JWT | **File:** `Controllers/Game/LobbyController.cs`
+
+```
+Route:   id: long
+200 OK:  { partyId: long, partyName: string, members: [string, ...], code: long, isReady: bool }
+```
+
+---
+
+### POST `/api/game/party/{id}/start`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Route:   id: long
+200 OK:  (no body)
+```
+
+Sets status to `"InGame"` and assigns roles to all members.
+
+---
+
+### GET `/api/game/party/{id}/state`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Route:   id: long
+200 OK:  { status: string, members: [{ username: string, role: string }], visitedCheckpointIds: long[],
+           groupSize?: int, boundaryId?: long, zoneCount?: int, checkpointsPerZone?: int, allowedRoles: string[] }
+```
+
+Polled every 3 s by the mobile client during party games.
+
+---
+
+### POST `/api/game/party/{id}/visit`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Route:   id: long
+Body:    { checkpointId: long }
+200 OK:  (no body)
+```
+
+Records a single checkpoint visit. **Not called by the mobile client** — it batches visits and submits them at game end via `/complete`.
+
+---
+
+### POST `/api/game/party/{id}/complete`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Route:   id: long
+Body:    { checkpointIds: long[], quizScore: int }
+200 OK:  (no body)
+```
+
+Marks party `"Completed"`, batch-inserts visited checkpoints, updates `UserStatistics` and `PartyMember.Score` for the submitting player.
+
+---
+
+## Game — Leaderboard (`/api/game/leaderboard`)
+
+### GET `/api/game/leaderboard`
+**Auth:** — | **File:** `Controllers/Game/LeaderboardController.cs`
+
+```
+200 OK:  [{ rank: int, username: string, totalPoints: long, avatarId: int? }]
+```
+
+Top 50 players ordered by `totalPoints` descending.
+
+---
+
 ## Game — Elements (`/api/game/elements/`)
 
 Controller has `[Authorize]` — all endpoints require JWT except `types`.
@@ -237,6 +412,20 @@ Body:    { elementName: string, elementType: string, latitude: float, longitude:
 | DELETE | `/api/dashboard/zones/{id}` | — | Delete zone |
 | POST | `/api/game/auth/login` | — RL | Player login → JWT |
 | POST | `/api/game/auth/signup` | — RL | Player registration → JWT |
+| GET | `/api/game/map/zones` | — | All zones with GeoJSON boundary |
+| GET | `/api/game/map/boundaries` | — | All boundaries with GeoJSON boundary |
+| GET | `/api/game/map/checkpoints` | — | All checkpoints (sensor + element) |
+| GET | `/api/game/sensors/{id}/data` | — | Sensor readings for a sensor |
+| GET | `/api/game/quiz/question` | JWT | Random quiz question (no isCorrect) |
+| POST | `/api/game/quiz/answer` | JWT | Submit answer → server returns correct + points |
+| POST | `/api/game/party/create` | JWT | Create party |
+| POST | `/api/game/party/join` | JWT | Join party by code |
+| GET | `/api/game/party/{id}/lobby` | JWT | Lobby state |
+| POST | `/api/game/party/{id}/start` | JWT | Start game, assign roles |
+| GET | `/api/game/party/{id}/state` | JWT | Polled game state |
+| POST | `/api/game/party/{id}/visit` | JWT | Record single checkpoint visit (unused by client) |
+| POST | `/api/game/party/{id}/complete` | JWT | End game, batch-submit checkpoints + score |
+| GET | `/api/game/leaderboard` | — | Top 50 players by total points |
 | GET | `/api/game/friends/search` | JWT | Search users by username |
 | GET | `/api/game/friends/connections/{username}` | — | Get user's friend list |
 | GET | `/api/game/friends/requests` | JWT | Get incoming friend requests |
