@@ -20,6 +20,9 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
   const [editForm, setEditForm] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [flyTo, setFlyTo] = useState(null);
+  const [locating, setLocating] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -83,6 +86,28 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
     setEditingId(null);
     setEditForm({});
     setCoordsPick(null);
+  };
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        setFlyTo(loc);
+        setLocating(false);
+        toast.success("Located! Your position is shown on the map.");
+      },
+      () => {
+        setLocating(false);
+        toast.error("Could not get your location — check browser permissions.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleAddSensor = async () => {
@@ -168,7 +193,7 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
 
         {/* Map + add panel (mirrors overview layout) */}
         <div className="w-full flex flex-col lg:flex-row items-stretch gap-3">
-          <div className="w-full h-[300px] sm:h-[375px] lg:flex-1">
+          <div className="w-full h-[300px] sm:h-[375px] lg:flex-1 relative">
             <Map
               showExtent={showAddPanel}
               setShowExtent={(v) => { if (v) setShowAddPanel(true); }}
@@ -177,7 +202,19 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
               closeModal={handleCloseAll}
               onCoordsPick={mapPickActive ? handleCoordsPick : null}
               pickedCoords={mapPickActive ? coordsPick : null}
+              userLocation={userLocation}
+              flyTo={flyTo}
             />
+            <button
+              onClick={handleLocateMe}
+              disabled={locating}
+              title="Show my location"
+              className="absolute bottom-14 right-3 z-10 w-9 h-9 bg-white border border-gray-300 rounded-lg shadow flex items-center justify-center text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition"
+            >
+              {locating
+                ? <i className="fa-solid fa-spinner fa-spin text-sm" />
+                : <i className="fa-solid fa-location-crosshairs text-sm" />}
+            </button>
           </div>
 
           {showAddPanel && (
@@ -217,6 +254,19 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
                     />
                   </div>
                 </div>
+                {userLocation && (
+                  <button
+                    onClick={() => setAddForm((f) => ({
+                      ...f,
+                      latitude: userLocation.lat.toFixed(6),
+                      longitude: userLocation.lng.toFixed(6),
+                    }))}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 text-sm text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition"
+                  >
+                    <i className="fa-solid fa-location-crosshairs text-xs" />
+                    Use my location
+                  </button>
+                )}
                 <p className="text-gray-500 text-center text-sm italic">
                   Click on the map to fill coordinates automatically.
                 </p>

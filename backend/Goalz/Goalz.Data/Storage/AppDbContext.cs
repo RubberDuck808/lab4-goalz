@@ -104,6 +104,7 @@ namespace Goalz.Data.Storage
 
             modelBuilder.Entity<Element>(entity =>
             {
+                entity.Property(e => e.Geom).HasColumnType("geometry");
                 entity.HasOne(e => e.ElementType)
                     .WithMany(et => et.Elements)
                     .HasForeignKey(e => e.ElementTypeId);

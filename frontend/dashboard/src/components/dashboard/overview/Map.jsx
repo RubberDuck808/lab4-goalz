@@ -22,6 +22,7 @@ export default function Map({
   onCoordsPick,
   pickedCoords,
   flyTo,
+  userLocation,
 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
@@ -29,6 +30,7 @@ export default function Map({
   const onCoordsPickRef = useRef(onCoordsPick)
   const onCheckpointClickRef = useRef(onCheckpointClick)
   const pickedMarkerRef = useRef(null)
+  const userLocationMarkerRef = useRef(null)
 
   useEffect(() => { onCoordsPickRef.current = onCoordsPick }, [onCoordsPick])
   useEffect(() => { onCheckpointClickRef.current = onCheckpointClick }, [onCheckpointClick])
@@ -168,6 +170,44 @@ export default function Map({
 
     markers.forEach((m) => clusterGroup.addLayer(m))
   }, [checkpoints])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    if (userLocationMarkerRef.current) {
+      map.removeLayer(userLocationMarkerRef.current)
+      userLocationMarkerRef.current = null
+    }
+
+    if (!userLocation) return
+
+    const icon = L.divIcon({
+      html: `
+        <style>
+          @keyframes ul-pulse {
+            0%   { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(3); opacity: 0; }
+          }
+          .ul-ring { animation: ul-pulse 1.5s ease-out infinite; }
+        </style>
+        <div style="position:relative;width:20px;height:20px;">
+          <div class="ul-ring" style="position:absolute;inset:-2px;border-radius:50%;background:#2563eb;"></div>
+          <div style="position:absolute;inset:2px;border-radius:50%;background:#2563eb;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);"></div>
+        </div>
+      `,
+      className: '',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    })
+
+    userLocationMarkerRef.current = L.marker(
+      [userLocation.lat, userLocation.lng],
+      { icon, zIndexOffset: 1000 }
+    )
+      .addTo(map)
+      .bindTooltip('You are here', { permanent: false, direction: 'top', offset: [0, -10] })
+  }, [userLocation])
 
   return (
     <div className="h-full w-full overflow-hidden flex flex-col">
