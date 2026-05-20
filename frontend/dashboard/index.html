@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src  'self' 'unsafe-eval' cdn.jsdelivr.net *.fontawesome.com;
+      style-src   'self' 'unsafe-inline' fonts.googleapis.com *.fontawesome.com;
+      font-src    'self' fonts.gstatic.com *.fontawesome.com;
+      img-src     'self' data: blob: *.tile.openstreetmap.org tile.openstreetmap.org *.supabase.co *.basemaps.cartocdn.com server.arcgisonline.com;
+      connect-src 'self' https://goalz-api-237169763190.europe-west1.run.app http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* *.fontawesome.com;
+    " />
     <title>Dashboard</title>
 
     <!--

@@ -161,7 +161,8 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
   const highlightTimer = useRef(null);
   const autoSaveRef    = useRef(false);
   const sensorIdRef    = useRef("");
-  const lastSavedReadingsRef = useRef(null);
+  const lastSavedReadingsRef  = useRef(null);
+  const lastHistoryUpdateRef  = useRef(0);
 
   useEffect(() => { autoSaveRef.current = autoSave; }, [autoSave]);
   useEffect(() => { sensorIdRef.current = sensorId; }, [sensorId]);
@@ -217,7 +218,7 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
         rawWindRv:    currentReadings.rawWindRv ?? 0,
         rawWindTmp:   currentReadings.rawWindTmp ?? 0,
         light:        currentReadings.light ?? 0
-      }), localStorage.getItem("token") ?? "");
+      }), sessionStorage.getItem("token") ?? "");
 
       if (!res?.ok) {
         if (res?.status === 404) {
@@ -286,10 +287,13 @@ export default function BLEScanner({ bleSelectedSensorId, setBleSelectedSensorId
       setHighlight(true);
       clearTimeout(highlightTimer.current);
       highlightTimer.current = setTimeout(() => setHighlight(false), 600);
-      setReadingHistory(prev => [
-        ...prev.slice(-(MAX_HISTORY - 1)),
-        { name: now.toLocaleTimeString(), temp: data.t, humidity: data.h, light: data.l ?? null, soilMoisture, windSpeed },
-      ]);
+      if (now.getTime() - lastHistoryUpdateRef.current >= 500) {
+        lastHistoryUpdateRef.current = now.getTime();
+        setReadingHistory(prev => [
+          ...prev.slice(-(MAX_HISTORY - 1)),
+          { name: now.toLocaleTimeString(), temp: data.t, humidity: data.h, light: data.l ?? null, soilMoisture, windSpeed },
+        ]);
+      }
       
       // Only auto-save if the sensor is registered in database (checked locally if sensor list is populated)
       if (autoSaveRef.current && currentId) {

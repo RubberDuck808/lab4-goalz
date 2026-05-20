@@ -1,8 +1,10 @@
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Goalz.Api.Controllers.Dashboard;
 
+[Authorize]
 [ApiController]
 [Route("api/dashboard/checkpoints")]
 public class CheckpointController : ControllerBase

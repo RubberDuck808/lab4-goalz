@@ -1,6 +1,7 @@
 using Goalz.Api.Hubs;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
+using Goalz.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -15,11 +16,19 @@ namespace Goalz.Api.Controllers.Game
     {
         private readonly IPartyService _partyService;
         private readonly IHubContext<PartyHub> _hub;
+        private readonly IUserRepository _userRepository;
+        private readonly IPartyRepository _partyRepository;
 
-        public PartyController(IPartyService partyService, IHubContext<PartyHub> hub)
+        public PartyController(
+            IPartyService partyService, 
+            IHubContext<PartyHub> hub,
+            IUserRepository userRepository,
+            IPartyRepository partyRepository)
         {
             _partyService = partyService;
             _hub = hub;
+            _userRepository = userRepository;
+            _partyRepository = partyRepository;
         }
 
         [Authorize]
@@ -34,6 +43,13 @@ namespace Goalz.Api.Controllers.Game
         [HttpGet("{id}")]
         public async Task<IActionResult> GetParty(int id)
         {
+            var username = User.Identity!.Name!;
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(id, user.Id))
+            {
+                return Forbid();
+            }
+
             var result = await _partyService.GetParty(id);
             if (result == null) return NotFound("Party not found");
             return Ok(result);
@@ -76,6 +92,13 @@ namespace Goalz.Api.Controllers.Game
         [HttpGet("{id}/state")]
         public async Task<IActionResult> GetGameState(long id)
         {
+            var username = User.Identity!.Name!;
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(id, user.Id))
+            {
+                return Forbid();
+            }
+
             var result = await _partyService.GetGameState(id);
             if (result == null) return NotFound("Party not found");
             return Ok(result);

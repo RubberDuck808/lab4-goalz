@@ -8,8 +8,19 @@ import ElementDetails from '../overview/ElementDetails';
 import Loading from '../../Loading/Loading';
 import { overviewService } from '../../../services/overviewService';
 
+function isAllowedImageUrl(url) {
+  if (!url) return false;
+  if (url.startsWith('blob:') || url.startsWith('data:')) return true;
+  try {
+    const { hostname } = new URL(url);
+    return hostname.endsWith('.supabase.co');
+  } catch {
+    return false;
+  }
+}
+
 function ImageCell({ imageUrl }) {
-  return imageUrl ? (
+  return isAllowedImageUrl(imageUrl) ? (
     <img src={imageUrl} alt="element" className="w-12 h-12 object-cover rounded-md border border-gray-200" />
   ) : (
     <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center text-gray-300">

@@ -1,9 +1,11 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Goalz.API.Controllers.Dashboard;
 
+[Authorize]
 [Route("api/dashboard/sensors/{sensorId}/popup")]
 [ApiController]
 public class PopUpController : ControllerBase

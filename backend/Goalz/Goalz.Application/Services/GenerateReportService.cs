@@ -1,30 +1,42 @@
-﻿using System.Text;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
-using System.IO;
+using System;
+using System.Collections.Generic;
 
 namespace Goalz.Core.Services
 {
     public class GenerateReportService : IGenerateReportService
     {
-        private ISensorDataRepository _sensorDataRepository;
+        private readonly ISensorDataRepository _sensorDataRepository;
         public GenerateReportService(ISensorDataRepository sensorDataRepository) 
         { 
             _sensorDataRepository = sensorDataRepository;
         }
 
-        public StringBuilder GenerateReport(GenerateReportDto settings)
+        public async IAsyncEnumerable<string> StreamReportAsync(GenerateReportDto settings)
         {
-            StringBuilder csvFile = new StringBuilder();
-
             ValidateSettings(settings);
 
             var dateTimeFrom = DateTime.SpecifyKind(settings.DateTimeFrom, DateTimeKind.Utc);
             var dateTimeTo = DateTime.SpecifyKind(settings.DateTimeTo, DateTimeKind.Utc);
 
-            csvFile.Append(RenderReportContent(dateTimeFrom, dateTimeTo, settings.reportContents));
+            if (settings.reportContents != null && settings.reportContents.SensorData && 
+                (settings.reportContents.Temperature || settings.reportContents.Humidity || settings.reportContents.Light))
+            {
+                yield return "Sensor Id;Temprature;Humidity;Light;Timestamp";
 
-            return csvFile;
+                var sensorsData = _sensorDataRepository.GetSensorsByTimeRangeAsync(dateTimeFrom, dateTimeTo);
+
+                await foreach (var data in sensorsData)
+                {
+                    var tempVal = settings.reportContents.Temperature ? data.Temp.ToString() : "";
+                    var humVal = settings.reportContents.Humidity ? data.Humidity.ToString() : "";
+                    var lightVal = settings.reportContents.Light ? data.Light.ToString() : "";
+                    var timestampVal = data.Timestamp.ToString("HH:mm:ss dd-MM-yyyy");
+
+                    yield return $"{data.SensorsId};{tempVal};{humVal};{lightVal};{timestampVal}";
+                }
+            }
         }
 
         private void ValidateSettings(GenerateReportDto settings)
@@ -48,58 +60,6 @@ namespace Goalz.Core.Services
             {
                 throw new ArgumentException("ReportType must be a valid value.");
             }
-        }
-
-        private StringBuilder RenderReportContent(DateTime dateTimeFrom, DateTime dateTimeTo, ReportSettingsDto settings)
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-
-            if (settings.SensorData && (settings.Temperature || settings.Humidity || settings.Light))
-            {
-                var result = RenderSensorData(dateTimeFrom, dateTimeTo, settings.Temperature, settings.Light, settings.Humidity);
-
-                stringBuilder.Append(result);
-            }
-
-            return stringBuilder;
-        }
-
-        private StringBuilder RenderNatureElement(DateTime dateTimeFrom, DateTime dateTimeTo, ReportSettingsDto settings)
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-
-
-
-            return stringBuilder;
-        }
-
-        private StringBuilder RenderSensorData(DateTime dateTimeFrom, DateTime dateTimeTo, bool temprature, bool light, bool humidity)
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("Sensor Id;Temprature;Humidity;Light;Timestamp");
-
-            var sensorsData = _sensorDataRepository.GetSensorsByTimeRangeAsync(dateTimeFrom, dateTimeTo).Result;
-
-            foreach (var data in sensorsData)
-            {
-                stringBuilder.Append(data.SensorsId);
-                stringBuilder.Append(";");
-
-                stringBuilder.Append(temprature ? data.Temp.ToString() : "");
-                stringBuilder.Append(";");
-
-                stringBuilder.Append(humidity ? data.Humidity.ToString() : "");
-                stringBuilder.Append(";");
-
-                stringBuilder.Append(light ? data.Light.ToString() : "");
-                stringBuilder.Append(";");
-
-                stringBuilder.Append(data.Timestamp.ToString("HH:mm:ss dd-MM-yyyy"));
-
-                stringBuilder.AppendLine();
-            }
-
-            return stringBuilder;
         }
     }
 }

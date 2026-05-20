@@ -36,7 +36,7 @@ namespace Goalz.Api.Services
                     new Claim(JwtRegisteredClaimNames.Sub, username),
                     new Claim("role", role),
                 ],
-                expires: DateTime.UtcNow.AddDays(30),
+                expires: DateTime.UtcNow.AddHours(24),
                 signingCredentials: creds
             );
             return new JwtSecurityTokenHandler().WriteToken(token);

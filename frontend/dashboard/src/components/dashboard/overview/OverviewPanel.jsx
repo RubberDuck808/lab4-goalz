@@ -303,7 +303,7 @@ export default function OverviewPanel({
             <p className="text-center text-text-secondary text-sm py-4">Loading data…</p>
           )}
           {error && (
-            <p className="text-center text-game-red text-sm py-4">Could not load data: {error.message}</p>
+            <p className="text-center text-game-red text-sm py-4">Failed to load data.</p>
           )}
 
           {/* Top-3 sensor list */}

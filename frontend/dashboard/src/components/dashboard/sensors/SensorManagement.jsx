@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DashboardNavBar from "../DashboardNavBar";
@@ -8,6 +8,33 @@ import Loading from "../../Loading/Loading";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 const defaultAddForm = { sensorName: "", latitude: "", longitude: "" };
+
+function getSensorHeight(sensor, editingId, selectedSensorId) {
+  if (selectedSensorId === sensor.id) return 460;
+  if (editingId === sensor.id) return 210;
+  return 165;
+}
+
+function getSensorVisibleItems(items, scrollTop, editingId, selectedSensorId) {
+  const gap = 12;
+  const viewportHeight = 600;
+  const tops = [];
+  let cumulative = 0;
+  for (const item of items) {
+    tops.push(cumulative);
+    cumulative += getSensorHeight(item, editingId, selectedSensorId) + gap;
+  }
+  const totalHeight = cumulative;
+  const visible = [];
+  for (let i = 0; i < items.length; i++) {
+    const top = tops[i];
+    const bottom = top + getSensorHeight(items[i], editingId, selectedSensorId);
+    if (bottom >= scrollTop - 200 && top <= scrollTop + viewportHeight + 200) {
+      visible.push({ item: items[i], top });
+    }
+  }
+  return { visible, totalHeight };
+}
 
 export default function SensorManagement({ setSelectedItem, setBleSelectedSensorId }) {
   const [sensors, setSensors] = useState([]);
@@ -24,6 +51,9 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
   const [userLocation, setUserLocation] = useState(null);
   const [flyTo, setFlyTo] = useState(null);
   const [locating, setLocating] = useState(false);
+  const [searchVal, setSearchVal] = useState('');
+  const [search, setSearch] = useState('');
+  const [scrollTop, setScrollTop] = useState(0);
 
   // Sensor data history graph states
   const [selectedSensorId, setSelectedSensorId] = useState(null);
@@ -36,6 +66,16 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
     soilMoisture: false,
     wind: false,
   });
+
+  useEffect(() => {
+    const h = setTimeout(() => setSearch(searchVal), 250);
+    return () => clearTimeout(h);
+  }, [searchVal]);
+
+  const filteredSensors = useMemo(
+    () => search.trim() ? sensors.filter(s => s.sensorName.toLowerCase().includes(search.toLowerCase())) : sensors,
+    [search, sensors]
+  );
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -332,37 +372,58 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
         </div>
 
         {/* List header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-800">All Sensors</h2>
             <p className="text-sm text-gray-500">
-              {sensors.length} sensor{sensors.length !== 1 ? "s" : ""} registered
+              {filteredSensors.length} sensor{filteredSensors.length !== 1 ? "s" : ""}{search.trim() ? " found" : " registered"}
             </p>
           </div>
-          <button
-            onClick={() => setShowAddPanel(true)}
-            className="bg-secondary-green text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 transition"
-          >
-            <i className="fa-solid fa-plus" />
-            Add Sensor
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              placeholder="Search sensors…"
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-52"
+            />
+            <button
+              onClick={() => setShowAddPanel(true)}
+              className="bg-secondary-green text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 transition"
+            >
+              <i className="fa-solid fa-plus" />
+              Add Sensor
+            </button>
+          </div>
         </div>
 
         {/* Sensor list */}
-        <div className="flex flex-col gap-3">
-          {!isLoading && sensors.length === 0 && (
-            <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-              No sensors found. Add one to get started.
-            </div>
-          )}
+        {!isLoading && sensors.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            No sensors found. Add one to get started.
+          </div>
+        )}
+        {!isLoading && sensors.length > 0 && filteredSensors.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            No sensors match your search.
+          </div>
+        )}
 
-          {sensors.map((sensor) => {
+        <div
+          style={{ height: 600, overflowY: 'auto', position: 'relative' }}
+          onScroll={e => setScrollTop(e.currentTarget.scrollTop)}
+        >
+          {(() => {
+            const { visible, totalHeight } = getSensorVisibleItems(filteredSensors, scrollTop, editingId, selectedSensorId);
+            return (
+              <div style={{ height: totalHeight, position: 'relative' }}>
+                {visible.map(({ item: sensor, top }) => {
             const coords = sensor.geo?.coordinates ?? [];
             const isEditing = editingId === sensor.id;
 
             return (
               <div
                 key={sensor.id}
+                style={{ position: 'absolute', top, left: 0, right: 0 }}
                 className={`bg-white rounded-lg shadow p-4 flex flex-col gap-3 transition-all ${
                   isEditing ? "ring-2 ring-indigo-400" : ""
                 }`}
@@ -598,7 +659,10 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
                 )}
               </div>
             );
-          })}
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

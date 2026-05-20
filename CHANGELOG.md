@@ -2,6 +2,10 @@
 
 ## Table of Contents
 
+1. [Fix: Block non-Supabase imageUrls in element components](#fix-block-non-supabase-imageurls-in-element-components--2026-05-20)
+1. [Fix: CSP img-src missing CARTO and Esri tile domains](#fix-csp-img-src-missing-carto-and-esri-tile-domains--2026-05-20)
+1. [Sweep 2: Security & Network Robustness](#sweep-2-security--network-robustness--2026-05-20)
+1. [Sweep 1: Dashboard Performance Optimizations](#sweep-1-dashboard-performance-optimizations--2026-05-20)
 1. [Feat: Show My Location button on arboretum map](#feat-show-my-location-button-on-arboretum-map--2026-05-20)
 1. [Unified persistent map — single Leaflet instance across all tabs](#unified-persistent-map--single-leaflet-instance-across-all-tabs--2026-05-19)
 1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
@@ -14,6 +18,103 @@
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
 ---
 
+
+## Fix: Block non-Supabase imageUrls in element components — 2026-05-20 15:10
+
+### Changed
+- `frontend/dashboard/src/components/dashboard/elements/ElementsPanel.jsx` — added `isAllowedImageUrl()` guard; elements with `imageUrl` from disallowed domains (e.g. `picsum.photos` test data) now render the placeholder icon instead of triggering a CSP violation.
+- `frontend/dashboard/src/components/dashboard/elements/ElementManagement.jsx` — same `isAllowedImageUrl()` guard applied to its own `ImageCell` component.
+- `frontend/dashboard/src/components/dashboard/overview/ElementDetails.jsx` — `displayImage` is now nulled out when `element.imageUrl` points to a non-Supabase domain, preventing the detail panel from also triggering a CSP block.
+
+### Rationale
+- A developer inserted test elements with `picsum.photos` placeholder URLs directly into the database; these don't pass the `img-src` CSP and caused console violations on the elements tab.
+- The frontend now defensively validates `imageUrl` against the allowed domain list (Supabase, blob:, data:) rather than blindly trusting API responses; this protects against any future bad data.
+- Adding `picsum.photos` to the CSP was rejected — it would permanently weaken the policy for a third-party random-image service with no business reason to be trusted.
+
+> Issue closed after 3 min
+
+---
+
+## Fix: CSP img-src missing CARTO and Esri tile domains — 2026-05-20 15:00
+
+### Changed
+- `frontend/dashboard/index.html` — added `*.basemaps.cartocdn.com` and `server.arcgisonline.com` to the `img-src` CSP directive so CARTO voyager tiles (used in `Map.jsx` and `ArboretumMap.jsx`) and Esri satellite tiles (`Map.jsx`) are no longer blocked by the browser.
+
+### Rationale
+- The CSP added in the security hardening pass only whitelisted OpenStreetMap tile servers; the map components also load from CARTO and ArcGIS which were omitted, causing a console CSP violation and broken map tiles.
+- Adding the two specific domains is the minimal fix; replacing the tile providers would require UI regressions with no security benefit.
+
+> Issue closed after 1 min
+
+---
+
+## Sweep 2: Security & Network Robustness — 2026-05-20
+
+### Audit
+Ran two parallel deep-dives across the dashboard (React + Vite) and mobile (Expo + React Native) frontends. Produced 13 findings. Cross-referenced against the codebase — 2 were already fixed (route code-splitting and the BLE timer), leaving 11 valid items addressed below.
+
+### Changed
+- `frontend/dashboard/src/services/authService.jsx` (+ 10 other dashboard service/component files) — JWT token storage migrated from `localStorage` to `sessionStorage`, eliminating the XSS-persistent token theft window (11 files updated).
+- `frontend/dashboard/src/hooks/useAPI.jsx` — all dashboard API calls wrapped with a 10 s `AbortController` timeout (`REQUEST_TIMEOUT_MS = 10_000`); timeout always cleared in `finally`.
+- `frontend/mobile/services/api/api.js` — introduced `fetchWithTimeout` helper (10 s `AbortController`); replaced all 7 bare `fetch()` calls and threaded it through `apiFetch`.
+- `frontend/dashboard/src/services/overviewService.jsx` — `getSensorHistory(id, limit = 500)` caps unbounded historical data fetches.
+- `frontend/dashboard/src/components/dashboard/map/ArboretumMap.jsx` — `useMemo` added for `zoneCheckpoints` and `searchResults` to prevent expensive re-filter loops during coordinate updates or scrolling.
+- `frontend/dashboard/src/components/dashboard/sensors/SensorManagement.jsx` — `filteredSensors` wrapped in `useMemo([search, sensors])`.
+- `frontend/dashboard/src/components/dashboard/ble/BLEScanner.jsx` — `setReadingHistory` gated behind a 500 ms throttle (`lastHistoryUpdateRef`) so rapid BLE notifications don't trigger a chart re-render on every packet.
+- `frontend/dashboard/index.html` — added strict `Content-Security-Policy` meta tag: `script-src` restricted to `'self'`, `cdn.jsdelivr.net`, Font Awesome; `img-src` limited to `'self'`, `data:`, `blob:`, OpenStreetMap, Supabase storage, CARTO, Esri (iterated after initial addition); `frame-ancestors 'none'` blocks clickjacking.
+- `.gitignore` / `frontend/mobile/env` — unstaged and gitignored the mobile env file to prevent Supabase anon key, Google Maps API key, and local IP from leaking into the repository.
+
+### Rationale
+- `sessionStorage` is cleared on tab close; a stolen token cannot survive across sessions or be exfiltrated by a cross-tab XSS payload.
+- `AbortController` prevents hung requests from silently blocking the UI when the backend is unreachable.
+- `useMemo` avoids re-running `.filter()` on every unrelated render (e.g. map move events).
+- BLE throttle caps chart re-renders at ≤2 per second regardless of sensor notification rate.
+- CSP eliminates the most common XSS escalation paths by restricting inline scripts and external resource origins. Browser extension errors (`FrameDoesNotExistError`, `encrypt() without a session key`) visible in the console are from a password manager extension — not application code.
+
+### Action required
+> **Rotate the Supabase anon key and Google Maps API key** in your cloud consoles — both were previously tracked in git history and must be considered compromised.
+
+> Issue closed after 0 min (no issue tracked)
+
+---
+
+## Sweep 1: Dashboard Performance Optimizations — 2026-05-20
+
+### Changed
+
+**Eliminated N+1 Queries**
+- `backend/Goalz/Goalz.Data/Repositories/OverviewRepositorycs.cs` — refactored the dashboard data loader to fetch the latest readings for all sensors in a single projected DB round-trip, eliminating up to 50,000 correlated subqueries per page load.
+
+**Backend Streaming**
+- `backend/Goalz/Goalz.Application/Interfaces/ISensorDataRepository.cs` / `SensorDataRepository.cs` — `GetSensorsByTimeRangeAsync` changed from `Task<IEnumerable<SensorData>>` (full buffer) to `IAsyncEnumerable<SensorData>` streamed via `.AsAsyncEnumerable()`.
+- `backend/Goalz/Goalz.Application/Services/GenerateReportService.cs` — updated to `await foreach` so CSV/JSON report rows stream sequentially without buffering.
+
+**Double-Layer Caching**
+- `backend/Goalz/Goalz.Application/Services/ZoneService.cs` / `BoundaryService.cs` — `IMemoryCache` injected; `GetAllAsync()` caches geometry for 60 s with sliding expiration; `Create`, `Update`, and `Delete` each call `_cache.Remove(key)` to invalidate on mutation.
+- `backend/Goalz/Goalz.API/Program.cs` — registered `AddMemoryCache()`; `Goalz.Core.csproj` added `Microsoft.Extensions.Caching.Memory` package reference.
+- `frontend/dashboard/src/services/overviewService.jsx` — module-level 60 s TTL cache wraps `getAllElements()`; all 7 mutation methods call `invalidateOverviewCache()`.
+
+**List Virtualisation & Input Debouncing**
+- `frontend/dashboard/src/components/dashboard/sensors/SensorManagement.jsx` — 250 ms debounced search, `filteredSensors` derived list, dynamic-height virtualised scroll container (only ~10 items rendered in the viewport at any time).
+- `frontend/dashboard/src/components/dashboard/elements/ElementsPanel.jsx` — same virtualisation applied to the elements list; fixed a runtime `ReferenceError` on `containerRef` by properly declaring the scroll container reference and reset hooks.
+
+**Leaflet Canvas Rendering**
+- `frontend/dashboard/src/components/dashboard/map/ArboretumMap.jsx` — `L.canvas({ padding: 0.5 })` shared across all `L.geoJSON()` zone layers, collapsing per-zone SVG nodes into a single `<canvas>` element (O(n) → O(1) layout cost).
+
+**Code Splitting**
+- `frontend/dashboard/vite.config.js` — `manualChunks` splits `leaflet` (~250 kB) and `recharts` (~400 kB) into separately cached bundles.
+- `frontend/dashboard/src/App.jsx` — `Overview` page lazy-loaded via `React.lazy` + `<Suspense>`, so Leaflet and Recharts are not parsed on the Login page.
+
+### Rationale
+- Target scale: 10,000 elements, 10,000 sensors, 1,000 game zones. The previous implementation issued up to 50k correlated subqueries per page load, buffered entire sensor datasets into memory before writing a single CSV byte, re-queried zone/boundary geometry on every request, re-fetched all records on every tab switch, rendered 1,000 SVG paths for zones, and shipped the full vendor bundle to the Login page.
+- Streaming removes the memory spike entirely; the first CSV byte is written before all rows are read.
+- `IMemoryCache` with 60 s TTL eliminates repeated geometry queries while still reflecting edits within a minute.
+- DOM virtualisation keeps the rendered DOM constant regardless of list size.
+- Code splitting cuts login-page parse time by ~650 kB.
+
+> Issue closed after 0 min (no issue tracked)
+
+---
 
 ## Feat: Show My Location button on arboretum map — 2026-05-20
 
