@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Fix: SonarQube — Dockerfile root user, recursive COPY, JWT NOSONAR](#fix-sonarqube--dockerfile-root-user-recursive-copy-jwt-nosonar--2026-05-20)
 1. [Fix: Block non-Supabase imageUrls in element components](#fix-block-non-supabase-imageurls-in-element-components--2026-05-20)
 1. [Fix: CSP img-src missing CARTO and Esri tile domains](#fix-csp-img-src-missing-carto-and-esri-tile-domains--2026-05-20)
 1. [Sweep 2: Security & Network Robustness](#sweep-2-security--network-robustness--2026-05-20)
@@ -18,6 +19,22 @@
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
 ---
 
+
+## Fix: SonarQube — Dockerfile root user, recursive COPY, JWT NOSONAR — 2026-05-20
+
+### Changed
+- `backend/Goalz/.dockerignore` — added exclusions for `appsettings.*.json`, `*.user`, `.env*`, `user-secrets.json`, and `.sonarqube/` so `COPY . .` in the build stage cannot pull sensitive local config into the image layer.
+- `backend/Goalz/Goalz.API/Dockerfile` — added `USER app` before `ENTRYPOINT`; the `mcr.microsoft.com/dotnet/aspnet:9.0` base image ships a built-in non-root `app` user (uid 1654), so no `RUN adduser` is needed.
+- `backend/Goalz/Goalz.API/Services/JwtService.cs` — added `// NOSONAR` on the `SymmetricSecurityKey` line; the finding is a false positive — the secret is read from `IConfiguration` (environment variable / user-secrets at runtime), never hardcoded.
+
+### Rationale
+- Running containers as root gives any process inside the container unnecessary host privileges if it escapes the container sandbox.
+- `COPY . .` without a complete `.dockerignore` can embed `appsettings.Development.json` or other local secrets into the image, which may be pushed to a registry.
+- SonarQube S6781 fires on any use of `GetBytes(variable)` near JWT APIs regardless of whether the value is hardcoded; suppressing at the call site documents the review decision without changing behaviour.
+
+> Issue closed after 5 min
+
+---
 
 ## Fix: Block non-Supabase imageUrls in element components — 2026-05-20 15:10
 
