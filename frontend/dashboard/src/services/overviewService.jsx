@@ -40,9 +40,14 @@ export const overviewService = {
     },
 
     getElementTypes: async () => {
-        const response = await APICall("GET", "/elements/types", null, localStorage.getItem("token") ?? "");
-        if (!response?.ok) throw new Error('Failed to fetch element types');
-        return await response.json();
+        try {
+            const response = await APICall("GET", "/elements/types", null, localStorage.getItem("token") ?? "");
+            if (!response?.ok) throw new Error('Failed to fetch element types');
+            return await response.json();
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
     },
 
     createElement: async (element) => {
@@ -121,5 +126,11 @@ export const overviewService = {
     rejectElement: async (id) => {
         const res = await APICall("PUT", `/elements/${id}/reject`, null, localStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to reject element');
+    },
+
+    getSensorHistory: async (id) => {
+        const res = await APICall("GET", `/sensors/${id}/data`, null, localStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to fetch sensor data history');
+        return res.json();
     },
 }

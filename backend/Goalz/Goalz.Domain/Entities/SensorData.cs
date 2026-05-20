@@ -7,8 +7,8 @@ public class SensorData
     public long Light { get; set; }
     public long Humidity { get; set; }
     public double Temp { get; set; }
-    public int SoilMoisture { get; set; }
-    public double Wind { get; set; }
+    public int? SoilMoisture { get; set; }
+    public double? Wind { get; set; }
     public int RawMoisture { get; set; }
     public DateTime Timestamp { get; set; }
 

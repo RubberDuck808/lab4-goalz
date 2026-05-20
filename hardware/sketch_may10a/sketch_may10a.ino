@@ -144,7 +144,7 @@ void loop() {
 
   if (!readSensors(data)) {
     Serial.println("Sensor read failed");
-    waitWithLed(2000);
+    waitWithLed(1000);
     return;
   }
 
@@ -167,7 +167,7 @@ void loop() {
   }
 
   Serial.println("----------------");
-  waitWithLed(2000);
+  waitWithLed(1000);
 }
 
 // ── Sensor reading ────────────────────────────────────────────────────────────
@@ -214,6 +214,10 @@ String createBleJson(SensorData data) {
   json += data.rawMoisture;
   json += ",\"l\":";
   json += lux;
+  json += ",\"windRv\":";
+  json += data.rawWindRv;
+  json += ",\"windTmp\":";
+  json += data.rawWindTmp;
   json += "}";
   return json;
 }

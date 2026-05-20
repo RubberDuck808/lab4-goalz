@@ -10,10 +10,12 @@ namespace Goalz.API.Controllers.Dashboard;
 public class SensorController : ControllerBase
 {
     private readonly ISensorService _sensorService;
+    private readonly ISensorDataService _sensorDataService;
 
-    public SensorController(ISensorService sensorService)
+    public SensorController(ISensorService sensorService, ISensorDataService sensorDataService)
     {
         _sensorService = sensorService;
+        _sensorDataService = sensorDataService;
     }
 
     [HttpPost]
@@ -73,5 +75,12 @@ public class SensorController : ControllerBase
         {
             return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
         }
+    }
+
+    [HttpGet("{id}/data")]
+    public async Task<IActionResult> GetSensorData(long id)
+    {
+        var data = await _sensorDataService.GetBySensorIdAsync(id);
+        return Ok(data);
     }
 }

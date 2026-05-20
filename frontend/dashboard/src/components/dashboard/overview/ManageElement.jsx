@@ -51,13 +51,13 @@ export default function ManageElement({ coordsPick, onCoordsConsumed, onSaved, o
     };
 
     return (
-        <div className='h-full bg-white rounded-lg shadow flex flex-col overflow-hidden'>
+        <div className='bg-white rounded-xl border border-border flex flex-col overflow-hidden'>
             <ToastContainer position="top-right" autoClose={3000} />
-            <div className='w-full h-[40px] bg-secondary-green flex items-center px-4'>
-                <i className="fa-solid fa-leaf text-white mr-2 text-sm" />
-                <p className='text-white text-sm font-bold'>Add Element</p>
+            <div className='w-full h-10 bg-game-green flex items-center px-4'>
+                <i className="fa-solid fa-leaf text-white mr-2 text-xs" />
+                <p className='text-white text-xs font-bold'>Add Element</p>
             </div>
-            <div className='grow-1 w-full overflow-auto'>
+            <div className='w-full overflow-auto'>
                 <NatureElement
                     formData={elementForm}
                     setFormData={setElementForm}

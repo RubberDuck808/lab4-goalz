@@ -61,7 +61,7 @@ public class SensorService : ISensorService
             Humidity = (long)sensorData.Humidity,
             SoilMoisture = CalculateSoilMoisture(sensorData.RawMoisture),
             RawMoisture = sensorData.RawMoisture,
-            Light = CalculateLight(sensorData.RawRed, sensorData.RawGreen, sensorData.RawBlue),
+            Light = sensorData.Light ?? CalculateLight(sensorData.RawRed, sensorData.RawGreen, sensorData.RawBlue),
             Wind = CalculateWindSpeed(sensorData.RawWindRv, sensorData.RawWindTmp),
             Timestamp = DateTime.UtcNow
         };

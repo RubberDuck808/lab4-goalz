@@ -10,22 +10,19 @@ import { getAllZones, createZone, updateZone, deleteZone } from '../../../servic
 import { getAllBoundaries, createBoundary, updateBoundary, deleteBoundary } from '../../../services/boundaryService'
 import { fetchOsmZones } from '../../../services/osmImportService'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from './boundarySnap'
-import LayerSidebar from './LayerSidebar'
-
 
 function buildStyle(zone, selected = false) {
   const isBoundary = zone._isBoundary === true
-  const noFill = isBoundary
   return {
     color: selected ? '#facc15' : (zone.color ?? '#33A661'),
     weight: selected ? 3 : (isBoundary ? 3 : 2),
-    fillOpacity: noFill ? 0 : (selected ? 0.25 : 0.15),
+    fillOpacity: isBoundary ? 0 : (selected ? 0.25 : 0.15),
     fillColor: zone.color ?? '#33A661',
   }
 }
 
 function checkpointColor(cp) {
-  if (cp.type === 'sensor') return '#ff24da'
+  if (cp.type === 'sensor') return '#6366f1'
   if (cp.elementTypeId === 1 || cp.isGreen) return '#33A661'
   if (cp.elementTypeId === 2) return '#3B82F6'
   return '#ef4444'
@@ -36,132 +33,96 @@ function getApiBase() {
 }
 
 function extractLatLng(pointLike, fallbackLat, fallbackLng) {
-  if (typeof fallbackLat === 'number' && typeof fallbackLng === 'number') {
+  if (typeof fallbackLat === 'number' && typeof fallbackLng === 'number')
     return { latitude: fallbackLat, longitude: fallbackLng }
-  }
-  if (pointLike?.type === 'Point' && Array.isArray(pointLike.coordinates) && pointLike.coordinates.length >= 2) {
+  if (pointLike?.type === 'Point' && Array.isArray(pointLike.coordinates) && pointLike.coordinates.length >= 2)
     return { latitude: pointLike.coordinates[1], longitude: pointLike.coordinates[0] }
-  }
-  if (typeof pointLike?.y === 'number' && typeof pointLike?.x === 'number') {
+  if (typeof pointLike?.y === 'number' && typeof pointLike?.x === 'number')
     return { latitude: pointLike.y, longitude: pointLike.x }
-  }
-  if (typeof pointLike?.latitude === 'number' && typeof pointLike?.longitude === 'number') {
+  if (typeof pointLike?.latitude === 'number' && typeof pointLike?.longitude === 'number')
     return { latitude: pointLike.latitude, longitude: pointLike.longitude }
-  }
   return null
 }
 
 function normalizeOverviewToCheckpoints(data) {
   const sensors = Array.isArray(data?.sensors) ? data.sensors : []
   const elements = Array.isArray(data?.element) ? data.element : []
-
-  const sensorPoints = sensors
-    .map((sensor) => {
-      const coords = extractLatLng(sensor?.geo, sensor?.latitude, sensor?.longitude)
-      if (!coords) return null
-      return {
-        id: `sensor-${sensor.id}`,
-        type: 'sensor',
-        referenceId: sensor.id,
-        zoneId: null,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        name: sensor.sensorName ?? `Sensor ${sensor.id}`,
-      }
-    })
-    .filter(Boolean)
-
-  const elementPoints = elements
-    .map((element) => {
-      const coords = extractLatLng(element?.geom, element?.latitude, element?.longitude)
-      if (!coords) return null
-      return {
-        id: `element-${element.id}`,
-        type: 'element',
-        referenceId: element.id,
-        zoneId: null,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        elementTypeId: element.elementTypeId,
-        isGreen: element.isGreen,
-        name: element.elementName ?? `Element ${element.id}`,
-      }
-    })
-    .filter(Boolean)
-
-  return [...sensorPoints, ...elementPoints]
+  return [
+    ...sensors.map((s) => {
+      const c = extractLatLng(s?.geo, s?.latitude, s?.longitude)
+      return c ? { id: `sensor-${s.id}`, type: 'sensor', referenceId: s.id, zoneId: null, latitude: c.latitude, longitude: c.longitude, name: s.sensorName ?? `Sensor ${s.id}` } : null
+    }).filter(Boolean),
+    ...elements.map((e) => {
+      const c = extractLatLng(e?.geom, e?.latitude, e?.longitude)
+      return c ? { id: `element-${e.id}`, type: 'element', referenceId: e.id, zoneId: null, latitude: c.latitude, longitude: c.longitude, elementTypeId: e.elementTypeId, isGreen: e.isGreen, name: e.elementName ?? `Element ${e.id}` } : null
+    }).filter(Boolean),
+  ]
 }
 
-// Convert a GeoJSON geometry to an editable Leaflet layer
 function geojsonToEditableLayer(geometry) {
   if (!geometry) return null
   const flip = (coords) => coords.map(([lng, lat]) => [lat, lng])
   switch (geometry.type) {
-    case 'Polygon':
-      return L.polygon(geometry.coordinates.map(flip))
-    case 'MultiPolygon':
-      return L.polygon(geometry.coordinates.map((poly) => flip(poly[0])))
-    case 'LineString':
-      return L.polyline(flip(geometry.coordinates))
-    default:
-      return null
+    case 'Polygon':      return L.polygon(geometry.coordinates.map(flip))
+    case 'MultiPolygon': return L.polygon(geometry.coordinates.map((p) => flip(p[0])))
+    case 'LineString':   return L.polyline(flip(geometry.coordinates))
+    default: return null
   }
 }
 
-export default function ArboretumMap() {
-  const mapRef              = useRef(null)
-  const mapInstance         = useRef(null)
-  const drawnItemsRef       = useRef(null)
-  const drawHandlerRef      = useRef(null)
-  const editHandlerRef      = useRef(null)
-  const zoneLayers          = useRef(new Map())
-  const boundaryRingRef     = useRef([])
-  const drawingRef          = useRef(false)
-  const checkpointClusterRef  = useRef(null)
-  const generatedLayersRef    = useRef([])
+const inputCls = 'w-full border border-border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-game-blue/30'
+const btnPrimary = 'bg-game-green border-b-[3px] border-game-green-border text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-50 cursor-pointer hover:opacity-90 transition'
+const btnBlue = 'bg-game-blue border-b-[3px] border-game-blue-border text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-50 cursor-pointer hover:opacity-90 transition'
+const btnSecondary = 'bg-surface border border-border text-text-primary text-sm font-bold px-4 py-2 rounded-xl cursor-pointer hover:bg-border transition'
+const btnDanger = 'bg-game-red border-b-[3px] border-game-red-dark text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-50 cursor-pointer hover:opacity-90 transition'
 
-  const [layerVisibility, setLayerVisibility] = useState({
-    boundary: true, zones: true, checkpoints: true,
-  })
+export default function ArboretumMap() {
+  const mapRef             = useRef(null)
+  const mapInstance        = useRef(null)
+  const drawnItemsRef      = useRef(null)
+  const drawHandlerRef     = useRef(null)
+  const editHandlerRef     = useRef(null)
+  const zoneLayers         = useRef(new Map())
+  const boundaryRingRef    = useRef([])
+  const drawingRef         = useRef(false)
+  const checkpointClusterRef = useRef(null)
+  const generatedLayersRef   = useRef([])
+
+  const [layerVisibility, setLayerVisibility] = useState({ boundary: true, zones: true, checkpoints: true })
   const layerVisibilityRef = useRef(layerVisibility)
   layerVisibilityRef.current = layerVisibility
 
-  const [zones,       setZones]       = useState([])
-  const [zoneCount,   setZoneCount]   = useState(0)
-  const [loadError,   setLoadError]   = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const [drawing,     setDrawing]     = useState(false)
+  const [zones, setZones]           = useState([])
+  const [zoneCount, setZoneCount]   = useState(0)
+  const [loadError, setLoadError]   = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [drawing, setDrawing]       = useState(false)
   const [vertexCount, setVertexCount] = useState(0)
+  const [checkpoints, setCheckpoints] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const [checkpoints,  setCheckpoints]  = useState([])
-  const [searchQuery,  setSearchQuery]  = useState('')
+  const [genCount, setGenCount]             = useState(4)
+  const [generatedZones, setGeneratedZones] = useState([])
+  const [generating, setGenerating]         = useState(false)
+  const [savingGen, setSavingGen]           = useState(false)
 
-  const [genCount,        setGenCount]      = useState(4)
-  const [generatedZones,  setGeneratedZones] = useState([])
-  const [generating,      setGenerating]   = useState(false)
-  const [savingGen,       setSavingGen]    = useState(false)
-
-  // create form
   const [pendingGeometry, setPendingGeometry] = useState(null)
-  const [createName,  setCreateName]  = useState('')
-  const [createMode,  setCreateMode]  = useState(null)
+  const [createName, setCreateName]   = useState('')
+  const [createMode, setCreateMode]   = useState(null)
   const [createColor, setCreateColor] = useState('#2D7D46')
-  const [saving,      setSaving]      = useState(false)
-  const createBoundaryIdRef = useRef(null)  // boundary to link a newly drawn zone to
+  const [saving, setSaving]           = useState(false)
+  const createBoundaryIdRef           = useRef(null)
 
-  // edit form
-  const [selectedZone,        setSelectedZone]        = useState(null)
-  const [editName,            setEditName]            = useState('')
-  const [editColor,           setEditColor]           = useState('#2D7D46')
+  const [selectedZone, setSelectedZone]               = useState(null)
+  const [editName, setEditName]                       = useState('')
+  const [editColor, setEditColor]                     = useState('#2D7D46')
   const [editPendingGeometry, setEditPendingGeometry] = useState(null)
-  const [editingVertices,     setEditingVertices]     = useState(false)
-  const [updating,            setUpdating]            = useState(false)
-  const [deleting,            setDeleting]            = useState(false)
-  const [confirmingDelete,    setConfirmingDelete]    = useState(false)
+  const [editingVertices, setEditingVertices]         = useState(false)
+  const [updating, setUpdating]                       = useState(false)
+  const [deleting, setDeleting]                       = useState(false)
+  const [confirmingDelete, setConfirmingDelete]       = useState(false)
+  const [importing, setImporting]                     = useState(false)
 
-  const [importing,   setImporting]   = useState(false)
-
-  // toast notifications
   const [toasts, setToasts] = useState([])
   const addToast = (message, type = 'success') => {
     const id = Date.now() + Math.random()
@@ -171,29 +132,19 @@ export default function ArboretumMap() {
 
   const loadCheckpoints = useCallback(async () => {
     const base = getApiBase()
-
     try {
-      const checkpointRes = await fetch(`${base}/api/dashboard/checkpoints`)
-      if (checkpointRes.ok) {
-        const checkpointData = await checkpointRes.json()
-        if (Array.isArray(checkpointData) && checkpointData.length > 0) {
-          setCheckpoints(checkpointData)
-          return
-        }
+      const res = await fetch(`${base}/api/dashboard/checkpoints`)
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0) { setCheckpoints(data); return }
       }
     } catch (_) {}
-
     try {
-      const overviewRes = await fetch(`${base}/api/dashboard/overview`)
-      if (!overviewRes.ok) throw new Error('Failed to fetch overview data')
-      const overviewData = await overviewRes.json()
-      setCheckpoints(normalizeOverviewToCheckpoints(overviewData))
-    } catch (_) {
-      setCheckpoints([])
-    }
+      const res = await fetch(`${base}/api/dashboard/overview`)
+      if (!res.ok) throw new Error()
+      setCheckpoints(normalizeOverviewToCheckpoints(await res.json()))
+    } catch (_) { setCheckpoints([]) }
   }, [])
-
-  // ── Layer helpers ─────────────────────────────────────────────────────────────
 
   function addZoneLayer(map, zone, onClick) {
     const isBoundary = zone._isBoundary === true
@@ -201,17 +152,9 @@ export default function ArboretumMap() {
     const layer = L.geoJSON(zone.boundary, { style: () => buildStyle(zone), pane })
     layer.bindTooltip(zone.name, { permanent: false, direction: 'center' })
     layer.on('click', (e) => { L.DomEvent.stopPropagation(e); onClick(zone) })
-    layer.on('mouseover', () => {
-      if (!zoneLayers.current.get(zone.id)?.selected)
-        layer.setStyle({ weight: 3, fillOpacity: isBoundary ? 0 : 0.25 })
-    })
-    layer.on('mouseout', () => {
-      if (!zoneLayers.current.get(zone.id)?.selected)
-        layer.setStyle(buildStyle(zone))
-    })
-    const visible = isBoundary
-      ? layerVisibilityRef.current.boundary
-      : layerVisibilityRef.current.zones
+    layer.on('mouseover', () => { if (!zoneLayers.current.get(zone.id)?.selected) layer.setStyle({ weight: 3, fillOpacity: isBoundary ? 0 : 0.25 }) })
+    layer.on('mouseout',  () => { if (!zoneLayers.current.get(zone.id)?.selected) layer.setStyle(buildStyle(zone)) })
+    const visible = isBoundary ? layerVisibilityRef.current.boundary : layerVisibilityRef.current.zones
     if (visible) layer.addTo(map)
     zoneLayers.current.set(zone.id, { layer, zone, selected: false })
     return layer
@@ -220,17 +163,10 @@ export default function ArboretumMap() {
   function extractBoundaryRing(zone) {
     const g = zone?.boundary
     if (!g) return null
-    const ringCoords = g.type === 'Polygon'
-      ? g.coordinates[0]
-      : g.type === 'MultiPolygon'
-        ? g.coordinates[0]?.[0]
-        : null
+    const ringCoords = g.type === 'Polygon' ? g.coordinates[0] : g.type === 'MultiPolygon' ? g.coordinates[0]?.[0] : null
     if (!ringCoords) return null
-    const closed = ringCoords.length > 1 &&
-      ringCoords[0][0] === ringCoords[ringCoords.length - 1][0] &&
-      ringCoords[0][1] === ringCoords[ringCoords.length - 1][1]
-    const coords = closed ? ringCoords.slice(0, -1) : ringCoords
-    return coords.map(([lng, lat]) => ({ lat, lng }))
+    const closed = ringCoords.length > 1 && ringCoords[0][0] === ringCoords[ringCoords.length - 1][0] && ringCoords[0][1] === ringCoords[ringCoords.length - 1][1]
+    return (closed ? ringCoords.slice(0, -1) : ringCoords).map(([lng, lat]) => ({ lat, lng }))
   }
 
   function reloadZones(map, onClickFn) {
@@ -259,39 +195,26 @@ export default function ArboretumMap() {
     clearGeneratedZones()
     drawHandlerRef.current?.disable()
     drawnItemsRef.current?.clearLayers()
-    setPendingGeometry(null)
-    setDrawing(false)
-    setVertexCount(0)
-
-    setSelectedZone(zone)
-    setEditName(zone.name)
-    setEditColor(zone.color)
-    setEditPendingGeometry(null)
-    setConfirmingDelete(false)
-    setSearchQuery('')
-
+    setPendingGeometry(null); setDrawing(false); setVertexCount(0)
+    setSelectedZone(zone); setEditName(zone.name); setEditColor(zone.color)
+    setEditPendingGeometry(null); setConfirmingDelete(false); setSearchQuery('')
     const e = zoneLayers.current.get(zone.id)
     if (e) { e.selected = true; e.layer.setStyle(buildStyle(zone, true)) }
   }
 
   const tryLoadZones = useCallback((map) => {
-    setLoadError(null)
-    setLoading(true)
+    setLoadError(null); setLoading(true)
     reloadZones(map, (zone) => handleZoneClickRef.current(zone))
       .then((zoneList) => {
         if (zoneList.length > 0) {
           const all = []
           map.eachLayer((l) => { if (l.getBounds) all.push(l) })
-          if (all.length) {
-            try { map.fitBounds(L.featureGroup(all).getBounds(), { padding: [40, 40] }) } catch (_) {}
-          }
+          if (all.length) { try { map.fitBounds(L.featureGroup(all).getBounds(), { padding: [40, 40] }) } catch (_) {} }
         }
       })
       .catch((err) => setLoadError(err.message))
       .finally(() => setLoading(false))
   }, [])
-
-  // ── Vertex edit helpers ───────────────────────────────────────────────────────
 
   function stopVertexEdit(save) {
     if (!editHandlerRef.current) return null
@@ -303,40 +226,23 @@ export default function ArboretumMap() {
     } else {
       editHandlerRef.current.revertLayers()
     }
-    editHandlerRef.current.disable()
-    editHandlerRef.current = null
-    drawnItemsRef.current?.clearLayers()
-    setEditingVertices(false)
+    editHandlerRef.current.disable(); editHandlerRef.current = null
+    drawnItemsRef.current?.clearLayers(); setEditingVertices(false)
     return geom
   }
 
-  // ── Map init ──────────────────────────────────────────────────────────────────
-
+  // Map init
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return
+    if (mapRef.current._leaflet_id) delete mapRef.current._leaflet_id
 
-    if (mapRef.current._leaflet_id) {
-      delete mapRef.current._leaflet_id
-    }
-
-    const map = L.map(mapRef.current, {
-      attributionControl: false,
-      zoomControl: false,
-      zoomSnap: 0.5,
-    }).setView([43.7270, -79.6099], 15)
-
+    const map = L.map(mapRef.current, { attributionControl: false, zoomControl: false, zoomSnap: 0.5 }).setView([43.7270, -79.6099], 15)
     map.createPane('zonePane').style.zIndex = '390'
     map.createPane('boundaryPane').style.zIndex = '410'
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: 'abcd',
-      maxZoom: 19,
-      updateWhenZooming: false,
-      updateWhenIdle: true,
-      keepBuffer: 1,
+      attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19, updateWhenZooming: false, updateWhenIdle: true, keepBuffer: 1,
     }).addTo(map)
-
     L.control.zoom({ position: 'bottomleft' }).addTo(map)
 
     const t = L.drawLocal.draw.handlers
@@ -349,61 +255,38 @@ export default function ArboretumMap() {
     map.addLayer(drawnItems)
     drawnItemsRef.current = drawnItems
 
-    // Checkpoint cluster layer
-    const cpCluster = L.markerClusterGroup({
-      showCoverageOnHover: false,
-      spiderfyOnMaxZoom: true,
-      zoomToBoundsOnClick: true,
-      disableClusteringAtZoom: 18,
-      maxClusterRadius: 40,
-    })
+    const cpCluster = L.markerClusterGroup({ showCoverageOnHover: false, spiderfyOnMaxZoom: true, zoomToBoundsOnClick: true, disableClusteringAtZoom: 18, maxClusterRadius: 40 })
     map.addLayer(cpCluster)
     checkpointClusterRef.current = cpCluster
 
-    drawHandlerRef.current = new L.Draw.Polygon(map, {
-      allowIntersection: true,
-      showArea: true,
-      shapeOptions: { color: '#33A661', weight: 2, fillOpacity: 0.2 },
-    })
+    drawHandlerRef.current = new L.Draw.Polygon(map, { allowIntersection: true, showArea: true, shapeOptions: { color: '#1CB0F6', weight: 2, fillOpacity: 0.2 } })
 
     map.on(L.Draw.Event.CREATED, (e) => {
       const drawnLatLngs = e.layer.getLatLngs()[0]
       const isSection = drawingRef.current === 'section'
       const rings = boundaryRingRef.current
       const firstPt = drawnLatLngs[0] ? { lat: drawnLatLngs[0].lat, lng: drawnLatLngs[0].lng } : null
-      const matchedRing = (isSection && firstPt)
-        ? (rings.find((r) => isInsideRing(firstPt, r)) ?? null)
-        : null
-      const finalRing = matchedRing
-        ? snapClosingSegment(drawnLatLngs, matchedRing)
-        : drawnLatLngs
-      const snapped = L.polygon(finalRing, { color: '#33A661', weight: 2, fillOpacity: 0.2 })
+      const matchedRing = (isSection && firstPt) ? (rings.find((r) => isInsideRing(firstPt, r)) ?? null) : null
+      const finalRing = matchedRing ? snapClosingSegment(drawnLatLngs, matchedRing) : drawnLatLngs
+      const snapped = L.polygon(finalRing, { color: '#1CB0F6', weight: 2, fillOpacity: 0.2 })
       drawnItems.addLayer(snapped)
       const coords = finalRing.map((p) => [p.lng, p.lat])
       coords.push([finalRing[0].lng, finalRing[0].lat])
-      const geom = { type: 'Polygon', coordinates: [coords] }
-      setPendingGeometry(geom)
-      setDrawing(false)
-      setVertexCount(0)
+      setPendingGeometry({ type: 'Polygon', coordinates: [coords] })
+      setDrawing(false); setVertexCount(0)
     })
     map.on(L.Draw.Event.DRAWSTOP,   () => { setDrawing(false); drawingRef.current = false; setVertexCount(0) })
     map.on(L.Draw.Event.DRAWVERTEX, () => {
       if (drawingRef.current === 'section') {
         const rings = boundaryRingRef.current
-        const handler = drawHandlerRef.current
-        const markers = handler?._markers
+        const markers = drawHandlerRef.current?._markers
         if (rings.length && markers?.length) {
           const last = markers[markers.length - 1]
           const ll = last.getLatLng()
           const pt = { lat: ll.lat, lng: ll.lng }
           let bestDist = Infinity, bestPt = null
-          for (const ring of rings) {
-            const near = nearestPointOnRing(ring, pt)
-            if (near.dist < bestDist) { bestDist = near.dist; bestPt = near.projected }
-          }
-          if (bestDist <= SNAP_TOLERANCE_METERS) {
-            last.setLatLng(L.latLng(bestPt.lat, bestPt.lng))
-          }
+          for (const ring of rings) { const near = nearestPointOnRing(ring, pt); if (near.dist < bestDist) { bestDist = near.dist; bestPt = near.projected } }
+          if (bestDist <= SNAP_TOLERANCE_METERS) last.setLatLng(L.latLng(bestPt.lat, bestPt.lng))
         }
       }
       setVertexCount((n) => n + 1)
@@ -411,13 +294,10 @@ export default function ArboretumMap() {
 
     const container = map.getContainer()
     const blockOutsideClick = (domEvent) => {
-      const rings = boundaryRingRef.current
-      if (drawingRef.current !== 'section' || !rings.length) return
+      if (drawingRef.current !== 'section' || !boundaryRingRef.current.length) return
       const ll = map.mouseEventToLatLng(domEvent)
-      const pt = { lat: ll.lat, lng: ll.lng }
-      if (!rings.some((ring) => isInsideRing(pt, ring))) {
-        domEvent.stopPropagation()
-        domEvent.preventDefault()
+      if (!boundaryRingRef.current.some((ring) => isInsideRing({ lat: ll.lat, lng: ll.lng }, ring))) {
+        domEvent.stopPropagation(); domEvent.preventDefault()
       }
     }
     container.addEventListener('mousedown', blockOutsideClick, true)
@@ -425,10 +305,7 @@ export default function ArboretumMap() {
 
     map.on('click', () => {
       setSelectedZone((prev) => {
-        if (prev) {
-          const e = zoneLayers.current.get(prev.id)
-          if (e) { e.selected = false; e.layer.setStyle(buildStyle(prev)) }
-        }
+        if (prev) { const e = zoneLayers.current.get(prev.id); if (e) { e.selected = false; e.layer.setStyle(buildStyle(prev)) } }
         return null
       })
     })
@@ -439,20 +316,14 @@ export default function ArboretumMap() {
     return () => {
       container.removeEventListener('mousedown', blockOutsideClick, true)
       container.removeEventListener('touchstart', blockOutsideClick, { capture: true })
-      generatedLayersRef.current.forEach(l => l.remove())
-      generatedLayersRef.current = []
-      checkpointClusterRef.current?.clearLayers()
-      checkpointClusterRef.current = null
-      map.remove()
-      mapInstance.current = null
-      zoneLayers.current.clear()
+      generatedLayersRef.current.forEach(l => l.remove()); generatedLayersRef.current = []
+      checkpointClusterRef.current?.clearLayers(); checkpointClusterRef.current = null
+      map.remove(); mapInstance.current = null; zoneLayers.current.clear()
     }
   }, [])
 
-  // Apply layer visibility toggles to the map
   useEffect(() => {
-    const map = mapInstance.current
-    if (!map) return
+    const map = mapInstance.current; if (!map) return
     zoneLayers.current.forEach(({ layer, zone }) => {
       const show = zone._isBoundary ? layerVisibility.boundary : layerVisibility.zones
       if (show && !map.hasLayer(layer)) layer.addTo(map)
@@ -460,90 +331,43 @@ export default function ArboretumMap() {
     })
   }, [layerVisibility])
 
-  const handleToggleLayer = (key) =>
-    setLayerVisibility((v) => ({ ...v, [key]: !v[key] }))
-
-  // ── Checkpoint fetch ──────────────────────────────────────────────────────────
+  useEffect(() => { loadCheckpoints() }, [loadCheckpoints])
 
   useEffect(() => {
-    loadCheckpoints()
-  }, [loadCheckpoints])
-
-  // ── Render checkpoint markers ─────────────────────────────────────────────────
-
-  useEffect(() => {
-    const cluster = checkpointClusterRef.current
-    if (!cluster) return
+    const cluster = checkpointClusterRef.current; if (!cluster) return
     cluster.clearLayers()
     if (!layerVisibility.checkpoints) return
     checkpoints.forEach((cp) => {
       if (cp.latitude == null || cp.longitude == null) return
       const color = checkpointColor(cp)
-      const icon = L.divIcon({
-        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.15)"></div>`,
-        className: '',
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-      })
+      const icon = L.divIcon({ html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.15)"></div>`, className: '', iconSize: [14, 14], iconAnchor: [7, 7] })
       L.marker([cp.latitude, cp.longitude], { icon }).addTo(cluster)
     })
   }, [checkpoints, layerVisibility.checkpoints])
 
-  // Escape key
   useEffect(() => {
     const onKey = (e) => {
       if (e.key !== 'Escape') return
-      if (editingVertices) {
-        stopVertexEdit(false)
-      } else if (drawing) {
-        drawHandlerRef.current?.disable()
-        drawnItemsRef.current?.clearLayers()
-        setPendingGeometry(null)
-        setEditPendingGeometry(null)
-        setDrawing(false)
-        setVertexCount(0)
-      } else if (selectedZone) {
-        const entry = zoneLayers.current.get(selectedZone.id)
-        if (entry) { entry.selected = false; entry.layer.setStyle(buildStyle(selectedZone)) }
-        setSelectedZone(null)
-      }
+      if (editingVertices) { stopVertexEdit(false) }
+      else if (drawing) { drawHandlerRef.current?.disable(); drawnItemsRef.current?.clearLayers(); setPendingGeometry(null); setEditPendingGeometry(null); setDrawing(false); setVertexCount(0) }
+      else if (selectedZone) { const entry = zoneLayers.current.get(selectedZone.id); if (entry) { entry.selected = false; entry.layer.setStyle(buildStyle(selectedZone)) }; setSelectedZone(null) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [drawing, selectedZone, editingVertices])
 
-  // ── Create ────────────────────────────────────────────────────────────────────
-
+  // Create
   const handleStartDraw = (mode) => {
-    // capture the active boundary before clearing selection
-    createBoundaryIdRef.current = (mode !== 'boundary' && selectedZone?._isBoundary)
-      ? selectedZone.id
-      : null
-    if (selectedZone) {
-      const e = zoneLayers.current.get(selectedZone.id)
-      if (e) { e.selected = false; e.layer.setStyle(buildStyle(selectedZone)) }
-      setSelectedZone(null)
-    }
-    const defaultColor = mode === 'boundary' ? '#1A5C2E' : '#2D7D46'
-    setPendingGeometry(null)
-    setCreateMode(mode)
-    setCreateColor(defaultColor)
-    drawnItemsRef.current?.clearLayers()
-    drawHandlerRef.current.enable()
-    mapInstance.current?.dragging.enable()
-    setDrawing(true)
-    drawingRef.current = mode
-    setVertexCount(0)
+    createBoundaryIdRef.current = (mode !== 'boundary' && selectedZone?._isBoundary) ? selectedZone.id : null
+    if (selectedZone) { const e = zoneLayers.current.get(selectedZone.id); if (e) { e.selected = false; e.layer.setStyle(buildStyle(selectedZone)) }; setSelectedZone(null) }
+    setPendingGeometry(null); setCreateMode(mode); setCreateColor(mode === 'boundary' ? '#1A5C2E' : '#2D7D46')
+    drawnItemsRef.current?.clearLayers(); drawHandlerRef.current.enable()
+    mapInstance.current?.dragging.enable(); setDrawing(true); drawingRef.current = mode; setVertexCount(0)
   }
 
   const handleCancelCreate = () => {
-    drawHandlerRef.current?.disable()
-    drawnItemsRef.current?.clearLayers()
-    setPendingGeometry(null)
-    setCreateMode(null)
-    setDrawing(false)
-    drawingRef.current = false
-    setVertexCount(0)
+    drawHandlerRef.current?.disable(); drawnItemsRef.current?.clearLayers()
+    setPendingGeometry(null); setCreateMode(null); setDrawing(false); drawingRef.current = false; setVertexCount(0)
   }
 
   const handleSaveCreate = async (e) => {
@@ -551,91 +375,41 @@ export default function ArboretumMap() {
     if (!createName.trim() || !pendingGeometry) return
     setSaving(true)
     try {
-      if (createMode === 'boundary') {
-        await createBoundary({ name: createName.trim(), color: createColor, boundary: pendingGeometry })
-      } else {
-        await createZone({
-          name: createName.trim(), color: createColor,
-          boundaryId: createBoundaryIdRef.current,
-          boundary: pendingGeometry,
-        })
-      }
+      if (createMode === 'boundary') await createBoundary({ name: createName.trim(), color: createColor, boundary: pendingGeometry })
+      else await createZone({ name: createName.trim(), color: createColor, boundaryId: createBoundaryIdRef.current, boundary: pendingGeometry })
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
-      setCreateName(''); setCreateMode(null); setCreateColor('#2D7D46')
-      setPendingGeometry(null)
-      drawnItemsRef.current?.clearLayers()
-      addToast(`"${createName.trim()}" saved`)
-      await loadCheckpoints()
+      setCreateName(''); setCreateMode(null); setCreateColor('#2D7D46'); setPendingGeometry(null); drawnItemsRef.current?.clearLayers()
+      addToast(`"${createName.trim()}" saved`); await loadCheckpoints()
     } catch (err) { addToast(err.message, 'error') }
     finally { setSaving(false) }
   }
 
-  // ── Edit ──────────────────────────────────────────────────────────────────────
-
+  // Edit
   const handleDeselect = () => {
     stopVertexEdit(false)
-    if (selectedZone) {
-      const e = zoneLayers.current.get(selectedZone.id)
-      if (e) { e.selected = false; e.layer.setStyle(buildStyle(selectedZone)) }
-    }
-    setSelectedZone(null)
-    setEditPendingGeometry(null)
-    setConfirmingDelete(false)
-    clearGeneratedZones()
-    drawHandlerRef.current?.disable()
-    drawnItemsRef.current?.clearLayers()
-    setDrawing(false)
-    setVertexCount(0)
+    if (selectedZone) { const e = zoneLayers.current.get(selectedZone.id); if (e) { e.selected = false; e.layer.setStyle(buildStyle(selectedZone)) } }
+    setSelectedZone(null); setEditPendingGeometry(null); setConfirmingDelete(false)
+    clearGeneratedZones(); drawHandlerRef.current?.disable(); drawnItemsRef.current?.clearLayers(); setDrawing(false); setVertexCount(0)
   }
 
   const handleEditVertices = () => {
-    const geom = selectedZone?.boundary
-    const layer = geojsonToEditableLayer(geom)
-    if (!layer) return
-
-    drawnItemsRef.current?.clearLayers()
-    drawnItemsRef.current?.addLayer(layer)
-    setEditPendingGeometry(null)
-
-    editHandlerRef.current = new L.EditToolbar.Edit(mapInstance.current, {
-      featureGroup: drawnItemsRef.current,
-    })
-    editHandlerRef.current.enable()
-    mapInstance.current?.dragging.enable()
-    setEditingVertices(true)
+    const layer = geojsonToEditableLayer(selectedZone?.boundary); if (!layer) return
+    drawnItemsRef.current?.clearLayers(); drawnItemsRef.current?.addLayer(layer); setEditPendingGeometry(null)
+    editHandlerRef.current = new L.EditToolbar.Edit(mapInstance.current, { featureGroup: drawnItemsRef.current })
+    editHandlerRef.current.enable(); mapInstance.current?.dragging.enable(); setEditingVertices(true)
   }
 
-  const handleDoneEditingVertices = () => {
-    const geom = stopVertexEdit(true)
-    if (geom) setEditPendingGeometry(geom)
-  }
-
-  const handleCancelEditingVertices = () => {
-    stopVertexEdit(false)
-    setEditPendingGeometry(null)
-  }
+  const handleDoneEditingVertices = () => { const geom = stopVertexEdit(true); if (geom) setEditPendingGeometry(geom) }
+  const handleCancelEditingVertices = () => { stopVertexEdit(false); setEditPendingGeometry(null) }
 
   const handleSaveEdit = async (e) => {
-    e.preventDefault()
-    if (!editName.trim() || !selectedZone) return
+    e.preventDefault(); if (!editName.trim() || !selectedZone) return
     setUpdating(true)
     try {
-      if (selectedZone._isBoundary) {
-        await updateBoundary(selectedZone.id, {
-          name: editName.trim(), color: editColor,
-          boundary: editPendingGeometry ?? undefined,
-        })
-      } else {
-        await updateZone(selectedZone.id, {
-          name: editName.trim(), color: editColor,
-          boundaryId: selectedZone.boundaryId ?? undefined,
-          boundary: editPendingGeometry ?? undefined,
-        })
-      }
+      if (selectedZone._isBoundary) await updateBoundary(selectedZone.id, { name: editName.trim(), color: editColor, boundary: editPendingGeometry ?? undefined })
+      else await updateZone(selectedZone.id, { name: editName.trim(), color: editColor, boundaryId: selectedZone.boundaryId ?? undefined, boundary: editPendingGeometry ?? undefined })
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
-      addToast(`"${editName.trim()}" saved`)
-      setSelectedZone(null); setEditPendingGeometry(null)
-      drawnItemsRef.current?.clearLayers()
+      addToast(`"${editName.trim()}" saved`); setSelectedZone(null); setEditPendingGeometry(null); drawnItemsRef.current?.clearLayers()
     } catch (err) { addToast(err.message, 'error') }
     finally { setUpdating(false) }
   }
@@ -645,35 +419,24 @@ export default function ArboretumMap() {
     setDeleting(true); setConfirmingDelete(false)
     const name = selectedZone.name
     try {
-      if (selectedZone._isBoundary) {
-        await deleteBoundary(selectedZone.id)
-      } else {
-        await deleteZone(selectedZone.id)
-      }
+      if (selectedZone._isBoundary) await deleteBoundary(selectedZone.id); else await deleteZone(selectedZone.id)
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
       setSelectedZone(null); drawnItemsRef.current?.clearLayers()
-      addToast(`"${name}" deleted`)
-      await loadCheckpoints()
+      addToast(`"${name}" deleted`); await loadCheckpoints()
     } catch (err) { addToast(err.message, 'error') }
     finally { setDeleting(false) }
   }
 
-  // ── OSM / export ──────────────────────────────────────────────────────────────
-
-  // ── Generated zone preview ────────────────────────────────────────────────────
-
+  // Generated zones
   function clearGeneratedZones() {
     generatedLayersRef.current.forEach(l => mapInstance.current?.removeLayer(l))
-    generatedLayersRef.current = []
-    setGeneratedZones([])
+    generatedLayersRef.current = []; setGeneratedZones([])
   }
 
   const handleGeneratePreview = async () => {
-    if (!selectedZone?._isBoundary) return
-    setGenerating(true)
+    if (!selectedZone?._isBoundary) return; setGenerating(true)
     try {
-      const base = import.meta.env.VITE_API_BASE_URL
-      const res = await fetch(`${base}/api/dashboard/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`)
+      const res = await fetch(`${getApiBase()}/api/dashboard/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`)
       if (!res.ok) throw new Error('Generation failed')
       const geometries = await res.json()
       setGeneratedZones(Array.isArray(geometries) ? geometries : [])
@@ -682,44 +445,30 @@ export default function ArboretumMap() {
   }
 
   const handleSaveGenerated = async () => {
-    if (!generatedZones.length || !selectedZone) return
-    setSavingGen(true)
+    if (!generatedZones.length || !selectedZone) return; setSavingGen(true)
     const count = generatedZones.length
     try {
-      for (let i = 0; i < count; i++) {
-        await createZone({ name: `${selectedZone.name} Zone ${i + 1}`, color: '#2D7D46', boundaryId: selectedZone.id, boundary: generatedZones[i] })
-      }
-      clearGeneratedZones()
-      await reloadZones(mapInstance.current, zone => handleZoneClickRef.current(zone))
-      addToast(`${count} zone${count !== 1 ? 's' : ''} saved`)
-      await loadCheckpoints()
+      for (let i = 0; i < count; i++) await createZone({ name: `${selectedZone.name} Zone ${i + 1}`, color: '#2D7D46', boundaryId: selectedZone.id, boundary: generatedZones[i] })
+      clearGeneratedZones(); await reloadZones(mapInstance.current, zone => handleZoneClickRef.current(zone))
+      addToast(`${count} zone${count !== 1 ? 's' : ''} saved`); await loadCheckpoints()
     } catch (err) { addToast(err.message, 'error') }
     finally { setSavingGen(false) }
   }
 
   useEffect(() => {
-    const map = mapInstance.current
-    if (!map) return
-    generatedLayersRef.current.forEach(l => map.removeLayer(l))
-    generatedLayersRef.current = []
+    const map = mapInstance.current; if (!map) return
+    generatedLayersRef.current.forEach(l => map.removeLayer(l)); generatedLayersRef.current = []
     generatedZones.forEach(geom => {
-      const layer = L.geoJSON(geom, {
-        style: () => ({ color: '#facc15', weight: 2, dashArray: '6 4', fillColor: '#facc15', fillOpacity: 0.12 })
-      })
-      layer.addTo(map)
-      generatedLayersRef.current.push(layer)
+      const layer = L.geoJSON(geom, { style: () => ({ color: '#facc15', weight: 2, dashArray: '6 4', fillColor: '#facc15', fillOpacity: 0.12 }) })
+      layer.addTo(map); generatedLayersRef.current.push(layer)
     })
   }, [generatedZones])
 
   const handleImportFromOsm = async () => {
     setImporting(true)
     try {
-      const osmZones = await fetchOsmZones()
-      let failed = 0
-      for (const z of osmZones) {
-        try { await createZone({ name: z.name, color: z.color, boundary: z.geometry }) }
-        catch (_) { failed++ }
-      }
+      const osmZones = await fetchOsmZones(); let failed = 0
+      for (const z of osmZones) { try { await createZone({ name: z.name, color: z.color, boundary: z.geometry }) } catch (_) { failed++ } }
       await reloadZones(mapInstance.current, (zone) => handleZoneClickRef.current(zone))
       if (failed > 0) addToast(`Imported ${osmZones.length - failed}/${osmZones.length} zones — ${failed} failed.`, 'error')
       else addToast(`Imported ${osmZones.length} zones successfully.`)
@@ -727,255 +476,192 @@ export default function ArboretumMap() {
     finally { setImporting(false) }
   }
 
-  const handleExport = () => {
-    if (!mapInstance.current || !window.leafletImage) return
-    window.leafletImage(mapInstance.current, (err, canvas) => {
-      if (err) return
-      const link = document.createElement('a')
-      link.download = 'arboretum-map.png'
-      link.href = canvas.toDataURL('image/png')
-      link.click()
-    })
-  }
-
-  // ── Derived ───────────────────────────────────────────────────────────────────
-
-  const panelMode = selectedZone ? 'edit' : 'create'
-
-  const zoneCheckpoints = selectedZone
-    ? checkpoints.filter((cp) => cp.zoneId === selectedZone.id)
-    : []
-
-  const searchResults = searchQuery.trim()
-    ? checkpoints.filter((cp) =>
-        cp.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())
-      )
-    : []
-
-  // ── Render ────────────────────────────────────────────────────────────────────
+  const zoneCheckpoints = selectedZone ? checkpoints.filter((cp) => cp.zoneId === selectedZone.id) : []
+  const searchResults = searchQuery.trim() ? checkpoints.filter((cp) => cp.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())) : []
 
   return (
-    <div className='flex flex-col h-full w-full'>
+    <div className='flex h-full w-full overflow-hidden'>
       {/* Toast notifications */}
       <div className="fixed top-4 right-4 flex flex-col gap-2 z-[9999] pointer-events-none">
         {toasts.map(t => (
-          <div key={t.id} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${t.type === 'error' ? 'bg-red-500' : 'bg-secondary-green'}`}>
+          <div key={t.id} className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white ${t.type === 'error' ? 'bg-game-red' : 'bg-game-green'}`}>
             <i className={`fa-solid ${t.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} text-xs`} />
             {t.message}
           </div>
         ))}
       </div>
 
-      {/* Header */}
-      <div className='h-[70px] bg-white w-full border-b border-gray-300 shadow flex items-center justify-between px-[20px] shrink-0'>
-        <div>
-          <h1 className='font font-bold text-xl ps-[50px] md:ps-0'>Arboretum Map</h1>
-          <p className='font text-gray-500 font-extralight text-sm hidden md:block'>Office of Sustainability · Now updated</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {loading && (
-            <span className="text-sm text-gray-500 flex items-center gap-2">
-              <i className="fa-solid fa-circle-notch fa-spin text-xs" /> Loading…
-            </span>
-          )}
-          {!loading && !loadError && (
-            <span className="text-xs bg-gray-100 text-secondary-green border border-gray-300 px-2.5 py-1 rounded-lg font-medium">
-              {zoneCount} zone{zoneCount !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-      </div>
+      {/* Left control panel */}
+      <div className="w-[380px] shrink-0 bg-surface border-r border-border overflow-y-auto flex flex-col pb-8">
 
-      <div className="p-[20px] flex flex-col gap-5 h-full overflow-y-auto w-full">
-
-        {/* Map + layer sidebar */}
-        <div className="flex gap-3 shrink-0" style={{ height: '460px' }}>
-          <div className="rounded-xl overflow-hidden relative shadow border border-gray-300 flex-1 z-[10]">
-            <div ref={mapRef} className="h-full w-full" />
+        {/* Panel header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-white shrink-0">
+          <div>
+            <h2 className="text-sm font-bold text-text-primary">Zone Manager</h2>
+            <p className="text-xs text-text-secondary">
+              {loading ? 'Loading…' : loadError ? 'Error loading zones' : `${zoneCount} zone${zoneCount !== 1 ? 's' : ''}`}
+            </p>
           </div>
-          <LayerSidebar visibility={layerVisibility} onToggle={handleToggleLayer} />
+          <div className="flex items-center gap-1.5">
+            {/* Layer toggles */}
+            {[
+              { key: 'boundary',    label: 'Bounds',   color: 'bg-gray-700'  },
+              { key: 'zones',       label: 'Zones',    color: 'bg-game-green' },
+              { key: 'checkpoints', label: 'Points',   color: 'bg-indigo-500' },
+            ].map(({ key, label, color }) => (
+              <button
+                key={key}
+                onClick={() => setLayerVisibility(v => ({ ...v, [key]: !v[key] }))}
+                className={`px-2 py-1 rounded-full text-[10px] font-bold border transition ${
+                  layerVisibility[key] ? `${color} text-white border-transparent` : 'bg-white text-text-secondary border-border'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Panel */}
-        <div className="bg-white rounded-xl border border-gray-300 shadow p-5 shrink-0 flex flex-col gap-2">
+        <div className="flex flex-col gap-4 p-4">
 
-          {/* ── Draw / pending ── */}
+          {/* Drawing status */}
           {(drawing || pendingGeometry) && (
-            <>
-              <div className="flex items-center justify-between mb-2">
+            <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font text-gray-900 font-semibold">
+                  <p className="text-sm font-bold text-text-primary">
                     {createMode === 'boundary' ? 'New Boundary' : 'New Zone'}
-                  </h2>
-                  <p className="font text-gray-500 text-sm mt-0.5">
+                  </p>
+                  <p className="text-xs text-text-secondary mt-0.5">
                     {pendingGeometry ? 'Shape ready — name it and save.'
                       : vertexCount === 0 ? 'Click on the map to place the first point.'
                       : vertexCount === 1 ? 'Click to add more points.'
-                      : `${vertexCount} points placed — double-click to close the shape.`}
+                      : `${vertexCount} points — double-click to close.`}
                   </p>
                 </div>
-                <button onClick={handleCancelCreate}
-                  className="font flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
-                  <i className="fa-solid fa-xmark text-xs" /> Cancel
+                <button onClick={handleCancelCreate} className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface border border-border text-text-secondary hover:text-text-primary transition cursor-pointer">
+                  <i className="fa-solid fa-xmark text-xs" />
                 </button>
               </div>
+
               {pendingGeometry && (
-                <form onSubmit={handleSaveCreate} className="flex flex-wrap items-end gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">
-                      {createMode === 'boundary' ? 'Boundary name' : 'Zone name'}
-                    </label>
-                    <input type="text"
-                      placeholder={createMode === 'boundary' ? 'e.g. Humber Arboretum' : 'e.g. North Meadow'}
-                      value={createName} onChange={(e) => setCreateName(e.target.value)} autoFocus required
-                      className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" />
+                <form onSubmit={handleSaveCreate} className="flex flex-col gap-3">
+                  <div>
+                    <p className="text-xs text-text-secondary mb-1">{createMode === 'boundary' ? 'Boundary name' : 'Zone name'}</p>
+                    <input type="text" placeholder={createMode === 'boundary' ? 'e.g. Humber Arboretum' : 'e.g. North Meadow'} value={createName} onChange={(e) => setCreateName(e.target.value)} autoFocus required className={inputCls} />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Color</label>
-                    <div className="flex items-center gap-2">
-                      <input type="color" value={createColor} onChange={(e) => setCreateColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer border border-gray-300 bg-transparent p-0" />
-                      <span className="font text-gray-500 text-xs font-mono">{createColor}</span>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="text-xs text-text-secondary mb-1">Color</p>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={createColor} onChange={(e) => setCreateColor(e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer border border-border bg-transparent p-0" />
+                        <span className="text-xs text-text-secondary font-mono">{createColor}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-end gap-2 ml-auto">
-                    <button type="button" onClick={handleCancelCreate}
-                      className="font bg-white hover:bg-gray-50 text-gray-700 px-4 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
-                      Discard
-                    </button>
-                    <button type="submit" disabled={saving}
-                      className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={saving} className={btnPrimary + ' flex-1'}>
                       {saving ? 'Saving…' : createMode === 'boundary' ? 'Save Boundary' : 'Save Zone'}
                     </button>
+                    <button type="button" onClick={handleCancelCreate} className={btnSecondary + ' flex-1'}>Discard</button>
                   </div>
                 </form>
               )}
-            </>
+            </div>
           )}
 
-          {/* ── Boundary selected ── */}
+          {/* Boundary selected */}
           {!drawing && !pendingGeometry && selectedZone?._isBoundary && (
-            <>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: selectedZone.color }} />
-                    <h2 className="font text-gray-900 font-semibold">{selectedZone.name}</h2>
-                    <span className="font text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">Boundary</span>
-                  </div>
-                  <p className="font text-gray-500 text-sm">
-                    {editingVertices ? 'Drag handles to move points. Click a point to delete it.'
-                      : editPendingGeometry ? 'New shape ready — save to apply.'
-                      : 'Edit this boundary or manage its zones.'}
-                  </p>
+            <div className="rounded-xl border border-game-blue/30 bg-white ring-1 ring-game-blue/20 p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: selectedZone.color }} />
+                  <p className="text-sm font-bold text-text-primary">{selectedZone.name}</p>
+                  <span className="text-[10px] font-bold text-game-blue bg-game-blue-soft px-2 py-0.5 rounded-full">Boundary</span>
                 </div>
-                <button onClick={handleDeselect} title="Deselect (Esc)"
-                  className="text-gray-400 hover:text-gray-700 text-sm p-1.5 rounded-lg hover:bg-gray-100 transition-colors ml-4 cursor-pointer">
-                  <i className="fa-solid fa-xmark" />
+                <button onClick={handleDeselect} title="Deselect (Esc)" className="w-7 h-7 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface transition cursor-pointer">
+                  <i className="fa-solid fa-xmark text-xs" />
                 </button>
               </div>
 
               {editingVertices ? (
-                <div className="flex items-center gap-3">
-                  <p className="font text-gray-600 text-sm flex-1">
-                    <i className="fa-solid fa-circle-info mr-1.5" />
-                    Drag any white handle to move a point. Click a point to delete it.
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs text-text-secondary">
+                    <i className="fa-solid fa-circle-info mr-1.5 text-game-blue" />
+                    Drag handles to move points. Click a point to delete it.
                   </p>
-                  <button onClick={handleCancelEditingVertices}
-                    className="font bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                  <button onClick={handleDoneEditingVertices}
-                    className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
-                    Done
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={handleDoneEditingVertices} className={btnPrimary + ' flex-1'}>Done</button>
+                    <button onClick={handleCancelEditingVertices} className={btnSecondary + ' flex-1'}>Cancel</button>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleSaveEdit} className="flex flex-wrap items-end gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Name</label>
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
-                      className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" required />
+                <form onSubmit={handleSaveEdit} className="flex flex-col gap-3">
+                  <div>
+                    <p className="text-xs text-text-secondary mb-1">Name</p>
+                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} required className={inputCls} />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Color</label>
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer border border-gray-300 bg-transparent p-0" />
-                      <span className="font text-gray-500 text-xs font-mono">{editColor}</span>
+                      <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer border border-border" />
+                      <span className="text-xs text-text-secondary font-mono">{editColor}</span>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Points</label>
-                    <button type="button" onClick={handleEditVertices}
-                      className="font flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
-                      <i className="fa-solid fa-pen text-xs" /> Edit points
+                    <button type="button" onClick={handleEditVertices} className="flex items-center gap-1.5 text-xs font-bold text-game-blue border border-game-blue/30 bg-game-blue-soft px-3 py-1.5 rounded-xl hover:opacity-80 transition cursor-pointer ml-auto">
+                      <i className="fa-solid fa-pen text-[10px]" /> Edit points
                     </button>
                   </div>
                   {editPendingGeometry && (
-                    <span className="font text-xs text-secondary-green flex items-center gap-1 self-end pb-2">
-                      <i className="fa-solid fa-check" /> New shape ready
-                    </span>
+                    <p className="text-xs text-game-green flex items-center gap-1">
+                      <i className="fa-solid fa-check" /> New shape ready to save
+                    </p>
                   )}
-                  <div className="flex items-end gap-2 ml-auto">
-                    {confirmingDelete ? (
-                      <>
-                        <span className="font text-sm text-gray-700">Delete "{selectedZone.name}"?</span>
-                        <button type="button" onClick={() => setConfirmingDelete(false)}
-                          className="font bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
-                          Cancel
-                        </button>
-                        <button type="button" onClick={handleDelete} disabled={deleting}
-                          className="font flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer">
-                          <i className="fa-solid fa-trash text-xs" />
-                          {deleting ? 'Deleting…' : 'Confirm Delete'}
-                        </button>
-                      </>
-                    ) : (
-                      <button type="button" onClick={() => setConfirmingDelete(true)} disabled={deleting || updating}
-                        className="font flex items-center gap-1.5 text-red-600 hover:text-red-700 px-3 py-1.5 rounded text-sm border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer">
-                        <i className="fa-solid fa-trash text-xs" />
-                        Delete
-                      </button>
-                    )}
-                    <button type="submit" disabled={updating || deleting}
-                      className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={updating || deleting} className={btnPrimary + ' flex-1'}>
                       {updating ? 'Saving…' : 'Save Changes'}
                     </button>
+                    {confirmingDelete ? (
+                      <div className="flex gap-1.5 flex-1">
+                        <button type="button" onClick={handleDelete} disabled={deleting} className={btnDanger + ' flex-1'}>
+                          {deleting ? '…' : 'Confirm'}
+                        </button>
+                        <button type="button" onClick={() => setConfirmingDelete(false)} className={btnSecondary}>
+                          <i className="fa-solid fa-xmark text-xs" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setConfirmingDelete(true)} disabled={deleting || updating}
+                        className="flex items-center gap-1.5 text-game-red border border-game-red/20 bg-red-50 text-sm font-bold px-3 py-2 rounded-xl disabled:opacity-50 cursor-pointer hover:bg-red-100 transition">
+                        <i className="fa-solid fa-trash text-xs" />
+                      </button>
+                    )}
                   </div>
                 </form>
               )}
 
-              {/* Zones within this boundary */}
-              <div className="pt-3 border-t border-gray-200 mt-1 flex flex-col gap-2">
+              {/* Zones within boundary */}
+              <div className="pt-3 border-t border-border flex flex-col gap-2">
                 {(() => {
                   const boundaryZones = zones.filter(z => !z._isBoundary && z.boundaryId === selectedZone.id)
                   return (
                     <>
                       <div className="flex items-center justify-between">
-                        <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">
-                          Zones
-                          {boundaryZones.length > 0 && (
-                            <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
-                              {boundaryZones.length}
-                            </span>
-                          )}
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-wide">
+                          Zones {boundaryZones.length > 0 && <span className="ml-1 bg-surface border border-border px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">{boundaryZones.length}</span>}
                         </p>
                         <button type="button" onClick={() => handleStartDraw('section')}
-                          className="font flex items-center gap-1.5 bg-secondary-green hover:bg-[#286f3e] text-white px-3 py-1 rounded text-sm font-bold transition-colors cursor-pointer">
-                          <i className="fa-solid fa-plus text-xs" /> Add Zone
+                          className="flex items-center gap-1 text-xs font-bold text-game-blue bg-game-blue-soft border border-game-blue/20 px-2.5 py-1 rounded-lg hover:opacity-80 transition cursor-pointer">
+                          <i className="fa-solid fa-plus text-[10px]" /> Add Zone
                         </button>
                       </div>
                       {boundaryZones.length === 0 ? (
-                        <p className="font text-gray-400 text-sm">No zones yet — click Add Zone to draw one.</p>
+                        <p className="text-xs text-text-secondary italic">No zones yet.</p>
                       ) : (
-                        <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto pr-1">
+                        <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
                           {boundaryZones.map((zone) => (
-                            <button key={zone.id} type="button"
-                              onClick={() => handleZoneClickRef.current(zone)}
-                              className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
+                            <button key={zone.id} type="button" onClick={() => handleZoneClickRef.current(zone)}
+                              className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-surface text-left w-full transition cursor-pointer">
                               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: zone.color }} />
-                              <span className="font text-gray-800 text-sm flex-1 truncate">{zone.name}</span>
+                              <span className="text-sm text-text-primary flex-1 truncate">{zone.name}</span>
                             </button>
                           ))}
                         </div>
@@ -985,238 +671,203 @@ export default function ArboretumMap() {
                 })()}
               </div>
 
-              {/* Generate Zones */}
-              <div className="pt-3 border-t border-gray-200 mt-1 flex flex-col gap-2">
-                <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide">Generate Zones</p>
+              {/* Generate zones */}
+              <div className="pt-3 border-t border-border flex flex-col gap-2">
+                <p className="text-xs font-bold text-text-secondary uppercase tracking-wide">Auto-generate Zones</p>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <input
-                    type="number" min="1" max="20" value={genCount}
-                    onChange={(e) => setGenCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                    className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-20"
-                  />
-                  <span className="font text-gray-500 text-sm">zones</span>
+                  <input type="number" min="1" max="20" value={genCount} onChange={(e) => setGenCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                    className="w-16 border border-border rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-game-blue/30" />
+                  <span className="text-xs text-text-secondary">zones</span>
                   <button type="button" onClick={handleGeneratePreview} disabled={generating}
-                    className="font flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors disabled:opacity-50 cursor-pointer">
+                    className="flex items-center gap-1.5 text-sm font-bold px-3 py-2 rounded-xl border border-border bg-white text-text-primary hover:bg-surface disabled:opacity-50 transition cursor-pointer">
                     <i className="fa-solid fa-wand-magic-sparkles text-xs" />
                     {generating ? 'Generating…' : 'Preview'}
                   </button>
                   {generatedZones.length > 0 && (
                     <>
-                      <button type="button" onClick={clearGeneratedZones}
-                        className="font text-gray-400 hover:text-gray-600 px-2 py-1.5 text-sm transition-colors cursor-pointer">
-                        Clear
-                      </button>
-                      <button type="button" onClick={handleSaveGenerated} disabled={savingGen}
-                        className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
-                        {savingGen ? 'Saving…' : `Save ${generatedZones.length} Zones`}
+                      <button type="button" onClick={clearGeneratedZones} className="text-xs text-text-secondary hover:text-text-primary cursor-pointer">Clear</button>
+                      <button type="button" onClick={handleSaveGenerated} disabled={savingGen} className={btnPrimary}>
+                        {savingGen ? 'Saving…' : `Save ${generatedZones.length}`}
                       </button>
                     </>
                   )}
                 </div>
                 {generatedZones.length > 0 && (
-                  <p className="font text-xs text-amber-600 flex items-center gap-1">
-                    <i className="fa-solid fa-eye" />
-                    {generatedZones.length} preview zones shown on map — save to keep them.
+                  <p className="text-xs text-game-amber flex items-center gap-1">
+                    <i className="fa-solid fa-eye" /> {generatedZones.length} preview zones on map — save to keep.
                   </p>
                 )}
               </div>
-            </>
+            </div>
           )}
 
-          {/* ── Zone selected ── */}
+          {/* Zone selected */}
           {!drawing && !pendingGeometry && selectedZone && !selectedZone._isBoundary && (
-            <>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: selectedZone.color }} />
-                    <h2 className="font text-gray-900 font-semibold">{selectedZone.name}</h2>
-                    <span className="font text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
-                      Zone
-                    </span>
-                  </div>
-                  <p className="font text-gray-500 text-sm">
-                    {editingVertices ? 'Drag handles to move points. Click a point to delete it.'
-                      : editPendingGeometry ? 'New shape ready — save to apply.'
-                      : 'Edit this zone or view its sensors and elements.'}
-                  </p>
+            <div className="rounded-xl border border-game-blue/30 bg-white ring-1 ring-game-blue/20 p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: selectedZone.color }} />
+                  <p className="text-sm font-bold text-text-primary">{selectedZone.name}</p>
+                  <span className="text-[10px] font-bold text-game-green bg-[#d1fae5] px-2 py-0.5 rounded-full">Zone</span>
                 </div>
-                <button onClick={handleDeselect} title="Deselect (Esc)"
-                  className="text-gray-400 hover:text-gray-700 text-sm p-1.5 rounded-lg hover:bg-gray-100 transition-colors ml-4 cursor-pointer">
-                  <i className="fa-solid fa-xmark" />
+                <button onClick={handleDeselect} title="Deselect (Esc)" className="w-7 h-7 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface transition cursor-pointer">
+                  <i className="fa-solid fa-xmark text-xs" />
                 </button>
               </div>
 
               {editingVertices ? (
-                <div className="flex items-center gap-3">
-                  <p className="font text-gray-600 text-sm flex-1">
-                    <i className="fa-solid fa-circle-info mr-1.5" />
-                    Drag any white handle to move a point. Click a point to delete it.
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs text-text-secondary">
+                    <i className="fa-solid fa-circle-info mr-1.5 text-game-blue" />
+                    Drag handles to move points. Click a point to delete it.
                   </p>
-                  <button onClick={handleCancelEditingVertices}
-                    className="font bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                  <button onClick={handleDoneEditingVertices}
-                    className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer">
-                    Done
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={handleDoneEditingVertices} className={btnPrimary + ' flex-1'}>Done</button>
+                    <button onClick={handleCancelEditingVertices} className={btnSecondary + ' flex-1'}>Cancel</button>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleSaveEdit} className="flex flex-wrap items-end gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Name</label>
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
-                      className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-52" required />
+                <form onSubmit={handleSaveEdit} className="flex flex-col gap-3">
+                  <div>
+                    <p className="text-xs text-text-secondary mb-1">Name</p>
+                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} required className={inputCls} />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Color</label>
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer border border-gray-300 bg-transparent p-0" />
-                      <span className="font text-gray-500 text-xs font-mono">{editColor}</span>
+                      <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer border border-border" />
+                      <span className="text-xs text-text-secondary font-mono">{editColor}</span>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font text-gray-500 text-sm">Points</label>
-                    <button type="button" onClick={handleEditVertices}
-                      className="font flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
-                      <i className="fa-solid fa-pen text-xs" /> Edit points
+                    <button type="button" onClick={handleEditVertices} className="flex items-center gap-1.5 text-xs font-bold text-game-blue border border-game-blue/30 bg-game-blue-soft px-3 py-1.5 rounded-xl hover:opacity-80 transition cursor-pointer ml-auto">
+                      <i className="fa-solid fa-pen text-[10px]" /> Edit points
                     </button>
                   </div>
                   {editPendingGeometry && (
-                    <span className="font text-xs text-secondary-green flex items-center gap-1 self-end pb-2">
-                      <i className="fa-solid fa-check" /> New shape ready
-                    </span>
+                    <p className="text-xs text-game-green flex items-center gap-1">
+                      <i className="fa-solid fa-check" /> New shape ready to save
+                    </p>
                   )}
-                  <div className="flex items-end gap-2 ml-auto">
-                    {confirmingDelete ? (
-                      <>
-                        <span className="font text-sm text-gray-700">Delete "{selectedZone.name}"?</span>
-                        <button type="button" onClick={() => setConfirmingDelete(false)}
-                          className="font bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm border border-gray-300 transition-colors cursor-pointer">
-                          Cancel
-                        </button>
-                        <button type="button" onClick={handleDelete} disabled={deleting}
-                          className="font flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer">
-                          <i className="fa-solid fa-trash text-xs" />
-                          {deleting ? 'Deleting…' : 'Confirm Delete'}
-                        </button>
-                      </>
-                    ) : (
-                      <button type="button" onClick={() => setConfirmingDelete(true)} disabled={deleting || updating}
-                        className="font flex items-center gap-1.5 text-red-600 hover:text-red-700 px-3 py-1.5 rounded text-sm border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer">
-                        <i className="fa-solid fa-trash text-xs" />
-                        Delete
-                      </button>
-                    )}
-                    <button type="submit" disabled={updating || deleting}
-                      className="font bg-secondary-green hover:bg-[#286f3e] text-white px-4 py-1.5 rounded text-sm font-bold disabled:opacity-50 transition-colors cursor-pointer">
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={updating || deleting} className={btnPrimary + ' flex-1'}>
                       {updating ? 'Saving…' : 'Save Changes'}
                     </button>
+                    {confirmingDelete ? (
+                      <div className="flex gap-1.5 flex-1">
+                        <button type="button" onClick={handleDelete} disabled={deleting} className={btnDanger + ' flex-1'}>
+                          {deleting ? '…' : 'Confirm'}
+                        </button>
+                        <button type="button" onClick={() => setConfirmingDelete(false)} className={btnSecondary}>
+                          <i className="fa-solid fa-xmark text-xs" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setConfirmingDelete(true)} disabled={deleting || updating}
+                        className="flex items-center gap-1.5 text-game-red border border-game-red/20 bg-red-50 text-sm font-bold px-3 py-2 rounded-xl disabled:opacity-50 cursor-pointer hover:bg-red-100 transition">
+                        <i className="fa-solid fa-trash text-xs" />
+                      </button>
+                    )}
                   </div>
                 </form>
               )}
 
-              {/* Sensors & Elements in this zone */}
-              <div className="pt-3 border-t border-gray-200 mt-1">
-                <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
+              {/* Sensors & Elements */}
+              <div className="pt-3 border-t border-border flex flex-col gap-2">
+                <p className="text-xs font-bold text-text-secondary uppercase tracking-wide">
                   Sensors &amp; Elements
-                  {zoneCheckpoints.length > 0 && (
-                    <span className="ml-1.5 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">
-                      {zoneCheckpoints.length}
-                    </span>
-                  )}
+                  {zoneCheckpoints.length > 0 && <span className="ml-1.5 bg-surface border border-border px-1.5 py-0.5 rounded-full font-medium normal-case tracking-normal">{zoneCheckpoints.length}</span>}
                 </p>
                 {zoneCheckpoints.length === 0 ? (
-                  <p className="font text-gray-400 text-sm">None assigned to this zone.</p>
+                  <p className="text-xs text-text-secondary italic">None assigned to this zone.</p>
                 ) : (
-                  <div className="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1">
+                  <div className="flex flex-col gap-1 max-h-36 overflow-y-auto">
                     {zoneCheckpoints.map((cp) => (
-                      <div key={cp.id} className="flex items-center gap-2 py-0.5">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm"
-                          style={{ backgroundColor: checkpointColor(cp) }} />
-                        <span className="font text-gray-800 text-sm flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
-                        <span className="font text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0 capitalize">{cp.type}</span>
+                      <div key={cp.id} className="flex items-center gap-2 py-1 px-2 rounded-lg">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm" style={{ backgroundColor: checkpointColor(cp) }} />
+                        <span className="text-sm text-text-primary flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
+                        <span className="text-[10px] text-text-secondary bg-surface border border-border px-1.5 py-0.5 rounded-full capitalize shrink-0">{cp.type}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
 
-          {/* ── Nothing selected ── */}
+          {/* Nothing selected — default state */}
           {!drawing && !pendingGeometry && !selectedZone && (
-            <>
-              <div className="mb-1">
-                <h2 className="font text-gray-900 font-semibold">Zone Manager</h2>
-                <p className="font text-gray-500 text-sm mt-0.5">Click a boundary on the map to edit it or manage its zones.</p>
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-text-secondary">Click a boundary on the map to edit it or manage its zones.</p>
+
+              <div className="flex gap-2">
+                <button onClick={() => handleStartDraw('boundary')} className={btnBlue + ' flex-1 flex items-center justify-center gap-2'}>
+                  <i className="fa-solid fa-border-all text-xs" /> Draw Boundary
+                </button>
+                <button onClick={handleImportFromOsm} disabled={importing} className={btnSecondary + ' flex-1 flex items-center justify-center gap-2'}>
+                  <i className="fa-brands fa-openstreetmap text-xs" /> {importing ? 'Importing…' : 'Import OSM'}
+                </button>
               </div>
-              <button onClick={() => handleStartDraw('boundary')}
-                className="font flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-1.5 rounded text-sm border border-gray-300 font-bold transition-colors cursor-pointer w-fit">
-                <i className="fa-solid fa-border-all text-xs" /> Draw Boundary
-              </button>
-              <div className="pt-3 border-t border-gray-200 mt-1">
-                <p className="font text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">Find sensor / element</p>
-                <input type="text" placeholder="Search by name…" value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="font bg-white text-gray-900 rounded border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:border-secondary-green w-full" />
+
+              {/* Search */}
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-bold text-text-secondary uppercase tracking-wide">Find sensor / element</p>
+                <div className="relative">
+                  <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-xs" />
+                  <input type="text" placeholder="Search by name…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full border border-border rounded-xl pl-8 pr-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-game-blue/30" />
+                </div>
                 {searchQuery.trim() && (
-                  <div className="mt-2 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                  <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
                     {searchResults.length === 0 ? (
-                      <p className="font text-gray-400 text-sm px-1">No results.</p>
+                      <p className="text-xs text-text-secondary px-1 italic">No results.</p>
                     ) : searchResults.map((cp) => {
                       const zone = zones.find((z) => z.id === cp.zoneId)
                       return (
                         <button key={cp.id} type="button"
-                          onClick={() => {
-                            if (cp.latitude != null && cp.longitude != null)
-                              mapInstance.current?.flyTo([cp.latitude, cp.longitude], 18)
-                            if (zone) handleZoneClickRef.current(zone)
-                          }}
-                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 text-left w-full transition-colors cursor-pointer">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm"
-                            style={{ backgroundColor: checkpointColor(cp) }} />
-                          <span className="font text-gray-800 text-sm flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
-                          <span className="font text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded capitalize shrink-0">{cp.type}</span>
-                          <span className="font text-xs text-gray-500 shrink-0">
-                            {zone
-                              ? <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: zone.color }} />{zone.name}</span>
-                              : <span className="text-gray-400">No zone</span>}
-                          </span>
+                          onClick={() => { if (cp.latitude != null) mapInstance.current?.flyTo([cp.latitude, cp.longitude], 18); if (zone) handleZoneClickRef.current(zone) }}
+                          className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-surface text-left w-full transition cursor-pointer">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm" style={{ backgroundColor: checkpointColor(cp) }} />
+                          <span className="text-sm text-text-primary flex-1 truncate">{cp.name || `#${cp.referenceId}`}</span>
+                          <span className="text-[10px] text-text-secondary bg-surface border border-border px-1.5 py-0.5 rounded-full capitalize shrink-0">{cp.type}</span>
                         </button>
                       )
                     })}
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm mt-2 pt-4 border-t border-gray-200 shrink-0">
+          <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
             {[
               { color: '#1A5C2E', label: 'Boundary' },
-              { color: '#2D7D46', label: 'Section',  opacity: 0.6 },
+              { color: '#2D7D46', label: 'Zone', opacity: 0.7 },
               { color: '#6366f1', label: 'Sensor' },
+              { color: '#33A661', label: 'Tree' },
+              { color: '#3B82F6', label: 'Shrub' },
+              { color: '#ef4444', label: 'Other' },
             ].map((t) => (
-              <div key={t.label} className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 rounded-full inline-block border border-white shadow-sm"
-                  style={{ backgroundColor: t.color, opacity: t.opacity ?? 1 }} />
-                <span className="font text-gray-600 text-xs">{t.label}</span>
+              <div key={t.label} className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: t.color, opacity: t.opacity ?? 1 }} />
+                <span className="text-xs text-text-secondary">{t.label}</span>
               </div>
             ))}
-            <div className="flex items-center gap-2">
-              <span className="flex gap-1">
-                {['#33A661', '#3B82F6', '#ef4444'].map((c) => (
-                  <span key={c} className="w-3.5 h-3.5 rounded-full inline-block border border-white shadow-sm" style={{ backgroundColor: c }} />
-                ))}
-              </span>
-              <span className="font text-gray-600 text-xs">Element</span>
-            </div>
           </div>
         </div>
+      </div>
+
+      {/* Map */}
+      <div className="flex-1 relative overflow-hidden">
+        <div ref={mapRef} className="h-full w-full" />
+        {loadError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+            <div className="bg-white rounded-xl border border-border p-6 text-center max-w-sm shadow-lg">
+              <i className="fa-solid fa-triangle-exclamation text-game-amber text-2xl mb-3" />
+              <p className="text-sm font-bold text-text-primary mb-1">Failed to load zones</p>
+              <p className="text-xs text-text-secondary mb-4">{loadError}</p>
+              <button onClick={() => tryLoadZones(mapInstance.current)} className={btnBlue}>Retry</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
