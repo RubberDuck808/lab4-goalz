@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Feat: Show My Location button on arboretum map](#feat-show-my-location-button-on-arboretum-map--2026-05-20)
 1. [Unified persistent map — single Leaflet instance across all tabs](#unified-persistent-map--single-leaflet-instance-across-all-tabs--2026-05-19)
 1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
 1. [Leaderboard redesign — hero pattern, podium, filters, time-based backend](#leaderboard-redesign--hero-pattern-podium-filters--2026-05-17)
@@ -13,6 +14,25 @@
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
 ---
 
+
+## Feat: Show My Location button on arboretum map — 2026-05-20
+
+### Added
+- Location crosshairs button overlaid on the map (bottom-right, above zoom controls) in `ArboretumMap.jsx`.
+- Clicking the button calls `navigator.geolocation.getCurrentPosition` with high accuracy, places a pulsing blue dot marker at the user's position, and flies the map to that location at zoom 18.
+- A second click removes the marker and resets the active state.
+- Shows a spinner while the browser is resolving the position.
+- Shows an error toast if geolocation is denied or unsupported.
+- CSS `@keyframes locate-pulse` injected via an inline `<style>` tag so the ring animates without requiring a separate stylesheet.
+
+### Rationale
+- Staff need to know their own position relative to the arboretum when deciding where to place a new sensor, especially outdoors away from a desk.
+- Browser Geolocation API is already available with no additional dependencies.
+- Using a toggle (active/inactive) lets staff dismiss the marker once they've orientated themselves.
+
+> Issue closed after 0 min
+
+---
 
 ## Unified persistent map — single Leaflet instance across all tabs — 2026-05-19
 

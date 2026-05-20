@@ -87,6 +87,7 @@ export default function ArboretumMap() {
   const drawingRef         = useRef(false)
   const checkpointClusterRef = useRef(null)
   const generatedLayersRef   = useRef([])
+  const locationMarkerRef    = useRef(null)
 
   const [layerVisibility, setLayerVisibility] = useState({ boundary: true, zones: true, checkpoints: true })
   const layerVisibilityRef = useRef(layerVisibility)
@@ -122,6 +123,9 @@ export default function ArboretumMap() {
   const [deleting, setDeleting]                       = useState(false)
   const [confirmingDelete, setConfirmingDelete]       = useState(false)
   const [importing, setImporting]                     = useState(false)
+
+  const [locating, setLocating]           = useState(false)
+  const [locationActive, setLocationActive] = useState(false)
 
   const [toasts, setToasts] = useState([])
   const addToast = (message, type = 'success') => {
@@ -318,6 +322,7 @@ export default function ArboretumMap() {
       container.removeEventListener('touchstart', blockOutsideClick, { capture: true })
       generatedLayersRef.current.forEach(l => l.remove()); generatedLayersRef.current = []
       checkpointClusterRef.current?.clearLayers(); checkpointClusterRef.current = null
+      if (locationMarkerRef.current) { map.removeLayer(locationMarkerRef.current); locationMarkerRef.current = null }
       map.remove(); mapInstance.current = null; zoneLayers.current.clear()
     }
   }, [])
@@ -464,6 +469,48 @@ export default function ArboretumMap() {
     })
   }, [generatedZones])
 
+  const handleLocate = () => {
+    if (locationActive) {
+      if (locationMarkerRef.current) {
+        mapInstance.current?.removeLayer(locationMarkerRef.current)
+        locationMarkerRef.current = null
+      }
+      setLocationActive(false)
+      return
+    }
+    if (!navigator.geolocation) {
+      addToast('Geolocation is not supported by your browser.', 'error')
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const { latitude, longitude } = coords
+        const map = mapInstance.current
+        if (!map) { setLocating(false); return }
+        if (locationMarkerRef.current) map.removeLayer(locationMarkerRef.current)
+        const icon = L.divIcon({
+          html: `<div style="position:relative;width:20px;height:20px">
+            <div style="position:absolute;inset:0;border-radius:50%;background:#1CB0F6;opacity:0.35;animation:locate-pulse 1.5s ease-out infinite"></div>
+            <div style="position:absolute;inset:4px;border-radius:50%;background:#1CB0F6;border:2.5px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.2)"></div>
+          </div>`,
+          className: '',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        })
+        locationMarkerRef.current = L.marker([latitude, longitude], { icon, zIndexOffset: 2000 }).addTo(map)
+        map.flyTo([latitude, longitude], 18, { duration: 1.5 })
+        setLocationActive(true)
+        setLocating(false)
+      },
+      () => {
+        addToast('Could not get your location. Please allow location access.', 'error')
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
   const handleImportFromOsm = async () => {
     setImporting(true)
     try {
@@ -481,6 +528,7 @@ export default function ArboretumMap() {
 
   return (
     <div className='flex h-full w-full overflow-hidden'>
+      <style>{`@keyframes locate-pulse { 0% { transform:scale(1);opacity:0.35; } 100% { transform:scale(3.5);opacity:0; } }`}</style>
       {/* Toast notifications */}
       <div className="fixed top-4 right-4 flex flex-col gap-2 z-[9999] pointer-events-none">
         {toasts.map(t => (
@@ -858,6 +906,19 @@ export default function ArboretumMap() {
       {/* Map */}
       <div className="flex-1 relative overflow-hidden">
         <div ref={mapRef} className="h-full w-full" />
+
+        {/* My Location button */}
+        <button
+          onClick={handleLocate}
+          disabled={locating}
+          title={locationActive ? 'Hide my location' : 'Show my location'}
+          className={`absolute bottom-[88px] right-3 z-[1000] w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
+            locationActive ? 'bg-game-blue text-white border-game-blue' : 'bg-white text-text-secondary border-border hover:bg-surface'
+          } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        >
+          <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
+        </button>
+
         {loadError && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
             <div className="bg-white rounded-xl border border-border p-6 text-center max-w-sm shadow-lg">

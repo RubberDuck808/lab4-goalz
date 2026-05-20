@@ -135,6 +135,9 @@ const DashboardMap = forwardRef(function DashboardMap({
   const mapInstanceRef     = useRef(null)
   const tileLayerRef       = useRef(null)
   const [mapType, setMapType] = useState('streets')
+  const [locating, setLocating]             = useState(false)
+  const [locationActive, setLocationActive] = useState(false)
+  const internalLocationRef                 = useRef(null)
   // checkpoint cluster
   const clusterGroupRef    = useRef(null)
   const hasFitRef          = useRef(false)
@@ -324,6 +327,10 @@ const DashboardMap = forwardRef(function DashboardMap({
       clusterGroupRef.current?.clearLayers()
       clusterGroupRef.current = null
       zoneLayersRef.current.clear()
+      if (internalLocationRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(internalLocationRef.current)
+        internalLocationRef.current = null
+      }
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
         mapInstanceRef.current = null
@@ -519,6 +526,36 @@ const DashboardMap = forwardRef(function DashboardMap({
     })
   }, [previewZones])
 
+  // ── my-location handler ────────────────────────────────────────────────
+  function handleLocate() {
+    const map = mapInstanceRef.current
+    if (locationActive) {
+      if (internalLocationRef.current) { map?.removeLayer(internalLocationRef.current); internalLocationRef.current = null }
+      setLocationActive(false)
+      return
+    }
+    if (!navigator.geolocation) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        if (!mapInstanceRef.current) { setLocating(false); return }
+        if (internalLocationRef.current) mapInstanceRef.current.removeLayer(internalLocationRef.current)
+        const icon = L.divIcon({
+          html: `<style>@keyframes lp{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.5);opacity:0}}.lp-ring{animation:lp 1.5s ease-out infinite}</style><div style="position:relative;width:20px;height:20px"><div class="lp-ring" style="position:absolute;inset:0;border-radius:50%;background:#2563eb"></div><div style="position:absolute;inset:4px;border-radius:50%;background:#2563eb;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div></div>`,
+          className: '', iconSize: [20, 20], iconAnchor: [10, 10],
+        })
+        internalLocationRef.current = L.marker([coords.latitude, coords.longitude], { icon, zIndexOffset: 2000 })
+          .addTo(mapInstanceRef.current)
+          .bindTooltip('You are here', { permanent: false, direction: 'top', offset: [0, -10] })
+        mapInstanceRef.current.flyTo([coords.latitude, coords.longitude], 18, { duration: 1.5 })
+        setLocationActive(true)
+        setLocating(false)
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
   // ── render ─────────────────────────────────────────────────────────────
   return (
     <div className="h-full w-full relative overflow-hidden">
@@ -558,6 +595,18 @@ const DashboardMap = forwardRef(function DashboardMap({
           >Cancel</button>
         </div>
       )}
+      {/* My Location button */}
+      <button
+        onClick={handleLocate}
+        disabled={locating}
+        title={locationActive ? 'Hide my location' : 'Show my location'}
+        className={`absolute bottom-[72px] right-4 z-[500] w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
+          locationActive ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
+        } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
+      </button>
+
       {/* Map Type Switcher */}
       <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
         <button
