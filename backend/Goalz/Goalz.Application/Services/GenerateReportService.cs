@@ -23,7 +23,7 @@ namespace Goalz.Core.Services
             if (settings.reportContents != null && settings.reportContents.SensorData && 
                 (settings.reportContents.Temperature || settings.reportContents.Humidity || settings.reportContents.Light))
             {
-                yield return "Sensor Id;Temprature;Humidity;Light;Timestamp";
+                yield return "Sensor Id;Temperature;Humidity;Light;Timestamp";
 
                 var sensorsData = _sensorDataRepository.GetSensorsByTimeRangeAsync(dateTimeFrom, dateTimeTo);
 

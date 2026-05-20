@@ -35,7 +35,7 @@ public class SensorDataRepository : ISensorDataRepository
 
         if (limit.HasValue)
         {
-            query = query.Take(limit.Value);
+            query = query.Take(Math.Min(limit.Value, 500));
         }
 
         return await query.ToListAsync();

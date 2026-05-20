@@ -6,7 +6,7 @@ namespace Goalz.Core.Utils
     {
         public static long GeneratePartyCode()
         {
-            return RandomNumberGenerator.GetInt32(100000, 999999);
+            return RandomNumberGenerator.GetInt32(100000, 1_000_000);
         }
     }
 }

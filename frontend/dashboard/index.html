@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src  'self' 'unsafe-eval' cdn.jsdelivr.net *.fontawesome.com;
+      script-src  'self' 'unsafe-eval' cdn.jsdelivr.net *.fontawesome.com; /* unsafe-eval required by Leaflet canvas renderer and Recharts */
       style-src   'self' 'unsafe-inline' fonts.googleapis.com *.fontawesome.com;
       font-src    'self' fonts.gstatic.com *.fontawesome.com;
       img-src     'self' data: blob: *.tile.openstreetmap.org tile.openstreetmap.org *.supabase.co *.basemaps.cartocdn.com server.arcgisonline.com;

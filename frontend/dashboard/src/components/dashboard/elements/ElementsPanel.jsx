@@ -5,16 +5,7 @@ import ElementDetails from '../overview/ElementDetails';
 import Loading from '../../Loading/Loading';
 import { overviewService } from '../../../services/overviewService';
 
-function isAllowedImageUrl(url) {
-  if (!url) return false;
-  if (url.startsWith('/') || url.startsWith('blob:') || url.startsWith('data:')) return true;
-  try {
-    const { hostname } = new URL(url);
-    return hostname.endsWith('.supabase.co');
-  } catch {
-    return !url.includes('://');
-  }
-}
+import { isAllowedImageUrl } from '../../../utils/imageUrl';
 
 function ImageCell({ imageUrl }) {
   return isAllowedImageUrl(imageUrl) ? (
