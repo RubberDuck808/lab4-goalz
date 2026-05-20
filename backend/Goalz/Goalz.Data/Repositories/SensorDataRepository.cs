@@ -14,7 +14,7 @@ public class SensorDataRepository : ISensorDataRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId, DateTime? from = null, DateTime? to = null)
+    public async Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId, DateTime? from = null, DateTime? to = null, int? limit = null)
     {
         var query = _context.SensorData
             .Where(sd => sd.SensorsId == sensorId);
@@ -31,9 +31,14 @@ public class SensorDataRepository : ISensorDataRepository
             query = query.Where(sd => sd.Timestamp <= utcTo);
         }
 
-        return await query
-            .OrderByDescending(sd => sd.Timestamp)
-            .ToListAsync();
+        query = query.OrderByDescending(sd => sd.Timestamp);
+
+        if (limit.HasValue)
+        {
+            query = query.Take(limit.Value);
+        }
+
+        return await query.ToListAsync();
     }
 
     public IAsyncEnumerable<SensorData> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo)

@@ -109,6 +109,12 @@ namespace Goalz.Api.Controllers.Game
         public async Task<IActionResult> VisitCheckpoint(long id, [FromBody] VisitCheckpointRequest request)
         {
             var username = User.Identity!.Name!;
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(id, user.Id))
+            {
+                return Forbid();
+            }
+
             await _partyService.VisitCheckpoint(id, request.CheckpointId, username);
 
             var state = await _partyService.GetGameState(id);
@@ -122,6 +128,12 @@ namespace Goalz.Api.Controllers.Game
         public async Task<IActionResult> CompleteGame(long id, [FromBody] CompleteGameRequest request)
         {
             var username = User.Identity!.Name!;
+            var user = await _userRepository.GetByUsernameAsync(username);
+            if (user == null || !await _partyRepository.IsMemberAsync(id, user.Id))
+            {
+                return Forbid();
+            }
+
             await _partyService.CompleteGame(id, username, request.CheckpointIds, request.QuizScore);
 
             await _hub.Clients.Group(id.ToString()).SendAsync("GameCompleted", new { username });

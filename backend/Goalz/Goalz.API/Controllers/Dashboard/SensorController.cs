@@ -85,10 +85,14 @@ public class SensorController : ControllerBase
     }
 
     [HttpGet("{id}/data")]
-    public async Task<IActionResult> GetSensorData(long id, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetSensorData(long id, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? limit)
     {
-        var fromDate = from ?? DateTime.UtcNow.AddDays(-7);
-        var data = await _sensorDataService.GetBySensorIdAsync(id, fromDate, to);
+        DateTime? fromDate = from;
+        if (!from.HasValue && !limit.HasValue)
+        {
+            fromDate = DateTime.UtcNow.AddDays(-7);
+        }
+        var data = await _sensorDataService.GetBySensorIdAsync(id, fromDate, to, limit);
         return Ok(data);
     }
 }

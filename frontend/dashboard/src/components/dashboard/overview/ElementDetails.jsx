@@ -155,8 +155,8 @@ export default function ElementDetails({
 
     const rawImage = previewImage || element.imageUrl;
     const isAllowed = rawImage && (
-      rawImage.startsWith('blob:') || rawImage.startsWith('data:') ||
-      (() => { try { return new URL(rawImage).hostname.endsWith('.supabase.co'); } catch { return false; } })()
+      rawImage.startsWith('/') || rawImage.startsWith('blob:') || rawImage.startsWith('data:') ||
+      (() => { try { return new URL(rawImage).hostname.endsWith('.supabase.co'); } catch { return !rawImage.includes('://'); } })()
     );
     const displayImage = isAllowed ? rawImage : null;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DashboardNavBar from "../DashboardNavBar";
@@ -54,6 +54,14 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
   const [searchVal, setSearchVal] = useState('');
   const [search, setSearch] = useState('');
   const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+    setScrollTop(0);
+  }, [search]);
 
   // Sensor data history graph states
   const [selectedSensorId, setSelectedSensorId] = useState(null);
@@ -409,6 +417,7 @@ export default function SensorManagement({ setSelectedItem, setBleSelectedSensor
         )}
 
         <div
+          ref={containerRef}
           style={{ height: 600, overflowY: 'auto', position: 'relative' }}
           onScroll={e => setScrollTop(e.currentTarget.scrollTop)}
         >

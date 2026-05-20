@@ -7,12 +7,12 @@ import { overviewService } from '../../../services/overviewService';
 
 function isAllowedImageUrl(url) {
   if (!url) return false;
-  if (url.startsWith('blob:') || url.startsWith('data:')) return true;
+  if (url.startsWith('/') || url.startsWith('blob:') || url.startsWith('data:')) return true;
   try {
     const { hostname } = new URL(url);
     return hostname.endsWith('.supabase.co');
   } catch {
-    return false;
+    return !url.includes('://');
   }
 }
 
@@ -67,7 +67,7 @@ export default function ElementsPanel({
       containerRef.current.scrollTop = 0;
     }
     setScrollTop(0);
-  }, [activeTab]);
+  }, [activeTab, search, typeFilter]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
