@@ -118,7 +118,7 @@
             const trees = elements.filter((e) => e.elementType?.id === TREE_TYPE_ID).length;
             return [
                 { name: "Canopy", value: trees },
-                { name: "Other", value: elements.length - trees },
+                { name: "Non-Canopy", value: elements.length - trees },
             ];
         }, [elements]);
 
@@ -132,7 +132,7 @@
   <div className="flex flex-col min-h-screen h-full relative overflow-hidden">
     {isLoading && <Loading />}
 
-    <DashboardNavBar title="Arboretum Overview" />
+    <DashboardNavBar title="Overview" />
 
     <div className="p-4 md:p-5 flex flex-col gap-5 flex-1 overflow-y-auto">
       <div className="w-full flex flex-col lg:flex-row items-stretch gap-3">

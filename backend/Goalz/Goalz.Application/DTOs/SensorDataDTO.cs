@@ -1,4 +1,4 @@
-﻿namespace Goalz.Core.DTOs
+namespace Goalz.Core.DTOs
 {
     public class SensorDataDto
     {
@@ -16,6 +16,8 @@
 
         public int RawWindRv { get; set; }
         public int RawWindTmp { get; set; }
+
+        public long? Light { get; set; }
     }
     
 }

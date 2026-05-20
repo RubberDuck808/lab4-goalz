@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Unified persistent map — single Leaflet instance across all tabs](#unified-persistent-map--single-leaflet-instance-across-all-tabs--2026-05-19)
 1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
 1. [Leaderboard redesign — hero pattern, podium, filters, time-based backend](#leaderboard-redesign--hero-pattern-podium-filters--2026-05-17)
 1. [Fix: PicturesTaken stat never incremented](#fix-picturestaken-stat-never-incremented--2026-05-16)
@@ -12,6 +13,24 @@
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
 ---
 
+
+## Unified persistent map — single Leaflet instance across all tabs — 2026-05-19
+
+### Changed
+- `Map.jsx` (renamed component to `DashboardMap` to avoid shadowing JS built-in): Added zone polygon layers (two Leaflet panes), leaflet-draw handler, vertex edit overlay, `previewZones` for dashed yellow AI-generated zone previews. Exposed `clearDrawnPreview()` via `forwardRef` + `useImperativeHandle`. Removed old `+` button and `MapLegend` bar.
+- `MapDashboard.jsx`: Removed conditional `ArboretumMap` render branch — map is now always mounted. Added zones/boundaries fetch, full zone draw state machine, vertex edit state, `previewZones`. Added `Zones` pill to layer toggles (off by default, auto-enabled on Zones tab). `filteredCheckpoints` passes all checkpoints on Zones tab. Map receives zone props; `ZonesPanel` replaces the old full-screen zones view in the side panel.
+
+### Added
+- `src/components/dashboard/zones/ZonesPanel.jsx` (new): Zone management side panel extracted from ArboretumMap. Handles all zone/boundary CRUD (create, name, color, edit vertices, delete), AI zone generation preview, OSM import, and search. Drives draw and vertex-edit modes through callbacks to `MapDashboard`.
+
+### Rationale
+- Previously switching to the Zones tab remounted a completely separate Leaflet instance (`ArboretumMap`), losing the user's pan/zoom position and making zone polygons invisible on other tabs.
+- Single map instance preserves position across all tabs and allows zone polygons to appear as a toggleable layer on Overview/Elements/Sensors tabs.
+- Zones layer defaults to off; auto-enables when entering the Zones tab so the experience is contextual without requiring manual toggle.
+
+> Issue closed after 90 min
+
+---
 
 ## Fix: MR !66 review — MapController null checks, PartyController GetParty — 2026-05-19
 

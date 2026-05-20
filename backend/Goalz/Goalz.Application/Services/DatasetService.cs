@@ -1,4 +1,4 @@
-﻿using Goalz.Core.DTOs;
+using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Goalz.Domain.Entities;
 using Microsoft.AspNetCore.Http;
@@ -87,7 +87,7 @@ namespace Goalz.Core.Services
                 {
                     ElementName = row["Name"].ToString() ?? string.Empty,
                     ElementTypeId = Convert.ToInt32(elementId),
-                    Geom = new Point(new Coordinate(latitude, longitude)),
+                    Geom = new Point(new Coordinate(longitude, latitude)),
                     IsGreen = bool.TryParse(row["IsGreen"].ToString(), out var isGreen) ? isGreen : false,
                     ImageUrl = row["ImageUrl"].ToString()
                 };

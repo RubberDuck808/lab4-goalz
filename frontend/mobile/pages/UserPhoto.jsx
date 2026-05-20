@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
+import GameButtons from '../components/GameButtons';
 
 const PLACEHOLDER_IMAGE = require('../assets/icon_white.png');
 
@@ -36,12 +37,8 @@ export default function UserPhoto({ navigation, route }) {
 
       {/* Action buttons */}
       <View style={styles.btnRow}>
-        <TouchableOpacity style={styles.uploadBtn} onPress={handleUpload} activeOpacity={0.85}>
-          <Text style={styles.btnText}>NEXT</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.retryBtn} onPress={handleRetry} activeOpacity={0.85}>
-          <Text style={styles.btnText}>TRY AGAIN</Text>
-        </TouchableOpacity>
+        <GameButtons variant="accept" size="half" onPress={handleUpload}>NEXT</GameButtons>
+        <GameButtons variant="decline" size="half" onPress={handleRetry}>TRY AGAIN</GameButtons>
       </View>
 
     </SafeAreaView>
@@ -69,31 +66,5 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 28,
     paddingVertical: 20,
-  },
-  uploadBtn: {
-    flex: 1,
-    height: 48,
-    backgroundColor: '#52B788',
-    borderRadius: 13,
-    borderBottomWidth: 4,
-    borderBottomColor: '#2D6A4F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  retryBtn: {
-    flex: 1,
-    height: 48,
-    backgroundColor: '#ff4b4b',
-    borderRadius: 13,
-    borderBottomWidth: 4,
-    borderBottomColor: '#CC2525',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
 });
