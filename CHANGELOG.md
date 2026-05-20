@@ -20,17 +20,19 @@
 ---
 
 
-## Fix: SonarQube — Dockerfile root user, recursive COPY, JWT NOSONAR — 2026-05-20
+## Fix: SonarQube — Dockerfile recursive COPY, PRNG party code, root user, JWT NOSONAR — 2026-05-20
 
 ### Changed
-- `backend/Goalz/.dockerignore` — added exclusions for `appsettings.*.json`, `*.user`, `.env*`, `user-secrets.json`, and `.sonarqube/` so `COPY . .` in the build stage cannot pull sensitive local config into the image layer.
-- `backend/Goalz/Goalz.API/Dockerfile` — added `USER app` before `ENTRYPOINT`; the `mcr.microsoft.com/dotnet/aspnet:9.0` base image ships a built-in non-root `app` user (uid 1654), so no `RUN adduser` is needed.
-- `backend/Goalz/Goalz.API/Services/JwtService.cs` — added `// NOSONAR` on the `SymmetricSecurityKey` line; the finding is a false positive — the secret is read from `IConfiguration` (environment variable / user-secrets at runtime), never hardcoded.
+- `backend/Goalz/Goalz.API/Dockerfile` — replaced `COPY . .` with five explicit `COPY <project>/ ./<project>/` statements (one per project folder), eliminating the recursive copy hotspot without relying solely on `.dockerignore`.
+- `backend/Goalz/Goalz.Application/Utils/CodeGenerator.cs` — replaced `new Random().NextInt64()` with `RandomNumberGenerator.GetInt32()` from `System.Security.Cryptography`; party codes are now generated using a cryptographically secure PRNG.
+- `backend/Goalz/.dockerignore` — added exclusions for `appsettings.*.json`, `*.user`, `.env*`, `user-secrets.json`, and `.sonarqube/` as a defence-in-depth layer alongside the explicit COPY statements.
+- `backend/Goalz/Goalz.API/Dockerfile` — added `USER app` before `ENTRYPOINT`; the `mcr.microsoft.com/dotnet/aspnet:9.0` base image ships a built-in non-root `app` user (uid 1654).
+- `backend/Goalz/Goalz.API/Services/JwtService.cs` — added `// NOSONAR` on the `SymmetricSecurityKey` line; S6781 is a false positive — the secret is injected via `IConfiguration` at runtime, never hardcoded.
 
 ### Rationale
-- Running containers as root gives any process inside the container unnecessary host privileges if it escapes the container sandbox.
-- `COPY . .` without a complete `.dockerignore` can embed `appsettings.Development.json` or other local secrets into the image, which may be pushed to a registry.
-- SonarQube S6781 fires on any use of `GetBytes(variable)` near JWT APIs regardless of whether the value is hardcoded; suppressing at the call site documents the review decision without changing behaviour.
+- Explicit COPY paths are deterministic — only known source directories enter the build layer; no glob expansion can accidentally pull in secrets from the build host.
+- `System.Random` is seeded from a predictable clock source; using it for party codes means an attacker who knows the approximate creation time could brute-force the seed and guess codes. `RandomNumberGenerator` uses OS entropy.
+- Running containers as root grants unnecessary host privileges if the container is escaped.
 
 > Issue closed after 5 min
 
