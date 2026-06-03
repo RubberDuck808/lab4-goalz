@@ -1,19 +1,30 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Goalz.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
 
 namespace Goalz.Core.Services;
 
 public class ElementService : IElementService
 {
+    private static readonly SemaphoreSlim _analysisSemaphore = new(10, 10);
+
     private readonly IElementRepository _repository;
     private readonly IUserService _userService;
+    private readonly IImageAnalysisService? _imageAnalysis;
+    private readonly ILogger<ElementService> _logger;
 
-    public ElementService(IElementRepository repository, IUserService userService)
+    public ElementService(
+        IElementRepository repository,
+        IUserService userService,
+        IImageAnalysisService? imageAnalysis,
+        ILogger<ElementService> logger)
     {
-        _repository  = repository;
-        _userService = userService;
+        _repository    = repository;
+        _userService   = userService;
+        _imageAnalysis = imageAnalysis;
+        _logger        = logger;
     }
 
     public Task<List<ElementType>> GetAllTypesAsync()
@@ -24,8 +35,6 @@ public class ElementService : IElementService
         ElementType? elementType;
         if (!request.IsApproved)
         {
-            // Player submissions must use an existing type — auto-creating types from player
-            // input would pollute the catalogue used by the dashboard.
             elementType = await _repository.GetElementTypeByNameAsync(request.ElementType);
             if (elementType is null)
                 return (null, "unknown_type");
@@ -38,15 +47,17 @@ public class ElementService : IElementService
 
         if (!request.IsApproved)
         {
-            // Deduplicate: re-submissions within 5 m update the pending row instead of creating a new one.
             var existing = await _repository.FindNearbyPendingAsync(
                 request.Latitude, request.Longitude,
                 request.ElementType, request.ElementName, radiusMeters: 5.0);
             if (existing is not null)
             {
                 if (request.ImageUrl is not null)
+                {
                     existing.ImageUrl = request.ImageUrl;
-                await _repository.UpdateAsync(existing);
+                    await _repository.UpdateAsync(existing);
+                    FireAnalysis(existing.Id, existing.ImageUrl, existing.ElementName, elementType.Name);
+                }
                 return (existing, null);
             }
         }
@@ -65,6 +76,10 @@ public class ElementService : IElementService
         await _repository.CreateAsync(element);
         if (request.SubmittedBy is not null)
             await _userService.IncrementPicturesTakenAsync(request.SubmittedBy);
+
+        if (!request.IsApproved && element.ImageUrl is not null)
+            FireAnalysis(element.Id, element.ImageUrl, element.ElementName, elementType.Name);
+
         return (element, null);
     }
 
@@ -107,6 +122,9 @@ public class ElementService : IElementService
             IsGreen     = e.IsGreen,
             SubmittedBy = e.SubmittedBy,
             CreatedAt   = e.CreatedAt,
+            AiConfidence = e.AiConfidence,
+            AiSummary    = e.AiSummary,
+            AiResult     = e.AiResult?.ToString(),
         });
     }
 
@@ -115,4 +133,49 @@ public class ElementService : IElementService
 
     public async Task<(bool Success, string? Error)> RejectAsync(long id)
         => await _repository.RejectAsync(id) ? (true, null) : (false, "not_found");
+
+    public async Task RetryMissedAnalysisAsync()
+    {
+        var missed = await _repository.GetPendingWithoutAiAsync(limit: 50);
+        foreach (var element in missed)
+        {
+            if (element.ImageUrl is null) continue;
+            FireAnalysis(element.Id, element.ImageUrl, element.ElementName, element.ElementType?.Name ?? "");
+        }
+    }
+
+    private void FireAnalysis(long id, string imageUrl, string name, string type)
+    {
+        if (_imageAnalysis is null) return;
+        _ = Task.Run(() => AnalyseAndActAsync(id, imageUrl, name, type));
+    }
+
+    private async Task AnalyseAndActAsync(long id, string imageUrl, string name, string type)
+    {
+        await _analysisSemaphore.WaitAsync();
+        try
+        {
+            var result = await _imageAnalysis!.AnalyseElementAsync(imageUrl, name, type);
+            if (result is null) return;
+
+            var element = await _repository.GetByIdAsync(id);
+            if (element is null || element.IsRejected) return;
+
+            element.AiConfidence = result.Confidence;
+            element.AiSummary    = result.Summary;
+            element.AiResult     = result.Recommendation;
+            await _repository.UpdateAsync(element);
+
+            if (result.Recommendation == AiRecommendation.AutoApprove)
+                await _repository.ApproveAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI analysis failed for element {Id}", id);
+        }
+        finally
+        {
+            _analysisSemaphore.Release();
+        }
+    }
 }

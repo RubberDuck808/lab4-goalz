@@ -11,4 +11,7 @@ public class PendingElementDto
     public bool IsGreen { get; set; }
     public string? SubmittedBy { get; set; }
     public DateTime CreatedAt { get; set; }
+    public float? AiConfidence { get; set; }
+    public string? AiSummary { get; set; }
+    public string? AiResult { get; set; }
 }

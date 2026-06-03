@@ -62,6 +62,7 @@ export default function PendingElements() {
                                     <th className="px-4 py-3 text-left">Type</th>
                                     <th className="px-4 py-3 text-left">Submitted By</th>
                                     <th className="px-4 py-3 text-left">Date</th>
+                                    <th className="px-4 py-3 text-left">AI Review</th>
                                     <th className="px-4 py-3 text-left">Location</th>
                                     <th className="px-4 py-3 text-left">Actions</th>
                                 </tr>
@@ -87,6 +88,26 @@ export default function PendingElements() {
                                         <td className="px-4 py-3 text-gray-600">{el.submittedBy ?? '—'}</td>
                                         <td className="px-4 py-3 text-gray-500">
                                             {new Date(el.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {el.aiResult ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                                        el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                                                        el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'
+                                                    }`}>
+                                                        {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                                                         el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                                                    {el.aiSummary && (
+                                                        <span className="text-xs text-gray-500 italic max-w-[180px]">{el.aiSummary}</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">Analysing…</span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-gray-500 text-xs">
                                             {el.latitude.toFixed(5)}, {el.longitude.toFixed(5)}
@@ -120,7 +141,7 @@ export default function PendingElements() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                 <div className="bg-white rounded-xl shadow-xl p-6 w-80 flex flex-col gap-4">
                     <h3 className="text-base font-semibold text-gray-800">Reject submission?</h3>
-                    <p className="text-sm text-gray-500">This will permanently delete the submission. This action cannot be undone.</p>
+                    <p className="text-sm text-gray-500">This will reject the submission. The record is kept for AI training data.</p>
                     <div className="flex gap-3 justify-end">
                         <button
                             onClick={() => setRejectTarget(null)}

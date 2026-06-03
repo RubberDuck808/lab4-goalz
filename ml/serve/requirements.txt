@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+onnxruntime
+tensorflow-cpu
+pillow
+httpx
+numpy

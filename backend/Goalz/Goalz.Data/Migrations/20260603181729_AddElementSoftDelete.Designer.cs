@@ -3,6 +3,7 @@ using System;
 using Goalz.Data.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Goalz.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260603181729_AddElementSoftDelete")]
+    partial class AddElementSoftDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,7 +49,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("Answers", (string)null);
+                    b.ToTable("Answers");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Boundary", b =>
@@ -75,7 +78,7 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Geometry"), "gist");
 
-                    b.ToTable("Boundaries", (string)null);
+                    b.ToTable("Boundaries");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Checkpoint", b =>
@@ -107,7 +110,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("Type", "ReferenceId")
                         .IsUnique();
 
-                    b.ToTable("Checkpoints", (string)null);
+                    b.ToTable("Checkpoints");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Element", b =>
@@ -160,7 +163,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("ElementTypeId");
 
-                    b.ToTable("Elements", (string)null);
+                    b.ToTable("Elements");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.ElementType", b =>
@@ -211,7 +214,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("RequesterId", "AddresseeId")
                         .IsUnique();
 
-                    b.ToTable("Friendships", (string)null);
+                    b.ToTable("Friendships");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Party", b =>
@@ -259,7 +262,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("QuizId");
 
-                    b.ToTable("Parties", (string)null);
+                    b.ToTable("Parties");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyGroup", b =>
@@ -281,7 +284,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("PartyId");
 
-                    b.ToTable("PartyGroups", (string)null);
+                    b.ToTable("PartyGroups");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyGroupAnswer", b =>
@@ -307,7 +310,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("PartyGroupId");
 
-                    b.ToTable("PartyGroupAnswers", (string)null);
+                    b.ToTable("PartyGroupAnswers");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyMember", b =>
@@ -339,7 +342,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PartyMembers", (string)null);
+                    b.ToTable("PartyMembers");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyVisitedCheckpoint", b =>
@@ -379,7 +382,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PopUps", (string)null);
+                    b.ToTable("PopUps");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Question", b =>
@@ -401,7 +404,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("QuizId");
 
-                    b.ToTable("Questions", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Quiz", b =>
@@ -414,7 +417,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Quizzes", (string)null);
+                    b.ToTable("Quizzes");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Sensor", b =>
@@ -440,7 +443,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("PopUpId")
                         .IsUnique();
 
-                    b.ToTable("Sensors", (string)null);
+                    b.ToTable("Sensors");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.SensorData", b =>
@@ -480,7 +483,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("SensorsId");
 
-                    b.ToTable("SensorData", (string)null);
+                    b.ToTable("SensorData");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.User", b =>
@@ -515,7 +518,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.UserBadge", b =>
@@ -541,7 +544,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("UserId", "BadgeId")
                         .IsUnique();
 
-                    b.ToTable("UserBadges", (string)null);
+                    b.ToTable("UserBadges");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.UserPointsLog", b =>
@@ -565,7 +568,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("UserId", "EarnedAt");
 
-                    b.ToTable("UserPointsLogs", (string)null);
+                    b.ToTable("UserPointsLogs");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.UserStatistics", b =>
@@ -599,7 +602,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserStatistics", (string)null);
+                    b.ToTable("UserStatistics");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
@@ -629,7 +632,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("BoundaryId");
 
-                    b.ToTable("Zones", (string)null);
+                    b.ToTable("Zones");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Answer", b =>
