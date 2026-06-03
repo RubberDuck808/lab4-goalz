@@ -1,0 +1,17 @@
+{
+  "id": "rubberduck808/goalz-cv-pipeline",
+  "title": "Goalz CV Pipeline",
+  "code_file": "goalz_cv_pipeline.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": [
+    "noahbadoa/plantnet-300k-images",
+    "jessicali9530/caltech256",
+    "chopinforest1986/efficientnetb0b7-keras-weights"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}
