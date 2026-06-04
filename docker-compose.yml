@@ -74,7 +74,7 @@ services:
     ports:
       - "8001:8000"
     volumes:
-      - ./ml/model:/app/model:ro
+      - ./ml/serve/model:/app/model:ro
     restart: unless-stopped
 
 volumes:
