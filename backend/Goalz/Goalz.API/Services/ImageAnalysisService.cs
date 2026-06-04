@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 using Goalz.Core.Interfaces;
 using Goalz.Domain.Entities;
@@ -8,14 +9,51 @@ public class ImageAnalysisService : IImageAnalysisService
 {
     private readonly HttpClient _http;
     private readonly ILogger<ImageAnalysisService> _logger;
+    private readonly string _mlServiceUrl;
+
+    // Separate client for GCP metadata server — short timeout so local dev fails fast
+    private static readonly HttpClient _metaClient = new() { Timeout = TimeSpan.FromSeconds(2) };
+
+    private string? _cachedToken;
+    private DateTime _tokenExpiry = DateTime.MinValue;
 
     public ImageAnalysisService(HttpClient http, IConfiguration config, ILogger<ImageAnalysisService> logger)
     {
-        _http   = http;
-        _logger = logger;
-        var baseUrl = config["MlService:BaseUrl"] ?? "http://localhost:8001";
-        _http.BaseAddress = new Uri(baseUrl);
+        _http         = http;
+        _logger       = logger;
+        _mlServiceUrl = config["MlService:BaseUrl"] ?? "http://localhost:8001";
+        _http.BaseAddress = new Uri(_mlServiceUrl);
         _http.Timeout     = TimeSpan.FromSeconds(60);
+    }
+
+    /// <summary>
+    /// Fetches a Google OIDC identity token from the Cloud Run metadata server.
+    /// Returns null when running outside GCP (local dev) — callers skip auth in that case.
+    /// Tokens are cached for 50 minutes (Cloud Run issues 1-hour tokens).
+    /// </summary>
+    private async Task<string?> GetIdentityTokenAsync(CancellationToken ct)
+    {
+        if (_cachedToken is not null && DateTime.UtcNow < _tokenExpiry)
+            return _cachedToken;
+
+        try
+        {
+            var audience = _mlServiceUrl.TrimEnd('/');
+            using var req = new HttpRequestMessage(HttpMethod.Get,
+                $"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience={audience}");
+            req.Headers.Add("Metadata-Flavor", "Google");
+
+            using var resp = await _metaClient.SendAsync(req, ct);
+            if (!resp.IsSuccessStatusCode) return null;
+
+            _cachedToken = (await resp.Content.ReadAsStringAsync(ct)).Trim();
+            _tokenExpiry = DateTime.UtcNow.AddMinutes(50);
+            return _cachedToken;
+        }
+        catch
+        {
+            return null; // not on GCP — local dev, skip auth
+        }
     }
 
     public async Task<ImageAnalysisResult?> AnalyseElementAsync(
@@ -24,14 +62,15 @@ public class ImageAnalysisService : IImageAnalysisService
     {
         try
         {
-            var payload = JsonSerializer.Serialize(new
-            {
-                imageUrl,
-                elementName,
-                elementType
-            });
+            var payload = JsonSerializer.Serialize(new { imageUrl, elementName, elementType });
             using var content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
-            using var response = await _http.PostAsync("/analyse", content, ct);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/analyse") { Content = content };
+
+            var token = await GetIdentityTokenAsync(ct);
+            if (token is not null)
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var response = await _http.SendAsync(request, ct);
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadAsStringAsync(ct);
