@@ -172,6 +172,7 @@ ml:deploy:
       --region $GCP_REGION
       --no-allow-unauthenticated
       --port 8080
+      --memory 1Gi
       --project $GCP_PROJECT
   only:
     - main
