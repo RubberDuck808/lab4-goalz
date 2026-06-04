@@ -408,36 +408,40 @@ export default function ElementsPanel({
                           className="text-game-blue hover:underline text-xs mt-1 flex items-center gap-1">
                           <i className="fa-solid fa-map-pin text-[10px]" /> View on map
                         </button>
-                        {el.aiResult ? (
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
-                              el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {el.aiResult === 'AutoApprove' ? 'Likely valid' :
-                               el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                        <div className="mt-2">
+                          {analysingIds.has(el.id) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                              <i className="fa-solid fa-spinner fa-spin text-[10px]" /> Checking…
                             </span>
-                            <span className="text-xs text-text-secondary">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-text-secondary italic mt-2">Analysing…</p>
-                        )}
+                          ) : el.aiResult ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                                el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                <i className={`fa-solid fa-robot mr-1 text-[10px]`} />
+                                {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                                 el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                              </span>
+                              <span className="text-xs text-text-secondary font-medium">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                              <i className="fa-solid fa-robot text-[10px]" /> Not checked
+                            </span>
+                          )}
+                        </div>
                         <div className="flex gap-2 mt-3 flex-wrap">
                           <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
                           <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
-                          {el.imageUrl && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id); }}
-                              disabled={analysingIds.has(el.id)}
-                              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1"
-                            >
-                              {analysingIds.has(el.id)
-                                ? <><i className="fa-solid fa-spinner fa-spin" /> Checking…</>
-                                : <><i className="fa-solid fa-robot" /> Check with AI</>
-                              }
-                            </button>
-                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id); }}
+                            disabled={analysingIds.has(el.id)}
+                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1"
+                          >
+                            <i className="fa-solid fa-robot" /> Check with AI
+                          </button>
                         </div>
                       </div>
                     </div>
