@@ -144,6 +144,15 @@ public class ElementService : IElementService
         }
     }
 
+    public async Task<(bool Success, string? Error)> TriggerAnalysisAsync(long id)
+    {
+        var element = await _repository.GetByIdAsync(id);
+        if (element is null) return (false, "not_found");
+        if (element.ImageUrl is null) return (false, "no_image");
+        FireAnalysis(element.Id, element.ImageUrl, element.ElementName, element.ElementType?.Name ?? "");
+        return (true, null);
+    }
+
     private void FireAnalysis(long id, string imageUrl, string name, string type)
     {
         if (_imageAnalysis is null) return;

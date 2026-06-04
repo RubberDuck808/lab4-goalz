@@ -128,6 +128,11 @@ export const overviewService = {
         if (!res?.ok) throw new Error('Failed to reject element');
     },
 
+    triggerAnalysis: async (id) => {
+        const res = await APICall("POST", `/elements/${id}/analyse`, null, localStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to trigger analysis');
+    },
+
     getSensorHistory: async (id) => {
         const res = await APICall("GET", `/sensors/${id}/data`, null, localStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to fetch sensor data history');

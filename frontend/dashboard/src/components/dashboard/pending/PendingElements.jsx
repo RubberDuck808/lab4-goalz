@@ -8,6 +8,7 @@ export default function PendingElements() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [rejectTarget, setRejectTarget] = useState(null);
+    const [analysingIds, setAnalysingIds] = useState(new Set());
 
     useEffect(() => {
         overviewService.getPendingElements()
@@ -23,6 +24,19 @@ export default function PendingElements() {
             toast.success('Element approved.');
         } catch (e) {
             toast.error(e.message || 'Failed to approve.');
+        }
+    }
+
+    async function handleAnalyse(id) {
+        setAnalysingIds(prev => new Set(prev).add(id));
+        try {
+            await overviewService.triggerAnalysis(id);
+            setItems(prev => prev.map(el => el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el));
+            toast.info('AI analysis triggered — result will appear shortly.');
+        } catch (e) {
+            toast.error(e.message || 'Failed to trigger analysis.');
+        } finally {
+            setAnalysingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
         }
     }
 
@@ -113,19 +127,34 @@ export default function PendingElements() {
                                             {el.latitude.toFixed(5)}, {el.longitude.toFixed(5)}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleApprove(el.id)}
-                                                    className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-md transition-colors"
-                                                >
-                                                    Approve
-                                                </button>
-                                                <button
-                                                    onClick={() => setRejectTarget(el.id)}
-                                                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-md transition-colors"
-                                                >
-                                                    Reject
-                                                </button>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleApprove(el.id)}
+                                                        className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-md transition-colors"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setRejectTarget(el.id)}
+                                                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-md transition-colors"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                                {el.imageUrl && (
+                                                    <button
+                                                        onClick={() => handleAnalyse(el.id)}
+                                                        disabled={analysingIds.has(el.id)}
+                                                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-md transition-colors flex items-center gap-1"
+                                                    >
+                                                        {analysingIds.has(el.id) ? (
+                                                            <><i className="fa-solid fa-spinner fa-spin"></i> Checking…</>
+                                                        ) : (
+                                                            <><i className="fa-solid fa-robot"></i> Check with AI</>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
