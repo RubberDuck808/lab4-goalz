@@ -131,6 +131,7 @@ backend:deploy:
   only:
     - main
     - dev
+    - feature/image-analysis-cv
 
 # ------------------------
 # ML SERVICE DEPLOY
@@ -220,6 +221,7 @@ dashboard:deploy:
   only:
     - main
     - dev
+    - feature/image-analysis-cv
 
 # ------------------------
 # MOBILE EAS UPDATE
