@@ -1,6 +1,7 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Goalz.Domain.Entities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
 
@@ -14,17 +15,20 @@ public class ElementService : IElementService
     private readonly IUserService _userService;
     private readonly IImageAnalysisService? _imageAnalysis;
     private readonly ILogger<ElementService> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public ElementService(
         IElementRepository repository,
         IUserService userService,
         IImageAnalysisService? imageAnalysis,
-        ILogger<ElementService> logger)
+        ILogger<ElementService> logger,
+        IServiceScopeFactory scopeFactory)
     {
         _repository    = repository;
         _userService   = userService;
         _imageAnalysis = imageAnalysis;
         _logger        = logger;
+        _scopeFactory  = scopeFactory;
     }
 
     public Task<List<ElementType>> GetAllTypesAsync()
@@ -164,19 +168,26 @@ public class ElementService : IElementService
         await _analysisSemaphore.WaitAsync();
         try
         {
-            var result = await _imageAnalysis!.AnalyseElementAsync(imageUrl, name, type);
+            // Create a fresh scope so this background task has its own AppDbContext.
+            // The original request scope may have been disposed by the time the ML
+            // response arrives, causing ObjectDisposedException if we use _repository.
+            using var scope      = _scopeFactory.CreateScope();
+            var repository       = scope.ServiceProvider.GetRequiredService<IElementRepository>();
+            var imageAnalysis    = scope.ServiceProvider.GetRequiredService<IImageAnalysisService>();
+
+            var result = await imageAnalysis.AnalyseElementAsync(imageUrl, name, type);
             if (result is null) return;
 
-            var element = await _repository.GetByIdAsync(id);
+            var element = await repository.GetByIdAsync(id);
             if (element is null || element.IsRejected) return;
 
             element.AiConfidence = result.Confidence;
             element.AiSummary    = result.Summary;
             element.AiResult     = result.Recommendation;
-            await _repository.UpdateAsync(element);
+            await repository.UpdateAsync(element);
 
             if (result.Recommendation == AiRecommendation.AutoApprove)
-                await _repository.ApproveAsync(id);
+                await repository.ApproveAsync(id);
         }
         catch (Exception ex)
         {
