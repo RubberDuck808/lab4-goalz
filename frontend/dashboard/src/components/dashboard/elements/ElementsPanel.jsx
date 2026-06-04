@@ -46,6 +46,7 @@ export default function ElementsPanel({
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [analysingIds, setAnalysingIds] = useState(new Set());
 
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [coordsPick, setCoordsPick] = useState(null);
@@ -156,6 +157,21 @@ export default function ElementsPanel({
       toast.success('Submission rejected.');
       await fetchData(); onCheckpointsChanged(); onPendingCountChanged?.();
     } catch (e) { toast.error(e.message || 'Failed to reject.'); }
+  };
+
+  const handleAnalyse = async (id) => {
+    setAnalysingIds(prev => new Set(prev).add(id));
+    try {
+      await overviewService.triggerAnalysis(id);
+      setPendingItems(prev => prev.map(el =>
+        el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el
+      ));
+      toast.info('AI analysis triggered — result will appear shortly.');
+    } catch (e) {
+      toast.error(e.message || 'Failed to trigger analysis.');
+    } finally {
+      setAnalysingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    }
   };
 
   const handleDeleteApproved = async (el) => {
@@ -392,9 +408,36 @@ export default function ElementsPanel({
                           className="text-game-blue hover:underline text-xs mt-1 flex items-center gap-1">
                           <i className="fa-solid fa-map-pin text-[10px]" /> View on map
                         </button>
-                        <div className="flex gap-2 mt-3">
+                        {el.aiResult ? (
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                              el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                               el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                            </span>
+                            <span className="text-xs text-text-secondary">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-text-secondary italic mt-2">Analysing…</p>
+                        )}
+                        <div className="flex gap-2 mt-3 flex-wrap">
                           <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
                           <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
+                          {el.imageUrl && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id); }}
+                              disabled={analysingIds.has(el.id)}
+                              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1"
+                            >
+                              {analysingIds.has(el.id)
+                                ? <><i className="fa-solid fa-spinner fa-spin" /> Checking…</>
+                                : <><i className="fa-solid fa-robot" /> Check with AI</>
+                              }
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
