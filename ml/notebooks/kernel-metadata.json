@@ -9,7 +9,7 @@
   "enable_internet": true,
   "dataset_sources": [
     "noahbadoa/plantnet-300k-images",
-    "jessicali9530/caltech256",
+    "benjaminkz/places365",
     "chopinforest1986/efficientnetb0b7-keras-weights",
     "werus23/tf2onnx",
     "i2nfinit3y/onnxruntime"
