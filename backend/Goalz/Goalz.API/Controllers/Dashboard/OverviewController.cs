@@ -1,10 +1,12 @@
-﻿    using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Goalz.Core.Services;
 using Goalz.API.Models;
 using Goalz.Core.Interfaces;
 
 namespace Goalz.API.Controllers.Dashboard;
 
+[Authorize]
 [Route("api/dashboard/overview")]
 [ApiController]
 public class OverviewController : ControllerBase

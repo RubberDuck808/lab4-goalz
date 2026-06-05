@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createZone, updateZone, deleteZone } from '../../../services/zoneService'
 import { createBoundary, updateBoundary, deleteBoundary } from '../../../services/boundaryService'
+import { APICall } from '../../../hooks/useAPI'
 
 function getApiBase() {
   return import.meta.env.VITE_API_BASE_URL ?? ''
@@ -73,6 +74,14 @@ export default function ZonesPanel({
   const [savingGen, setSavingGen]   = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchVal, setSearchVal] = useState('')
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchVal);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [searchVal]);
 
   const [toasts, setToasts] = useState([])
   function addToast(message, type = 'success') {
@@ -191,8 +200,9 @@ export default function ZonesPanel({
     if (!selectedZone?._isBoundary) return
     setGenerating(true)
     try {
-      const res = await fetch(`${getApiBase()}/api/dashboard/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`)
-      if (!res.ok) throw new Error('Generation failed')
+      const token = sessionStorage.getItem("token") ?? ""
+      const res = await APICall("GET", `/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`, null, token)
+      if (!res?.ok) throw new Error('Generation failed')
       const geometries = await res.json()
       const list = Array.isArray(geometries) ? geometries : []
       setGeneratedZones(list)
@@ -577,8 +587,8 @@ export default function ZonesPanel({
             <input
               type="text"
               placeholder="Search sensors & elements…"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
               className={inputCls}
             />
             {searchQuery.trim() && (

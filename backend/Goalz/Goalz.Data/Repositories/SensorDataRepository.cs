@@ -14,16 +14,37 @@ public class SensorDataRepository : ISensorDataRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId)
+    public async Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId, DateTime? from = null, DateTime? to = null, int? limit = null)
     {
-        return await _context.SensorData
-            .Where(sd => sd.SensorsId == sensorId)
-            .OrderByDescending(sd => sd.Timestamp)
-            .ToListAsync();
+        var query = _context.SensorData
+            .Where(sd => sd.SensorsId == sensorId);
+
+        if (from.HasValue)
+        {
+            var utcFrom = DateTime.SpecifyKind(from.Value, DateTimeKind.Utc);
+            query = query.Where(sd => sd.Timestamp >= utcFrom);
+        }
+
+        if (to.HasValue)
+        {
+            var utcTo = DateTime.SpecifyKind(to.Value, DateTimeKind.Utc);
+            query = query.Where(sd => sd.Timestamp <= utcTo);
+        }
+
+        query = query.OrderByDescending(sd => sd.Timestamp);
+
+        if (limit.HasValue)
+        {
+            query = query.Take(Math.Min(limit.Value, 500));
+        }
+
+        return await query.ToListAsync();
     }
 
-    public async Task<IEnumerable<SensorData>> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo)
+    public IAsyncEnumerable<SensorData> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo)
     {
-        return await _context.SensorData.Where(s => s.Timestamp >= dateTimeFrom && s.Timestamp <= dateTimeTo).ToListAsync();
+        return _context.SensorData
+            .Where(s => s.Timestamp >= dateTimeFrom && s.Timestamp <= dateTimeTo)
+            .AsAsyncEnumerable();
     }
 }
