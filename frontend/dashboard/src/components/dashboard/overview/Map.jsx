@@ -595,43 +595,47 @@ const DashboardMap = forwardRef(function DashboardMap({
           >Cancel</button>
         </div>
       )}
-      {/* My Location button */}
-      <button
-        onClick={handleLocate}
-        disabled={locating}
-        title={locationActive ? 'Hide my location' : 'Show my location'}
-        className={`absolute bottom-[72px] right-4 z-[500] w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
-          locationActive ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
-        } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
-      </button>
-
-      {/* Map Type Switcher */}
-      <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
+      {/* Controls — location button above Map/Sat toggle.
+           On mobile: stacked vertically, raised above the collapsed bottom sheet (76px from bottom).
+           On desktop: location button on top, toggle switches to horizontal row. */}
+      <div className="absolute bottom-[76px] md:bottom-4 right-4 z-[500] flex flex-col items-end gap-2">
+        {/* Location button */}
         <button
-          onClick={() => setMapType('streets')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-            mapType === 'streets'
-              ? 'bg-game-green text-white shadow-sm'
-              : 'text-text-secondary hover:bg-surface hover:text-text-primary'
-          }`}
+          onClick={handleLocate}
+          disabled={locating}
+          title={locationActive ? 'Hide my location' : 'Show my location'}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
+            locationActive ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
+          } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          <i className="fa-solid fa-map text-[10px]" />
-          Map
-        </button>
-        <button
-          onClick={() => setMapType('satellite')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-            mapType === 'satellite'
-              ? 'bg-game-green text-white shadow-sm'
-              : 'text-text-secondary hover:bg-surface hover:text-text-primary'
-          }`}
-        >
-          <i className="fa-solid fa-globe text-[10px]" />
-          Satellite
+          <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
         </button>
 
+        {/* Map/Satellite toggle — vertical on mobile, horizontal on desktop */}
+        <div className="flex flex-col md:flex-row gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
+          <button
+            onClick={() => setMapType('streets')}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+              mapType === 'streets'
+                ? 'bg-game-green text-white shadow-sm'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+            }`}
+          >
+            <i className="fa-solid fa-map text-[10px]" />
+            Map
+          </button>
+          <button
+            onClick={() => setMapType('satellite')}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+              mapType === 'satellite'
+                ? 'bg-game-green text-white shadow-sm'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+            }`}
+          >
+            <i className="fa-solid fa-globe text-[10px]" />
+            Satellite
+          </button>
+        </div>
       </div>
     </div>
   )

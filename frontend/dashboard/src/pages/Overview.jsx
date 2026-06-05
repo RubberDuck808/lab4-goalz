@@ -58,8 +58,8 @@ export default function Overview() {
   };
 
   return (
-    <main className='h-full w-full flex'>
-      <div className='h-full'>
+    <main className='h-full w-full flex overflow-hidden'>
+      <div className='h-full shrink-0'>
         <Navbar
           selectedItem={selectedItem}
           setSelectedItem={setSelectedItem}
@@ -68,8 +68,12 @@ export default function Overview() {
           pendingCount={pendingCount}
         />
       </div>
-      <div className='w-full h-full overflow-y-auto flex-1'>
-        {renderContent()}
+      <div className='flex flex-col flex-1 min-h-0'>
+        {/* Spacer so content clears the fixed mobile top bar */}
+        <div className='h-[60px] shrink-0 md:hidden' />
+        <div className='flex-1 min-h-0 overflow-y-auto'>
+          {renderContent()}
+        </div>
       </div>
     </main>
   );

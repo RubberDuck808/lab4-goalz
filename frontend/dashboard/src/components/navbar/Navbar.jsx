@@ -61,12 +61,23 @@ export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, ac
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-white border border-border text-text-primary rounded-xl flex items-center justify-center shadow-sm cursor-pointer"
-      >
-        <i className="fa-solid fa-bars" />
-      </button>
+      {/* Mobile top bar — logo left, burger right */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-50 h-[60px] bg-[#1E293B] flex items-center justify-between px-4 border-b border-slate-700/40">
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="Loggin" className="w-8 h-8 shrink-0" />
+          <div>
+            <p className="text-sm font-extrabold text-white leading-tight">Loggin</p>
+            <p className="text-[10px] font-bold text-slate-400 leading-tight">Dashboard</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-10 h-10 flex items-center justify-center text-white cursor-pointer"
+          aria-label="Open menu"
+        >
+          <i className="fa-solid fa-bars text-xl" />
+        </button>
+      </div>
       {isOpen && (
         <div onClick={() => setIsOpen(false)} className="md:hidden fixed inset-0 bg-black/40 z-40" />
       )}
