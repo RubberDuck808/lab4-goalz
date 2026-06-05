@@ -9,7 +9,6 @@ const NAV_SECTIONS = [
       { name: "map:overview", label: "Overview",  icon: "fa-chart-line",    tab: "overview" },
       { name: "map:elements", label: "Elements",  icon: "fa-seedling",      tab: "elements", pendingBadge: true },
       { name: "map:sensors",  label: "Sensors",   icon: "fa-wifi",          tab: "sensors"  },
-      { name: "map:zones",    label: "Zones",     icon: "fa-draw-polygon",  tab: "zones"    },
     ],
   },
   {

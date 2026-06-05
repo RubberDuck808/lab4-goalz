@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [#105 Fix: dashboard responsive — z-index layering, GPS 3-state cycle, Zones button removal](#105-fix-dashboard-responsive--z-index-layering-gps-3-state-cycle-zones-button-removal--2026-06-05)
 1. [Feat: Show My Location button on arboretum map](#feat-show-my-location-button-on-arboretum-map--2026-05-20)
 1. [Unified persistent map — single Leaflet instance across all tabs](#unified-persistent-map--single-leaflet-instance-across-all-tabs--2026-05-19)
 1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
@@ -12,6 +13,28 @@
 1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+
+---
+
+## [#105] Fix: dashboard responsive — z-index layering, GPS 3-state cycle, Zones button removal — 2026-06-05
+
+### Fixed
+- **Z-index layering**: Map wrapper in `MapDashboard.jsx` gains `relative z-0`, creating a CSS stacking context that scopes all Leaflet internal z-indexes (200–1000) so they no longer compete with page overlays.
+- Bottom sheet raised from `z-10` to `z-[1100]`, sidebar overlay to `z-[1200]`, sidebar nav and mobile top bar to `z-[1300]` — sidebar and sheet both properly overlay the map.
+- `isOpen`/`setIsOpen` sidebar state lifted from `Navbar.jsx` to `Overview.jsx` and wired to `MapDashboard` via `onCloseSidebar` prop; touching the bottom sheet drag handle now closes the sidebar simultaneously.
+
+### Changed
+- **GPS location button** (`Map.jsx`): replaced `locationActive` boolean with `locCycle` (0 = idle / 1 = at user / 2 = at arboretum) + `userCoordsRef`. Tap 1 → geolocation + fly to user zoom 18; Tap 2 → fly to arboretum `[43.7260, -79.6099]` zoom 15, marker kept; Tap 3 → fly back to stored user coords zoom 18 (cycle repeats). Button turns blue when active.
+- **Zones nav button** removed from `NAV_SECTIONS` in `Navbar.jsx`. Underlying data fetching and `ZonesPanel` rendering are untouched.
+- **Zones layer toggle pill** removed from `layerDefs` in `MapDashboard.jsx` (both the elements-tab branch and the default branch).
+
+### Rationale
+- Leaflet sets internal pane z-indexes up to 1000 in the root CSS stacking context; `relative z-0` on the map wrapper scopes them within a new context so any z-index above 0 on a sibling beats the entire map — cleanest fix with no impact on desktop layout.
+- 3-state GPS cycle matches the spec: staff orient themselves (state 1), check the full arboretum (state 2), then return to their position (back to state 1) without re-requesting geolocation.
+- Zones tab was requested for removal by the team; the data layer and panel are kept intact for potential reintroduction.
+
+> Issue closed after 0 min
+
 ---
 
 

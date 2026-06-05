@@ -237,13 +237,11 @@ export default function MapDashboard({
         list.push({ key: name, bg: getLayerBg(name) });
       });
       list.push({ key: 'Sensors', bg: 'bg-indigo-500' });
-      list.push({ key: 'Zones', bg: 'bg-purple-500' });
       return list;
     } else {
       return [
         { key: 'Elements', bg: 'bg-game-green' },
         { key: 'Sensors',  bg: 'bg-indigo-500' },
-        { key: 'Zones',    bg: 'bg-purple-500' },
       ];
     }
   }, [activeTab, elementTypes]);
