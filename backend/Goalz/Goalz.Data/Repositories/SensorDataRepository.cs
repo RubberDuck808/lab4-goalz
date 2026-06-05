@@ -26,4 +26,17 @@ public class SensorDataRepository : ISensorDataRepository
     {
         return await _context.SensorData.Where(s => s.Timestamp >= dateTimeFrom && s.Timestamp <= dateTimeTo).ToListAsync();
     }
+
+    public async Task<IEnumerable<SensorData>> GetDataSummary()
+    {
+        var data = await _context.SensorData
+            .OrderByDescending(x => x.Timestamp)
+            .ToListAsync();
+
+        return data
+            .GroupBy(x => x.SensorsId)
+            .Select(g => g.First())
+            .Take(20)
+            .ToList();
+    }
 }

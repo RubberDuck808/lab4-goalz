@@ -83,4 +83,12 @@ public class SensorController : ControllerBase
         var data = await _sensorDataService.GetBySensorIdAsync(id);
         return Ok(data);
     }
+
+    [HttpGet("dashboard/sensor-summary")]
+    public async Task<IActionResult> GetSensorSummary()
+    {
+        var data = await _sensorService.GetDataSummary();
+
+        return Ok(data);
+    }
 }

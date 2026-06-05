@@ -7,6 +7,7 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from '../map/boundarySnap'
+import DashboardChatbot from '../chatbot/DashboardChatbot'
 
 // ── tile providers ─────────────────────────────────────────────────────────
 const TILE_PROVIDERS = {
@@ -607,8 +608,12 @@ const DashboardMap = forwardRef(function DashboardMap({
         <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
       </button>
 
+      <DashboardChatbot />
+
+
       {/* Map Type Switcher */}
       <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
+
         <button
           onClick={() => setMapType('streets')}
           className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${

@@ -143,7 +143,7 @@ builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
 // Lobby
 builder.Services.AddScoped<ILobbyService, LobbyService>();
-builder.Services.AddHostedService<PartyCleanupService>();
+//builder.Services.AddHostedService<PartyCleanupService>();
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
     {
