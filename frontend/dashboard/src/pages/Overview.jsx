@@ -73,10 +73,10 @@ export default function Overview() {
           setIsOpen={setSidebarOpen}
         />
       </div>
-      <div className='flex flex-col flex-1 min-h-0'>
+      <div className='flex flex-col flex-1 min-h-0 min-w-0'>
         {/* Spacer so content clears the fixed mobile top bar */}
         <div className='h-[60px] shrink-0 md:hidden' />
-        <div className='flex-1 min-h-0 overflow-y-auto'>
+        <div className='flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden'>
           {renderContent()}
         </div>
       </div>

@@ -395,20 +395,18 @@ export default function MapDashboard({
       {(isLoading || zonesLoading) && <Loading />}
 
       {/* Top bar */}
-      <div className="bg-white border-b border-border flex flex-col md:flex-row md:items-center justify-between px-5 py-2.5 md:py-0 gap-3 min-h-[60px] md:h-[60px] shrink-0">
-        <div className="flex flex-wrap items-center gap-4">
-          <div>
-            <h1 className="font-bold text-base text-text-primary leading-tight truncate">
-              {TAB_LABELS[activeTab] ?? 'Map'}
-            </h1>
-            <p className="text-text-secondary text-[10px] hidden md:block leading-tight mt-0.5">
-              Office of Sustainability · Arboretum
-            </p>
-          </div>
+      <div className="bg-white border-b border-border flex items-center justify-between px-4 gap-3 h-[50px] md:h-[60px] shrink-0">
+        <div className="shrink-0">
+          <h1 className="font-bold text-sm md:text-base text-text-primary leading-tight">
+            {TAB_LABELS[activeTab] ?? 'Map'}
+          </h1>
+          <p className="text-text-secondary text-[10px] hidden md:block leading-tight mt-0.5">
+            Office of Sustainability · Arboretum
+          </p>
         </div>
 
         {/* Layer Toggles */}
-        <div className="flex items-center gap-1 shrink-0 overflow-x-auto no-scrollbar py-1 md:py-0">
+        <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto no-scrollbar">
           {layerDefs.map(({ key, bg }) => (
             <button
               key={key}
