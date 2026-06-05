@@ -41,6 +41,7 @@ export default function MapDashboard({
   setActiveTab,
   pendingCount,
   onPendingCountChanged,
+  onCloseSidebar,
 }) {
   // ── checkpoint state ───────────────────────────────────────────────────
   const [checkpoints, setCheckpoints] = useState([]);
@@ -342,7 +343,8 @@ export default function MapDashboard({
   const handleSheetDragStart = useCallback((e) => {
     sheetDragStartYRef.current = e.touches[0].clientY;
     sheetDragDeltaRef.current  = 0;
-  }, []);
+    onCloseSidebar?.();
+  }, [onCloseSidebar]);
 
   const handleSheetDragMove = useCallback((e) => {
     if (sheetDragStartYRef.current == null) return;
@@ -432,7 +434,7 @@ export default function MapDashboard({
         <div
           className={[
             // ── mobile: absolute bottom sheet ──────────────────────────────
-            'absolute inset-x-0 bottom-0 z-10 w-full h-[65vh]',
+            'absolute inset-x-0 bottom-0 z-[1100] w-full h-[65vh]',
             // ── desktop: static sidebar ────────────────────────────────────
             'md:static md:inset-auto md:z-auto md:w-[380px] md:h-auto md:flex-1',
             // ── shared appearance ──────────────────────────────────────────
@@ -494,8 +496,8 @@ export default function MapDashboard({
           {activeTab === 'zones' && <ZonesPanel {...zonesPanelProps} />}
         </div>
 
-        {/* Persistent map — never remounts */}
-        <div className="flex-1 overflow-hidden">
+        {/* relative z-0 scopes Leaflet's internal z-indexes so sheet/sidebar can overlay the map */}
+        <div className="relative z-0 flex-1 overflow-hidden">
           <Map
             ref={mapRef}
             checkpoints={filteredCheckpoints}

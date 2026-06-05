@@ -12,6 +12,7 @@ export default function Overview() {
   const [bleSelectedSensorId, setBleSelectedSensorId] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [pendingCount, setPendingCount] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchPendingCount = useCallback(async () => {
     try {
@@ -33,6 +34,7 @@ export default function Overview() {
             setActiveTab={setActiveTab}
             pendingCount={pendingCount}
             onPendingCountChanged={fetchPendingCount}
+            onCloseSidebar={() => setSidebarOpen(false)}
           />
         );
       case "Reports":
@@ -52,6 +54,7 @@ export default function Overview() {
             setActiveTab={setActiveTab}
             pendingCount={pendingCount}
             onPendingCountChanged={fetchPendingCount}
+            onCloseSidebar={() => setSidebarOpen(false)}
           />
         );
     }
@@ -66,6 +69,8 @@ export default function Overview() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           pendingCount={pendingCount}
+          isOpen={sidebarOpen}
+          setIsOpen={setSidebarOpen}
         />
       </div>
       <div className='flex flex-col flex-1 min-h-0'>

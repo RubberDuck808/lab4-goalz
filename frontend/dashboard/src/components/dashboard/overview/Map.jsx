@@ -135,9 +135,10 @@ const DashboardMap = forwardRef(function DashboardMap({
   const mapInstanceRef     = useRef(null)
   const tileLayerRef       = useRef(null)
   const [mapType, setMapType] = useState('streets')
-  const [locating, setLocating]             = useState(false)
-  const [locationActive, setLocationActive] = useState(false)
-  const internalLocationRef                 = useRef(null)
+  const [locating, setLocating]   = useState(false)
+  const [locCycle, setLocCycle]   = useState(0)   // 0 = idle, 1 = at user, 2 = at arboretum
+  const internalLocationRef       = useRef(null)
+  const userCoordsRef             = useRef(null)
   // checkpoint cluster
   const clusterGroupRef    = useRef(null)
   const hasFitRef          = useRef(false)
@@ -526,34 +527,42 @@ const DashboardMap = forwardRef(function DashboardMap({
     })
   }, [previewZones])
 
-  // ── my-location handler ────────────────────────────────────────────────
+  // ── my-location handler (3-state: idle → at-user → at-arboretum → at-user …)
   function handleLocate() {
     const map = mapInstanceRef.current
-    if (locationActive) {
-      if (internalLocationRef.current) { map?.removeLayer(internalLocationRef.current); internalLocationRef.current = null }
-      setLocationActive(false)
-      return
+    if (!map) return
+
+    if (locCycle === 0) {
+      if (!navigator.geolocation) return
+      setLocating(true)
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          if (!mapInstanceRef.current) { setLocating(false); return }
+          if (internalLocationRef.current) mapInstanceRef.current.removeLayer(internalLocationRef.current)
+          const icon = L.divIcon({
+            html: `<style>@keyframes lp{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.5);opacity:0}}.lp-ring{animation:lp 1.5s ease-out infinite}</style><div style="position:relative;width:20px;height:20px"><div class="lp-ring" style="position:absolute;inset:0;border-radius:50%;background:#2563eb"></div><div style="position:absolute;inset:4px;border-radius:50%;background:#2563eb;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div></div>`,
+            className: '', iconSize: [20, 20], iconAnchor: [10, 10],
+          })
+          internalLocationRef.current = L.marker([coords.latitude, coords.longitude], { icon, zIndexOffset: 2000 })
+            .addTo(mapInstanceRef.current)
+            .bindTooltip('You are here', { permanent: false, direction: 'top', offset: [0, -10] })
+          userCoordsRef.current = [coords.latitude, coords.longitude]
+          mapInstanceRef.current.flyTo([coords.latitude, coords.longitude], 18, { duration: 1.5 })
+          setLocCycle(1)
+          setLocating(false)
+        },
+        () => setLocating(false),
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    } else if (locCycle === 1) {
+      // Zoom out to full arboretum view, keep marker
+      map.flyTo([43.7260, -79.6099], 15, { duration: 1.5 })
+      setLocCycle(2)
+    } else {
+      // Zoom back to user location
+      if (userCoordsRef.current) map.flyTo(userCoordsRef.current, 18, { duration: 1.5 })
+      setLocCycle(1)
     }
-    if (!navigator.geolocation) return
-    setLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        if (!mapInstanceRef.current) { setLocating(false); return }
-        if (internalLocationRef.current) mapInstanceRef.current.removeLayer(internalLocationRef.current)
-        const icon = L.divIcon({
-          html: `<style>@keyframes lp{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.5);opacity:0}}.lp-ring{animation:lp 1.5s ease-out infinite}</style><div style="position:relative;width:20px;height:20px"><div class="lp-ring" style="position:absolute;inset:0;border-radius:50%;background:#2563eb"></div><div style="position:absolute;inset:4px;border-radius:50%;background:#2563eb;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div></div>`,
-          className: '', iconSize: [20, 20], iconAnchor: [10, 10],
-        })
-        internalLocationRef.current = L.marker([coords.latitude, coords.longitude], { icon, zIndexOffset: 2000 })
-          .addTo(mapInstanceRef.current)
-          .bindTooltip('You are here', { permanent: false, direction: 'top', offset: [0, -10] })
-        mapInstanceRef.current.flyTo([coords.latitude, coords.longitude], 18, { duration: 1.5 })
-        setLocationActive(true)
-        setLocating(false)
-      },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
   }
 
   // ── render ─────────────────────────────────────────────────────────────
@@ -603,9 +612,9 @@ const DashboardMap = forwardRef(function DashboardMap({
         <button
           onClick={handleLocate}
           disabled={locating}
-          title={locationActive ? 'Hide my location' : 'Show my location'}
+          title={locCycle === 0 ? 'Go to my location' : locCycle === 1 ? 'Show full arboretum' : 'Back to my location'}
           className={`w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
-            locationActive ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
+            locCycle > 0 ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
           } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
           <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />

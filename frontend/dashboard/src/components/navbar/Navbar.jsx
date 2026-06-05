@@ -28,8 +28,7 @@ const NAV_SECTIONS = [
   },
 ];
 
-export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, activeTab, pendingCount = 0 }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, activeTab, pendingCount = 0, isOpen, setIsOpen }) {
   const [openSections, setOpenSections] = useState(
     NAV_SECTIONS.reduce((acc, s) => ({ ...acc, [s.title]: true }), {})
   );
@@ -62,7 +61,7 @@ export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, ac
   return (
     <>
       {/* Mobile top bar — logo left, burger right */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-50 h-[60px] bg-[#1E293B] flex items-center justify-between px-4 border-b border-slate-700/40">
+      <div className="md:hidden fixed top-0 inset-x-0 z-[1300] h-[60px] bg-[#1E293B] flex items-center justify-between px-4 border-b border-slate-700/40">
         <div className="flex items-center gap-3">
           <img src="/logo.svg" alt="Loggin" className="w-8 h-8 shrink-0" />
           <div>
@@ -79,11 +78,11 @@ export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, ac
         </button>
       </div>
       {isOpen && (
-        <div onClick={() => setIsOpen(false)} className="md:hidden fixed inset-0 bg-black/40 z-40" />
+        <div onClick={() => setIsOpen(false)} className="md:hidden fixed inset-0 bg-black/40 z-[1200]" />
       )}
 
       <nav className={`
-        fixed md:static top-0 left-0 z-50
+        fixed md:static top-0 left-0 z-[1300]
         w-[220px] md:w-[220px]
         h-screen md:h-full
         bg-[#1E293B] border-r border-slate-700/40 flex flex-col
