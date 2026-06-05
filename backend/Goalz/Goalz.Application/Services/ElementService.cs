@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Goalz.Domain.Entities;
@@ -10,6 +11,7 @@ namespace Goalz.Core.Services;
 public class ElementService : IElementService
 {
     private static readonly SemaphoreSlim _analysisSemaphore = new(10, 10);
+    private static readonly ConcurrentDictionary<long, byte> _inFlightIds = new();
 
     private readonly IElementRepository _repository;
     private readonly IUserService _userService;
@@ -160,6 +162,7 @@ public class ElementService : IElementService
     private void FireAnalysis(long id, string imageUrl, string name, string type)
     {
         if (_imageAnalysis is null) return;
+        if (!_inFlightIds.TryAdd(id, 0)) return; // already in flight
         _ = Task.Run(() => AnalyseAndActAsync(id, imageUrl, name, type));
     }
 
@@ -196,6 +199,7 @@ public class ElementService : IElementService
         finally
         {
             _analysisSemaphore.Release();
+            _inFlightIds.TryRemove(id, out _);
         }
     }
 }

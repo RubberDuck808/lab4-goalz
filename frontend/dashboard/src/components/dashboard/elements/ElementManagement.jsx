@@ -41,6 +41,8 @@ export default function ElementManagement() {
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [analysingIds, setAnalysingIds] = useState(new Set());
+  const [failedIds, setFailedIds] = useState(new Set());
 
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [coordsPick, setCoordsPick] = useState(null);
@@ -156,6 +158,46 @@ export default function ElementManagement() {
     setEditingElement(null);
     setViewPin({ lat, lng });
     setMapFlyTo({ lat, lng });
+  };
+
+  // ── AI analysis ───────────────────────────────────────────────────────────
+  const handleAnalyse = async (id) => {
+    setAnalysingIds(prev => new Set(prev).add(id));
+    setFailedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    try {
+      await overviewService.triggerAnalysis(id);
+      setPendingItems(prev => prev.map(el =>
+        el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el
+      ));
+
+      const startTime = Date.now();
+      const poll = setInterval(async () => {
+        if (Date.now() - startTime > 20_000) {
+          clearInterval(poll);
+          setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+          setFailedIds(s => new Set(s).add(id));
+          return;
+        }
+        try {
+          const fresh = await overviewService.getPendingElements();
+          const found = Array.isArray(fresh) ? fresh.find(el => el.id === id) : null;
+          if (!found) {
+            clearInterval(poll);
+            setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            await fetchData();
+            return;
+          }
+          if (found.aiResult) {
+            clearInterval(poll);
+            setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            setPendingItems(prev => prev.map(el => el.id === id ? found : el));
+          }
+        } catch { /* ignore transient poll errors */ }
+      }, 2_000);
+    } catch (e) {
+      toast.error(e.message || 'Failed to trigger analysis.');
+      setAnalysingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    }
   };
 
   // ── CRUD handlers ─────────────────────────────────────────────────────────
@@ -507,6 +549,7 @@ export default function ElementManagement() {
                         <th className="px-4 py-3 text-left">Submitted By</th>
                         <th className="px-4 py-3 text-left">Date</th>
                         <th className="px-4 py-3 text-left">Location</th>
+                        <th className="px-4 py-3 text-left">AI</th>
                         <th className="px-4 py-3 text-left">Actions</th>
                       </tr>
                     </thead>
@@ -535,10 +578,53 @@ export default function ElementManagement() {
                               <i className="fa-solid fa-map-pin text-[10px]" /> View on map
                             </button>
                           </td>
+                          <td className="px-4 py-3 min-w-[140px]">
+                            {analysingIds.has(el.id) ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                <i className="fa-solid fa-spinner fa-spin text-[10px]" /> Checking…
+                              </span>
+                            ) : el.aiResult ? (
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                    el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                                    el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    <i className="fa-solid fa-robot mr-1 text-[10px]" />
+                                    {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                                     el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                                  </span>
+                                  <span className="text-xs text-gray-500 font-medium">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                                </div>
+                                {el.aiSummary && (
+                                  <p className="text-xs text-gray-400 italic">{el.aiSummary}</p>
+                                )}
+                              </div>
+                            ) : failedIds.has(el.id) ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-500">
+                                <i className="fa-solid fa-triangle-exclamation text-[10px]" /> Analysis failed
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                                <i className="fa-solid fa-robot text-[10px]" /> Not checked
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3">
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                               <button onClick={() => handleApprove(el.id)} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-md transition-colors">Approve</button>
                               <button onClick={() => handleReject(el.id)} className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-md transition-colors">Reject</button>
+                              <button
+                                onClick={() => handleAnalyse(el.id)}
+                                disabled={analysingIds.has(el.id)}
+                                className={`px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-md transition-colors ${
+                                  el.aiResult ? 'bg-gray-400 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'
+                                }`}
+                              >
+                                <i className="fa-solid fa-robot mr-1" />
+                                {el.aiResult ? 'Re-check' : 'Check with AI'}
+                              </button>
                             </div>
                           </td>
                         </tr>

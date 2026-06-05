@@ -47,6 +47,7 @@ export default function ElementsPanel({
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [analysingIds, setAnalysingIds] = useState(new Set());
+  const [failedIds, setFailedIds] = useState(new Set());
 
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [coordsPick, setCoordsPick] = useState(null);
@@ -161,15 +162,39 @@ export default function ElementsPanel({
 
   const handleAnalyse = async (id) => {
     setAnalysingIds(prev => new Set(prev).add(id));
+    setFailedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     try {
       await overviewService.triggerAnalysis(id);
       setPendingItems(prev => prev.map(el =>
         el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el
       ));
-      toast.info('AI analysis triggered — result will appear shortly.');
+
+      const startTime = Date.now();
+      const poll = setInterval(async () => {
+        if (Date.now() - startTime > 20_000) {
+          clearInterval(poll);
+          setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+          setFailedIds(s => new Set(s).add(id));
+          return;
+        }
+        try {
+          const fresh = await overviewService.getPendingElements();
+          const found = Array.isArray(fresh) ? fresh.find(el => el.id === id) : null;
+          if (!found) {
+            clearInterval(poll);
+            setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            await fetchData();
+            return;
+          }
+          if (found.aiResult) {
+            clearInterval(poll);
+            setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            setPendingItems(prev => prev.map(el => el.id === id ? found : el));
+          }
+        } catch { /* ignore transient poll errors */ }
+      }, 2_000);
     } catch (e) {
       toast.error(e.message || 'Failed to trigger analysis.');
-    } finally {
       setAnalysingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }
   };
@@ -414,18 +439,27 @@ export default function ElementsPanel({
                               <i className="fa-solid fa-spinner fa-spin text-[10px]" /> Checking…
                             </span>
                           ) : el.aiResult ? (
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
-                                el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                <i className={`fa-solid fa-robot mr-1 text-[10px]`} />
-                                {el.aiResult === 'AutoApprove' ? 'Likely valid' :
-                                 el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
-                              </span>
-                              <span className="text-xs text-text-secondary font-medium">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                                  el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  <i className="fa-solid fa-robot mr-1 text-[10px]" />
+                                  {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                                   el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                                </span>
+                                <span className="text-xs text-text-secondary font-medium">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                              </div>
+                              {el.aiSummary && (
+                                <p className="text-xs text-text-secondary italic mt-0.5">{el.aiSummary}</p>
+                              )}
                             </div>
+                          ) : failedIds.has(el.id) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-500">
+                              <i className="fa-solid fa-triangle-exclamation text-[10px]" /> Analysis failed
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
                               <i className="fa-solid fa-robot text-[10px]" /> Not checked
@@ -438,9 +472,11 @@ export default function ElementsPanel({
                           <button
                             onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id); }}
                             disabled={analysingIds.has(el.id)}
-                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1"
+                            className={`px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1 ${
+                              el.aiResult ? 'bg-gray-400 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
                           >
-                            <i className="fa-solid fa-robot" /> Check with AI
+                            <i className="fa-solid fa-robot" /> {el.aiResult ? 'Re-check' : 'Check with AI'}
                           </button>
                         </div>
                       </div>

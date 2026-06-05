@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Fix: ML dashboard feedback — live polling, dedup, summary display, ElementManagement AI column](#fix-ml-dashboard-feedback--live-polling-dedup-summary-display-elementmanagement-ai-column--2026-06-05)
 1. [Feat: Show My Location button on arboretum map](#feat-show-my-location-button-on-arboretum-map--2026-05-20)
 1. [Unified persistent map — single Leaflet instance across all tabs](#unified-persistent-map--single-leaflet-instance-across-all-tabs--2026-05-19)
 1. [Fix: MR !66 review — MapController null checks, PartyController GetParty, ZoneController doc](#fix-mr-66-review--mapcollectornull-checks-partycontroller-getparty--2026-05-19)
@@ -14,6 +15,24 @@
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
 ---
 
+
+## Fix: ML dashboard feedback — live polling, dedup, summary display, ElementManagement AI column — 2026-06-05
+
+### Changed
+- **Backend** (`ElementService.cs`): Added `ConcurrentDictionary<long, byte> _inFlightIds` in-flight guard. `FireAnalysis` now returns early if the same element ID is already being processed, preventing duplicate ML calls from concurrent manual triggers and the retry service. The ID is removed in `AnalyseAndActAsync`'s `finally` block.
+- **ElementsPanel.jsx**: Replaced instant-clear spinner with live polling. After triggering analysis, `handleAnalyse` keeps the element in `analysingIds` and starts a `setInterval` (2 s) that polls `getPendingElements` for up to 20 s. When a result arrives it updates `pendingItems` in-place; if the element disappears (auto-approved) it calls `fetchData`. Timeout after 20 s sets a `failedIds` entry and shows an "Analysis failed" badge.
+- **ElementsPanel.jsx**: `aiSummary` is now displayed as italic text below the AI badge in pending element cards.
+- **ElementsPanel.jsx**: "Check with AI" button changes to "Re-check" (gray) when a result already exists, reducing accidental re-triggering.
+- **ElementManagement.jsx**: Added `analysingIds`, `failedIds` state and `handleAnalyse` (same polling logic). Pending table now includes an "AI" column showing the badge + summary, and a "Check with AI" / "Re-check" button in the Actions column — bringing this view to full parity with ElementsPanel.
+
+### Rationale
+- The original `handleAnalyse` cleared the spinner in `finally`, which ran the moment the 202 came back — so results never appeared without a manual refresh. Polling the `/pending` endpoint until `aiResult` is populated closes this gap without requiring a new WebSocket event.
+- The in-flight dictionary prevents stacked ML calls when staff click the button repeatedly or when the 2-minute retry service fires simultaneously, reducing unnecessary load on the Cloud Run ML service.
+- `ElementManagement.jsx` is a separate full-page staff view for the same pending queue; omitting AI there meant staff using that page had no visibility into AI recommendations at all.
+
+> Issue closed after 30 min
+
+---
 
 ## Feat: Show My Location button on arboretum map — 2026-05-20
 
