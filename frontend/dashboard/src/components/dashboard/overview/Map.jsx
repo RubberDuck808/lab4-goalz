@@ -218,7 +218,7 @@ const DashboardMap = forwardRef(function DashboardMap({
     const container = mapRef.current
     if (container._leaflet_id) { container._leaflet_id = null; delete container._leaflet_id }
 
-    const map = L.map(container, { attributionControl: false, zoomSnap: 0.5, maxZoom: 22 }).setView([43.7260, -79.6099], 15)
+    const map = L.map(container, { attributionControl: false, zoomControl: false, zoomSnap: 0.5, maxZoom: 22 }).setView([43.7260, -79.6099], 15)
     mapInstanceRef.current = map
 
     // panes for zone polygons
@@ -229,8 +229,18 @@ const DashboardMap = forwardRef(function DashboardMap({
     const baseLayer = L.tileLayer(provider.url, provider.options).addTo(map)
     tileLayerRef.current = baseLayer
 
-    map.setMinZoom(0)
-    map.zoomControl.setPosition('bottomleft')
+    // Keep minZoom tight enough that tiles always fill the container (no gray edges).
+    // At zoom z, Leaflet's 256 px tile grid is 256·2^z px wide and tall.
+    const updateMinZoom = () => {
+      const w = container.clientWidth
+      const h = container.clientHeight
+      if (!w || !h) return
+      map.setMinZoom(Math.ceil(Math.max(Math.log2(w / 256), Math.log2(h / 256))))
+    }
+    updateMinZoom()
+    const minZoomObserver = new ResizeObserver(updateMinZoom)
+    minZoomObserver.observe(container)
+
 
     // checkpoint cluster
     const clusterGroup = L.markerClusterGroup({
@@ -322,6 +332,7 @@ const DashboardMap = forwardRef(function DashboardMap({
     })
 
     return () => {
+      minZoomObserver.disconnect()
       container.removeEventListener('mousedown', blockOutsideClick, true)
       container.removeEventListener('touchstart', blockOutsideClick, { capture: true })
       hasFitRef.current = false

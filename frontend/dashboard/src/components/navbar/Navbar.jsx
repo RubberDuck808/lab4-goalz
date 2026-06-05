@@ -69,7 +69,7 @@ export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, ac
           </div>
         </div>
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsOpen(x => !x)}
           className="w-10 h-10 flex items-center justify-center text-white cursor-pointer"
           aria-label="Open menu"
         >
