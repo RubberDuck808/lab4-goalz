@@ -136,9 +136,10 @@ const DashboardMap = forwardRef(function DashboardMap({
   const mapInstanceRef     = useRef(null)
   const tileLayerRef       = useRef(null)
   const [mapType, setMapType] = useState('streets')
-  const [locating, setLocating]             = useState(false)
-  const [locationActive, setLocationActive] = useState(false)
-  const internalLocationRef                 = useRef(null)
+  const [locating, setLocating]   = useState(false)
+  const [locCycle, setLocCycle]   = useState(0)   // 0 = idle, 1 = at user, 2 = at arboretum
+  const internalLocationRef       = useRef(null)
+  const userCoordsRef             = useRef(null)
   // checkpoint cluster
   const clusterGroupRef    = useRef(null)
   const hasFitRef          = useRef(false)
@@ -218,7 +219,7 @@ const DashboardMap = forwardRef(function DashboardMap({
     const container = mapRef.current
     if (container._leaflet_id) { container._leaflet_id = null; delete container._leaflet_id }
 
-    const map = L.map(container, { attributionControl: false, zoomSnap: 0.5, maxZoom: 22 }).setView([43.7260, -79.6099], 15)
+    const map = L.map(container, { attributionControl: false, zoomControl: false, zoomSnap: 0.5, maxZoom: 22 }).setView([43.7260, -79.6099], 15)
     mapInstanceRef.current = map
 
     // panes for zone polygons
@@ -229,8 +230,18 @@ const DashboardMap = forwardRef(function DashboardMap({
     const baseLayer = L.tileLayer(provider.url, provider.options).addTo(map)
     tileLayerRef.current = baseLayer
 
-    map.setMinZoom(0)
-    map.zoomControl.setPosition('bottomleft')
+    // Keep minZoom tight enough that tiles always fill the container (no gray edges).
+    // At zoom z, Leaflet's 256 px tile grid is 256·2^z px wide and tall.
+    const updateMinZoom = () => {
+      const w = container.clientWidth
+      const h = container.clientHeight
+      if (!w || !h) return
+      map.setMinZoom(Math.ceil(Math.max(Math.log2(w / 256), Math.log2(h / 256))))
+    }
+    updateMinZoom()
+    const minZoomObserver = new ResizeObserver(updateMinZoom)
+    minZoomObserver.observe(container)
+
 
     // checkpoint cluster
     const clusterGroup = L.markerClusterGroup({
@@ -322,6 +333,7 @@ const DashboardMap = forwardRef(function DashboardMap({
     })
 
     return () => {
+      minZoomObserver.disconnect()
       container.removeEventListener('mousedown', blockOutsideClick, true)
       container.removeEventListener('touchstart', blockOutsideClick, { capture: true })
       hasFitRef.current = false
@@ -527,34 +539,42 @@ const DashboardMap = forwardRef(function DashboardMap({
     })
   }, [previewZones])
 
-  // ── my-location handler ────────────────────────────────────────────────
+  // ── my-location handler (3-state: idle → at-user → at-arboretum → at-user …)
   function handleLocate() {
     const map = mapInstanceRef.current
-    if (locationActive) {
-      if (internalLocationRef.current) { map?.removeLayer(internalLocationRef.current); internalLocationRef.current = null }
-      setLocationActive(false)
-      return
+    if (!map) return
+
+    if (locCycle === 0) {
+      if (!navigator.geolocation) return
+      setLocating(true)
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          if (!mapInstanceRef.current) { setLocating(false); return }
+          if (internalLocationRef.current) mapInstanceRef.current.removeLayer(internalLocationRef.current)
+          const icon = L.divIcon({
+            html: `<style>@keyframes lp{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.5);opacity:0}}.lp-ring{animation:lp 1.5s ease-out infinite}</style><div style="position:relative;width:20px;height:20px"><div class="lp-ring" style="position:absolute;inset:0;border-radius:50%;background:#2563eb"></div><div style="position:absolute;inset:4px;border-radius:50%;background:#2563eb;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div></div>`,
+            className: '', iconSize: [20, 20], iconAnchor: [10, 10],
+          })
+          internalLocationRef.current = L.marker([coords.latitude, coords.longitude], { icon, zIndexOffset: 2000 })
+            .addTo(mapInstanceRef.current)
+            .bindTooltip('You are here', { permanent: false, direction: 'top', offset: [0, -10] })
+          userCoordsRef.current = [coords.latitude, coords.longitude]
+          mapInstanceRef.current.flyTo([coords.latitude, coords.longitude], 18, { duration: 1.5 })
+          setLocCycle(1)
+          setLocating(false)
+        },
+        () => setLocating(false),
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    } else if (locCycle === 1) {
+      // Zoom out to full arboretum view, keep marker
+      map.flyTo([43.7260, -79.6099], 15, { duration: 1.5 })
+      setLocCycle(2)
+    } else {
+      // Zoom back to user location
+      if (userCoordsRef.current) map.flyTo(userCoordsRef.current, 18, { duration: 1.5 })
+      setLocCycle(1)
     }
-    if (!navigator.geolocation) return
-    setLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        if (!mapInstanceRef.current) { setLocating(false); return }
-        if (internalLocationRef.current) mapInstanceRef.current.removeLayer(internalLocationRef.current)
-        const icon = L.divIcon({
-          html: `<style>@keyframes lp{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.5);opacity:0}}.lp-ring{animation:lp 1.5s ease-out infinite}</style><div style="position:relative;width:20px;height:20px"><div class="lp-ring" style="position:absolute;inset:0;border-radius:50%;background:#2563eb"></div><div style="position:absolute;inset:4px;border-radius:50%;background:#2563eb;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div></div>`,
-          className: '', iconSize: [20, 20], iconAnchor: [10, 10],
-        })
-        internalLocationRef.current = L.marker([coords.latitude, coords.longitude], { icon, zIndexOffset: 2000 })
-          .addTo(mapInstanceRef.current)
-          .bindTooltip('You are here', { permanent: false, direction: 'top', offset: [0, -10] })
-        mapInstanceRef.current.flyTo([coords.latitude, coords.longitude], 18, { duration: 1.5 })
-        setLocationActive(true)
-        setLocating(false)
-      },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
   }
 
   // ── render ─────────────────────────────────────────────────────────────
@@ -596,6 +616,11 @@ const DashboardMap = forwardRef(function DashboardMap({
           >Cancel</button>
         </div>
       )}
+      {/* Controls — location button above Map/Sat toggle.
+           On mobile: stacked vertically, raised above the collapsed bottom sheet (76px from bottom).
+           On desktop: location button on top, toggle switches to horizontal row. */}
+      <div className="absolute bottom-[76px] md:bottom-4 right-4 z-[500] flex flex-col items-end gap-2">
+        {/* Location button */}
       {/* My Location button */}
       <button
         onClick={handleLocate}
@@ -615,31 +640,46 @@ const DashboardMap = forwardRef(function DashboardMap({
       <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
 
         <button
-          onClick={() => setMapType('streets')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-            mapType === 'streets'
-              ? 'bg-game-green text-white shadow-sm'
-              : 'text-text-secondary hover:bg-surface hover:text-text-primary'
-          }`}
+          onClick={handleLocate}
+          disabled={locating}
+          title={locCycle === 0 ? 'Go to my location' : locCycle === 1 ? 'Show full arboretum' : 'Back to my location'}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
+            locCycle > 0 ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
+          } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          <i className="fa-solid fa-map text-[10px]" />
-          Map
-        </button>
-        <button
-          onClick={() => setMapType('satellite')}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-            mapType === 'satellite'
-              ? 'bg-game-green text-white shadow-sm'
-              : 'text-text-secondary hover:bg-surface hover:text-text-primary'
-          }`}
-        >
-          <i className="fa-solid fa-globe text-[10px]" />
-          Satellite
+          <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
         </button>
 
+        {/* Map/Satellite toggle — vertical on mobile, horizontal on desktop */}
+        <div className="flex flex-col md:flex-row gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
+          <button
+            onClick={() => setMapType('streets')}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+              mapType === 'streets'
+                ? 'bg-game-green text-white shadow-sm'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+            }`}
+          >
+            <i className="fa-solid fa-map text-[10px]" />
+            Map
+          </button>
+          <button
+            onClick={() => setMapType('satellite')}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+              mapType === 'satellite'
+                ? 'bg-game-green text-white shadow-sm'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+            }`}
+          >
+            <i className="fa-solid fa-globe text-[10px]" />
+            Satellite
+          </button>
+        </div>
       </div>
     </div>
-  )
-})
+  </div>
+)
+}
+)
 
 export default DashboardMap

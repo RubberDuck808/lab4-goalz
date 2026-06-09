@@ -12,6 +12,7 @@ export default function Overview() {
   const [bleSelectedSensorId, setBleSelectedSensorId] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [pendingCount, setPendingCount] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchPendingCount = useCallback(async () => {
     try {
@@ -33,6 +34,7 @@ export default function Overview() {
             setActiveTab={setActiveTab}
             pendingCount={pendingCount}
             onPendingCountChanged={fetchPendingCount}
+            onCloseSidebar={() => setSidebarOpen(false)}
           />
         );
       case "Reports":
@@ -52,24 +54,31 @@ export default function Overview() {
             setActiveTab={setActiveTab}
             pendingCount={pendingCount}
             onPendingCountChanged={fetchPendingCount}
+            onCloseSidebar={() => setSidebarOpen(false)}
           />
         );
     }
   };
 
   return (
-    <main className='h-full w-full flex'>
-      <div className='h-full'>
+    <main className='h-full w-full flex overflow-hidden'>
+      <div className='h-full shrink-0'>
         <Navbar
           selectedItem={selectedItem}
           setSelectedItem={setSelectedItem}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           pendingCount={pendingCount}
+          isOpen={sidebarOpen}
+          setIsOpen={setSidebarOpen}
         />
       </div>
-      <div className='w-full h-full overflow-y-auto flex-1'>
-        {renderContent()}
+      <div className='flex flex-col flex-1 min-h-0 min-w-0'>
+        {/* Spacer so content clears the fixed mobile top bar */}
+        <div className='h-[60px] shrink-0 md:hidden' />
+        <div className='flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden'>
+          {renderContent()}
+        </div>
       </div>
     </main>
   );

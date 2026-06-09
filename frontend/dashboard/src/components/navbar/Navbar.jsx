@@ -9,7 +9,6 @@ const NAV_SECTIONS = [
       { name: "map:overview", label: "Overview",  icon: "fa-chart-line",    tab: "overview" },
       { name: "map:elements", label: "Elements",  icon: "fa-seedling",      tab: "elements", pendingBadge: true },
       { name: "map:sensors",  label: "Sensors",   icon: "fa-wifi",          tab: "sensors"  },
-      { name: "map:zones",    label: "Zones",     icon: "fa-draw-polygon",  tab: "zones"    },
     ],
   },
   {
@@ -28,8 +27,7 @@ const NAV_SECTIONS = [
   },
 ];
 
-export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, activeTab, pendingCount = 0 }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, activeTab, pendingCount = 0, isOpen, setIsOpen }) {
   const [openSections, setOpenSections] = useState(
     NAV_SECTIONS.reduce((acc, s) => ({ ...acc, [s.title]: true }), {})
   );
@@ -61,18 +59,29 @@ export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, ac
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-white border border-border text-text-primary rounded-xl flex items-center justify-center shadow-sm cursor-pointer"
-      >
-        <i className="fa-solid fa-bars" />
-      </button>
+      {/* Mobile top bar — logo left, burger right */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-[1300] h-[60px] bg-[#1E293B] flex items-center justify-between px-4 border-b border-slate-700/40">
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="Loggin" className="w-8 h-8 shrink-0" />
+          <div>
+            <p className="text-sm font-extrabold text-white leading-tight">Loggin</p>
+            <p className="text-[10px] font-bold text-slate-400 leading-tight">Dashboard</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsOpen(x => !x)}
+          className="w-10 h-10 flex items-center justify-center text-white cursor-pointer"
+          aria-label="Open menu"
+        >
+          <i className="fa-solid fa-bars text-xl" />
+        </button>
+      </div>
       {isOpen && (
-        <div onClick={() => setIsOpen(false)} className="md:hidden fixed inset-0 bg-black/40 z-40" />
+        <div onClick={() => setIsOpen(false)} className="md:hidden fixed inset-0 bg-black/40 z-[1200]" />
       )}
 
       <nav className={`
-        fixed md:static top-0 left-0 z-50
+        fixed md:static top-0 left-0 z-[1300]
         w-[220px] md:w-[220px]
         h-screen md:h-full
         bg-[#1E293B] border-r border-slate-700/40 flex flex-col

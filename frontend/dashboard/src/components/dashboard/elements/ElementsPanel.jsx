@@ -267,7 +267,7 @@ export default function ElementsPanel({
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden min-w-0 w-full">
       {isLoading && <Loading />}
 
       {/* Stats */}
@@ -329,14 +329,28 @@ export default function ElementsPanel({
         </button>
       </div>
 
-      {/* Type filter */}
+      {/* Type filter — horizontal scrollable pills */}
       {elementTypes.length > 0 && (
-        <div className="px-4 pb-3">
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            className="w-full border border-border rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-game-blue/30 text-text-primary">
-            <option value="">All types</option>
-            {elementTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-          </select>
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setTypeFilter('')}
+            className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${
+              typeFilter === '' ? 'bg-game-blue text-white border-transparent' : 'bg-white text-text-secondary border-border'
+            }`}
+          >
+            All
+          </button>
+          {elementTypes.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTypeFilter(f => f === t.name ? '' : t.name)}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${
+                typeFilter === t.name ? 'bg-game-blue text-white border-transparent' : 'bg-white text-text-secondary border-border'
+              }`}
+            >
+              {t.name}
+            </button>
+          ))}
         </div>
       )}
 
