@@ -33,9 +33,17 @@ namespace Goalz.Data.Storage
         {
             modelBuilder.HasPostgresExtension("postgis");
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.Role)
-                .HasConversion<string>();
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.Property(u => u.Role)
+                    .HasConversion<string>();
+
+                entity.HasIndex(u => u.Email)
+                    .IsUnique();
+
+                entity.HasIndex(u => u.Username)
+                    .IsUnique();
+            });
 
             modelBuilder.Entity<Friendship>(entity =>
             {
@@ -98,6 +106,8 @@ namespace Goalz.Data.Storage
                     .WithMany(s => s.SensorData)
                     .HasForeignKey(sd => sd.SensorsId)
                     .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(sd => new { sd.SensorsId, sd.Timestamp })
+                    .IsDescending(false, true);
             });
 
             modelBuilder.Entity<ElementType>().ToTable("ElementType");
@@ -108,6 +118,8 @@ namespace Goalz.Data.Storage
                 entity.HasOne(e => e.ElementType)
                     .WithMany(et => et.Elements)
                     .HasForeignKey(e => e.ElementTypeId);
+                entity.HasIndex(e => e.IsApproved)
+                    .HasFilter("\"IsApproved\" = false");
             });
 
             modelBuilder.Entity<PartyVisitedCheckpoint>(entity =>

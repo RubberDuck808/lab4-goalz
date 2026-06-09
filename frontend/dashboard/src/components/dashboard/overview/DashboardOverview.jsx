@@ -177,7 +177,7 @@
 
       {error && (
         <div className="flex justify-center items-center text-red-400 text-sm py-10">
-          Could not load data: {error.message}
+          Failed to load data.
         </div>
       )}
 

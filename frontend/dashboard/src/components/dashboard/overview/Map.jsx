@@ -7,6 +7,7 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from '../map/boundarySnap'
+import DashboardChatbot from '../chatbot/DashboardChatbot'
 
 // ── tile providers ─────────────────────────────────────────────────────────
 const TILE_PROVIDERS = {
@@ -620,6 +621,24 @@ const DashboardMap = forwardRef(function DashboardMap({
            On desktop: location button on top, toggle switches to horizontal row. */}
       <div className="absolute bottom-[76px] md:bottom-4 right-4 z-[500] flex flex-col items-end gap-2">
         {/* Location button */}
+      {/* My Location button */}
+      <button
+        onClick={handleLocate}
+        disabled={locating}
+        title={locationActive ? 'Hide my location' : 'Show my location'}
+        className={`absolute bottom-[72px] right-4 z-[500] w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
+          locationActive ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
+        } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
+      </button>
+
+      <DashboardChatbot />
+
+
+      {/* Map Type Switcher */}
+      <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
+
         <button
           onClick={handleLocate}
           disabled={locating}
@@ -658,7 +677,8 @@ const DashboardMap = forwardRef(function DashboardMap({
         </div>
       </div>
     </div>
-  )
-})
-
+  </div>
+)
 export default DashboardMap
+}
+)

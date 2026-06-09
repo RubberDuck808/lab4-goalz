@@ -148,6 +148,9 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("ElementTypeId");
 
+                    b.HasIndex("IsApproved")
+                        .HasFilter("\"IsApproved\" = false");
+
                     b.ToTable("Elements");
                 });
 
@@ -452,8 +455,8 @@ namespace Goalz.Data.Migrations
                     b.Property<long>("SensorsId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("SoilMoisture")
-                        .HasColumnType("bigint");
+                    b.Property<int?>("SoilMoisture")
+                        .HasColumnType("integer");
 
                     b.Property<double>("Temp")
                         .HasColumnType("double precision");
@@ -461,12 +464,13 @@ namespace Goalz.Data.Migrations
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<double>("Wind")
+                    b.Property<double?>("Wind")
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SensorsId");
+                    b.HasIndex("SensorsId", "Timestamp")
+                        .IsDescending(false, true);
 
                     b.ToTable("SensorData");
                 });
@@ -502,6 +506,12 @@ namespace Goalz.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });

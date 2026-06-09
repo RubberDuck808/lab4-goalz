@@ -5,9 +5,11 @@ import ElementDetails from '../overview/ElementDetails';
 import Loading from '../../Loading/Loading';
 import { overviewService } from '../../../services/overviewService';
 
+import { isAllowedImageUrl } from '../../../utils/imageUrl';
+
 function ImageCell({ imageUrl }) {
-  return imageUrl ? (
-    <img src={imageUrl} alt="element" className="w-10 h-10 object-cover rounded-xl border border-border" />
+  return isAllowedImageUrl(imageUrl) ? (
+    <img src={imageUrl} alt="element" className="w-10 h-10 object-cover rounded-xl border border-border" loading="lazy" />
   ) : (
     <div className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center text-text-secondary">
       <i className="fa-solid fa-image text-xs" />
@@ -42,7 +44,28 @@ export default function ElementsPanel({
 
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [searchVal, setSearchVal] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef(null);
+
+  const handleScroll = (e) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  };
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+    setScrollTop(0);
+  }, [activeTab, search, typeFilter]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchVal);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [searchVal]);
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -295,9 +318,9 @@ export default function ElementsPanel({
         </div>
         <input
           type="text"
-          placeholder="Search…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+          placeholder="Search elements..."
+          value={searchVal}
+          onChange={e => setSearchVal(e.target.value)}
           className="flex-1 min-w-[100px] px-3 py-2 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-game-blue/30"
         />
         <button onClick={() => setShowAddPanel(true)}
@@ -343,107 +366,148 @@ export default function ElementsPanel({
 
       {/* List */}
       {!isLoading && (
-        <div className="flex-1 overflow-y-auto flex flex-col gap-2 px-4 pb-8">
+        <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto relative px-4 pb-8" style={{ minHeight: '300px' }}>
 
           {/* All tab */}
           {activeTab === 'all' && (
-            filteredAll.length === 0 ? <EmptyState /> :
-            filteredAll.map(el => {
-              const coords = getLatLng(el);
+            filteredAll.length === 0 ? <EmptyState /> : (() => {
+              const { visible, totalHeight } = getVisibleItems(filteredAll, scrollTop);
               return (
-                <div
-                  key={el.id}
-                  onClick={() => { if (coords) onFlyTo?.(coords); }}
-                  className="bg-white rounded-xl border border-border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all"
-                >
-                  <ImageCell imageUrl={el.imageUrl} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
-                    <p className="text-xs text-text-secondary capitalize">{getTypeName(el)}</p>
-                    {coords && <p className="text-xs text-text-secondary mt-0.5">{coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</p>}
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      {el.isPending ? (
-                        <>
-                          <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
-                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-game-amber-soft text-[#CC8B00]">Pending</span>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={(e) => { e.stopPropagation(); setEditingElement(el); }} className="px-3 py-1.5 bg-game-blue border-b-[3px] border-game-blue-border text-white text-xs font-semibold rounded-lg">Edit</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteApproved(el); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Delete</button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                <div style={{ height: totalHeight, position: 'relative', width: '100%' }}>
+                  {visible.map(({ item: el, top }) => {
+                    const coords = getLatLng(el);
+                    return (
+                      <div
+                        key={el.id}
+                        onClick={() => { if (coords) onFlyTo?.(coords); }}
+                        style={{ position: 'absolute', top: `${top}px`, left: 0, right: 0, height: `${itemHeight}px` }}
+                        className="bg-white rounded-xl border border-border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all overflow-hidden"
+                      >
+                        <ImageCell imageUrl={el.imageUrl} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
+                          <p className="text-xs text-text-secondary capitalize">{getTypeName(el)}</p>
+                          {coords && <p className="text-xs text-text-secondary mt-0.5">{coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</p>}
+                          <div className="flex gap-2 mt-3 flex-wrap">
+                            {el.isPending ? (
+                              <>
+                                <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
+                                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-game-amber-soft text-[#CC8B00]">Pending</span>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={(e) => { e.stopPropagation(); setEditingElement(el); }} className="px-3 py-1.5 bg-game-blue border-b-[3px] border-game-blue-border text-white text-xs font-semibold rounded-lg">Edit</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteApproved(el); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Delete</button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })
+            })()
           )}
 
           {/* Pending tab */}
           {activeTab === 'pending' && (
             filteredPending.length === 0
               ? <EmptyState icon="fa-check-circle" iconColor="text-game-green" message="No pending submissions" sub="All submissions have been reviewed." />
-              : <>
-                  <label className="flex items-center gap-2 text-xs text-text-secondary px-1 cursor-pointer">
-                    <input type="checkbox" checked={selectedIds.size === filteredPending.length && filteredPending.length > 0} onChange={toggleSelectAll} />
-                    Select all
-                  </label>
-                  {filteredPending.map(el => (
-                    <div
-                      key={el.id}
-                      onClick={() => { if (el.latitude != null) onFlyTo?.({ lat: el.latitude, lng: el.longitude }); }}
-                      className={`bg-white rounded-xl border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all ${selectedIds.has(el.id) ? 'border-game-amber bg-game-amber-soft/40' : 'border-border'}`}
-                    >
-                      <input type="checkbox" checked={selectedIds.has(el.id)} onChange={() => toggleSelect(el.id)} onClick={(e) => e.stopPropagation()} className="mt-1 cursor-pointer" />
-                      <ImageCell imageUrl={el.imageUrl} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
-                        <p className="text-xs text-text-secondary capitalize">{el.elementType}</p>
-                        <p className="text-xs text-text-secondary">{el.submittedBy ?? '—'} · {new Date(el.createdAt).toLocaleDateString()}</p>
-                        <button onClick={(e) => { e.stopPropagation(); onFlyTo({ lat: el.latitude, lng: el.longitude }); }}
-                          className="text-game-blue hover:underline text-xs mt-1 flex items-center gap-1">
-                          <i className="fa-solid fa-map-pin text-[10px]" /> View on map
-                        </button>
-                        <div className="flex gap-2 mt-3">
-                          <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
-                        </div>
+              : (() => {
+                  const { visible, totalHeight } = getVisibleItems(filteredPending, scrollTop);
+                  return (
+                    <div className="flex flex-col h-full">
+                      <label className="flex items-center gap-2 text-xs text-text-secondary px-1 mb-2 cursor-pointer shrink-0">
+                        <input type="checkbox" checked={selectedIds.size === filteredPending.length && filteredPending.length > 0} onChange={toggleSelectAll} />
+                        Select all
+                      </label>
+                      <div style={{ height: totalHeight, position: 'relative', width: '100%', flex1: 1 }}>
+                        {visible.map(({ item: el, top }) => (
+                          <div
+                            key={el.id}
+                            onClick={() => { if (el.latitude != null) onFlyTo?.({ lat: el.latitude, lng: el.longitude }); }}
+                            style={{ position: 'absolute', top: `${top}px`, left: 0, right: 0, height: `${itemHeight}px` }}
+                            className={`bg-white rounded-xl border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all overflow-hidden ${selectedIds.has(el.id) ? 'border-game-amber bg-game-amber-soft/40' : 'border-border'}`}
+                          >
+                            <input type="checkbox" checked={selectedIds.has(el.id)} onChange={() => toggleSelect(el.id)} onClick={(e) => e.stopPropagation()} className="mt-1 cursor-pointer" />
+                            <ImageCell imageUrl={el.imageUrl} />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
+                              <p className="text-xs text-text-secondary capitalize">{el.elementType}</p>
+                              <p className="text-xs text-text-secondary truncate">{el.submittedBy ?? '—'} · {new Date(el.createdAt).toLocaleDateString()}</p>
+                              <div className="flex gap-2 mt-3">
+                                <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </>
+                  );
+                })()
           )}
 
           {/* Approved tab */}
           {activeTab === 'approved' && (
-            filteredApproved.length === 0 ? <EmptyState /> :
-            filteredApproved.map(el => {
-              const coords = getLatLng(el);
-              const isEditing = editingElement?.id === el.id;
+            filteredApproved.length === 0 ? <EmptyState /> : (() => {
+              const { visible, totalHeight } = getVisibleItems(filteredApproved, scrollTop);
               return (
-                <div
-                  key={el.id}
-                  onClick={() => { if (coords) onFlyTo?.(coords); }}
-                  className={`bg-white rounded-xl border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all ${isEditing ? 'border-game-blue bg-game-blue-soft/30' : 'border-border'}`}
-                >
-                  <ImageCell imageUrl={el.imageUrl} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
-                    <p className="text-xs text-text-secondary capitalize">{getTypeName(el)}</p>
-                    {coords && <p className="text-xs text-text-secondary mt-0.5">{coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</p>}
-                    <div className="flex gap-2 mt-3">
-                      <button onClick={(e) => { e.stopPropagation(); setEditingElement(el); }} className="px-3 py-1.5 bg-game-blue border-b-[3px] border-game-blue-border text-white text-xs font-semibold rounded-lg">Edit</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteApproved(el); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Delete</button>
-                    </div>
-                  </div>
+                <div style={{ height: totalHeight, position: 'relative', width: '100%' }}>
+                  {visible.map(({ item: el, top }) => {
+                    const coords = getLatLng(el);
+                    const isEditing = editingElement?.id === el.id;
+                    return (
+                      <div
+                        key={el.id}
+                        onClick={() => { if (coords) onFlyTo?.(coords); }}
+                        style={{ position: 'absolute', top: `${top}px`, left: 0, right: 0, height: `${itemHeight}px` }}
+                        className={`bg-white rounded-xl border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all overflow-hidden ${isEditing ? 'border-game-blue bg-game-blue-soft/30' : 'border-border'}`}
+                      >
+                        <ImageCell imageUrl={el.imageUrl} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
+                          <p className="text-xs text-text-secondary capitalize">{getTypeName(el)}</p>
+                          {coords && <p className="text-xs text-text-secondary mt-0.5">{coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</p>}
+                          <div className="flex gap-2 mt-3">
+                            <button onClick={(e) => { e.stopPropagation(); setEditingElement(el); }} className="px-3 py-1.5 bg-game-blue border-b-[3px] border-game-blue-border text-white text-xs font-semibold rounded-lg">Edit</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteApproved(el); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })
+            })()
           )}
         </div>
       )}
     </div>
   );
+}
+
+// Helpers for virtualization
+const itemHeight = 125;
+const gap = 8;
+const viewportHeight = 600;
+
+function getVisibleItems(items, scrollTop = 0) {
+  const totalHeight = items.length * (itemHeight + gap);
+  const startIndex = Math.max(0, Math.floor(scrollTop / (itemHeight + gap)) - 2);
+  const endIndex = Math.min(items.length - 1, Math.floor((scrollTop + viewportHeight) / (itemHeight + gap)) + 2);
+
+  const visible = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    if (items[i]) {
+      visible.push({
+        item: items[i],
+        index: i,
+        top: i * (itemHeight + gap)
+      });
+    }
+  }
+  return { visible, totalHeight };
 }

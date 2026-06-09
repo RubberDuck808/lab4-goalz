@@ -84,7 +84,6 @@ export default function MapDashboard({
         overviewService.getElementTypes().catch(() => []),
         overviewService.getPendingElements().catch(() => [])
       ]);
-      console.log("MapDashboard: fetched checkpoints count:", cps?.length, "types count:", types?.length, "pending count:", pending?.length);
       
       const validCps = (Array.isArray(cps) ? cps : []).filter(cp => 
         cp && 
@@ -105,7 +104,6 @@ export default function MapDashboard({
         }));
 
       const combined = [...validCps, ...validPending];
-      console.log("MapDashboard: valid checkpoints count:", validCps.length, "valid pending count:", validPending.length);
       setCheckpoints(combined);
       const resolvedTypes = Array.isArray(types) ? types : [];
       setElementTypes(resolvedTypes);

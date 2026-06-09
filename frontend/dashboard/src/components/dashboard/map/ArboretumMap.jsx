@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw'
@@ -10,6 +10,7 @@ import { getAllZones, createZone, updateZone, deleteZone } from '../../../servic
 import { getAllBoundaries, createBoundary, updateBoundary, deleteBoundary } from '../../../services/boundaryService'
 import { fetchOsmZones } from '../../../services/osmImportService'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from './boundarySnap'
+import { APICall } from '../../../hooks/useAPI'
 
 function buildStyle(zone, selected = false) {
   const isBoundary = zone._isBoundary === true
@@ -135,17 +136,17 @@ export default function ArboretumMap() {
   }
 
   const loadCheckpoints = useCallback(async () => {
-    const base = getApiBase()
+    const token = sessionStorage.getItem("token") ?? ""
     try {
-      const res = await fetch(`${base}/api/dashboard/checkpoints`)
-      if (res.ok) {
+      const res = await APICall("GET", "/checkpoints", null, token)
+      if (res?.ok) {
         const data = await res.json()
         if (Array.isArray(data) && data.length > 0) { setCheckpoints(data); return }
       }
     } catch (_) {}
     try {
-      const res = await fetch(`${base}/api/dashboard/overview`)
-      if (!res.ok) throw new Error()
+      const res = await APICall("GET", "/overview", null, token)
+      if (!res?.ok) throw new Error()
       setCheckpoints(normalizeOverviewToCheckpoints(await res.json()))
     } catch (_) { setCheckpoints([]) }
   }, [])
@@ -153,7 +154,11 @@ export default function ArboretumMap() {
   function addZoneLayer(map, zone, onClick) {
     const isBoundary = zone._isBoundary === true
     const pane = isBoundary ? 'boundaryPane' : 'zonePane'
-    const layer = L.geoJSON(zone.boundary, { style: () => buildStyle(zone), pane })
+    const layer = L.geoJSON(zone.boundary, {
+      style: () => buildStyle(zone),
+      pane,
+      renderer: map._canvasRenderer || (mapInstance.current ? mapInstance.current._canvasRenderer : null),
+    })
     layer.bindTooltip(zone.name, { permanent: false, direction: 'center' })
     layer.on('click', (e) => { L.DomEvent.stopPropagation(e); onClick(zone) })
     layer.on('mouseover', () => { if (!zoneLayers.current.get(zone.id)?.selected) layer.setStyle({ weight: 3, fillOpacity: isBoundary ? 0 : 0.25 }) })
@@ -240,7 +245,8 @@ export default function ArboretumMap() {
     if (!mapRef.current || mapInstance.current) return
     if (mapRef.current._leaflet_id) delete mapRef.current._leaflet_id
 
-    const map = L.map(mapRef.current, { attributionControl: false, zoomControl: false, zoomSnap: 0.5 }).setView([43.7270, -79.6099], 15)
+    const map = L.map(mapRef.current, { attributionControl: false, zoomControl: false, zoomSnap: 0.5, preferCanvas: true }).setView([43.7270, -79.6099], 15)
+    map._canvasRenderer = L.canvas({ padding: 0.5 })
     map.createPane('zonePane').style.zIndex = '390'
     map.createPane('boundaryPane').style.zIndex = '410'
 
@@ -441,8 +447,9 @@ export default function ArboretumMap() {
   const handleGeneratePreview = async () => {
     if (!selectedZone?._isBoundary) return; setGenerating(true)
     try {
-      const res = await fetch(`${getApiBase()}/api/dashboard/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`)
-      if (!res.ok) throw new Error('Generation failed')
+      const token = sessionStorage.getItem("token") ?? ""
+      const res = await APICall("GET", `/boundaries/${selectedZone.id}/generate-preview?count=${genCount}`, null, token)
+      if (!res?.ok) throw new Error('Generation failed')
       const geometries = await res.json()
       setGeneratedZones(Array.isArray(geometries) ? geometries : [])
     } catch (err) { addToast(err.message, 'error') }
@@ -523,8 +530,14 @@ export default function ArboretumMap() {
     finally { setImporting(false) }
   }
 
-  const zoneCheckpoints = selectedZone ? checkpoints.filter((cp) => cp.zoneId === selectedZone.id) : []
-  const searchResults = searchQuery.trim() ? checkpoints.filter((cp) => cp.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())) : []
+  const zoneCheckpoints = useMemo(
+    () => selectedZone ? checkpoints.filter((cp) => cp.zoneId === selectedZone.id) : [],
+    [checkpoints, selectedZone]
+  )
+  const searchResults = useMemo(
+    () => searchQuery.trim() ? checkpoints.filter((cp) => cp.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())) : [],
+    [checkpoints, searchQuery]
+  )
 
   return (
     <div className='flex h-full w-full overflow-hidden'>

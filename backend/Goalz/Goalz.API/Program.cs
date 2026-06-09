@@ -88,6 +88,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddMemoryCache();
+
 // Dashboard auth
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -143,7 +145,7 @@ builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
 // Lobby
 builder.Services.AddScoped<ILobbyService, LobbyService>();
-builder.Services.AddHostedService<PartyCleanupService>();
+//builder.Services.AddHostedService<PartyCleanupService>();
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
     {
@@ -171,6 +173,11 @@ builder.Services.AddRateLimiter(options =>
     });
 
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
 });
 
 builder.Services.AddControllers()
@@ -210,6 +217,11 @@ app.UseExceptionHandler(error => error.Run(async context =>
 }));
 
 app.UseCors("AllowFrontend");
+app.UseResponseCompression();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication(); //implements AddAuthentication()

@@ -1,10 +1,10 @@
-﻿using System.Text;
 using Goalz.Core.DTOs;
+using System.Collections.Generic;
 
 namespace Goalz.Core.Interfaces
 {
     public interface IGenerateReportService
     {
-        public StringBuilder GenerateReport(GenerateReportDto settings);
+        IAsyncEnumerable<string> StreamReportAsync(GenerateReportDto settings);
     }
 }

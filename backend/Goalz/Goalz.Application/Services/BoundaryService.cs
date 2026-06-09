@@ -1,6 +1,7 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Goalz.Domain.Entities;
+using Microsoft.Extensions.Caching.Memory;
 using NetTopologySuite.Geometries;
 
 namespace Goalz.Core.Services
@@ -8,22 +9,31 @@ namespace Goalz.Core.Services
     public class BoundaryService : IBoundaryService
     {
         private readonly IBoundaryRepository _boundaryRepository;
+        private readonly IMemoryCache _cache;
+        private const string CacheKey = "boundaries";
 
-        public BoundaryService(IBoundaryRepository boundaryRepository)
+        public BoundaryService(IBoundaryRepository boundaryRepository, IMemoryCache cache)
         {
             _boundaryRepository = boundaryRepository;
+            _cache = cache;
         }
 
         public async Task<IEnumerable<BoundaryDto>> GetAllAsync()
         {
+            if (_cache.TryGetValue(CacheKey, out IEnumerable<BoundaryDto>? cached) && cached != null)
+                return cached;
+
             var boundaries = await _boundaryRepository.GetAllAsync();
-            return boundaries.Select(b => new BoundaryDto
+            var result = boundaries.Select(b => new BoundaryDto
             {
                 Id       = b.Id,
                 Name     = b.Name,
                 Color    = b.Color,
                 Boundary = b.Geometry,
-            });
+            }).ToList();
+
+            _cache.Set(CacheKey, (IEnumerable<BoundaryDto>)result, TimeSpan.FromSeconds(60));
+            return result;
         }
 
         public async Task<(bool Success, string? Error)> CreateAsync(CreateBoundaryDto dto)
@@ -43,6 +53,7 @@ namespace Goalz.Core.Services
 
             await _boundaryRepository.AddAsync(boundary);
             await _boundaryRepository.SaveChangesAsync();
+            _cache.Remove(CacheKey);
             return (true, null);
         }
 
@@ -57,6 +68,7 @@ namespace Goalz.Core.Services
             if (dto.Boundary != null) boundary.Geometry = dto.Boundary;
 
             await _boundaryRepository.SaveChangesAsync();
+            _cache.Remove(CacheKey);
             return (true, null);
         }
 
@@ -67,6 +79,7 @@ namespace Goalz.Core.Services
 
             await _boundaryRepository.DeleteAsync(boundary);
             await _boundaryRepository.SaveChangesAsync();
+            _cache.Remove(CacheKey);
             return true;
         }
 

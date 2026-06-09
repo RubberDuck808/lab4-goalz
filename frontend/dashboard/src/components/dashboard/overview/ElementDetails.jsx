@@ -153,7 +153,12 @@ export default function ElementDetails({
         );
     }
 
-    const displayImage = previewImage || element.imageUrl;
+    const rawImage = previewImage || element.imageUrl;
+    const isAllowed = rawImage && (
+      rawImage.startsWith('/') || rawImage.startsWith('blob:') || rawImage.startsWith('data:') ||
+      (() => { try { return new URL(rawImage).hostname.endsWith('.supabase.co'); } catch { return !rawImage.includes('://'); } })()
+    );
+    const displayImage = isAllowed ? rawImage : null;
 
     return (
         <div className='bg-white rounded-xl border border-border flex flex-col overflow-hidden'>
