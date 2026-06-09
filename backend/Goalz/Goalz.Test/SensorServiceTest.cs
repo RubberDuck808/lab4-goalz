@@ -30,7 +30,8 @@ namespace Goalz.Test
             _context = new AppDbContext(options);
             _repository = new SensorRepository(_context);
             var stubCheckpointService = new StubCheckpointService();
-            _sensorService = new SensorService(_repository, stubCheckpointService);
+            var stubSensorDataRepository = new StubSensorDataRepository();
+            _sensorService = new SensorService(_repository, stubCheckpointService, stubSensorDataRepository);
         }
 
         [TestCleanup]
@@ -149,6 +150,14 @@ namespace Goalz.Test
             {
                 await _sensorService.StoreSensorData(dataDto);
             });
+        }
+
+        private class StubSensorDataRepository : ISensorDataRepository
+        {
+            public Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId, DateTime? from = null, DateTime? to = null, int? limit = null) => Task.FromResult<IEnumerable<SensorData>>(new List<SensorData>());
+            public Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId) => Task.FromResult<IEnumerable<SensorData>>(new List<SensorData>());
+            public async IAsyncEnumerable<SensorData> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo) { yield break; }
+            public Task<IEnumerable<SensorData>> GetDataSummary() => Task.FromResult<IEnumerable<SensorData>>(new List<SensorData>());
         }
 
         private class StubCheckpointService : ICheckpointService
