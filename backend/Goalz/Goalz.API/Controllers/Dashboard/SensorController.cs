@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Goalz.API.Controllers.Dashboard;
 
-[Authorize]
 [Route("api/dashboard/sensors")]
 [ApiController]
 public class SensorController : ControllerBase

@@ -41,6 +41,15 @@ public class SensorDataRepository : ISensorDataRepository
         return await query.ToListAsync();
     }
 
+    public async Task<IEnumerable<SensorData>> GetBySensorIdAsync(long sensorId)
+    {
+        return await _context.SensorData
+            .Where(sd => sd.SensorsId == sensorId)
+            .OrderByDescending(sd => sd.Timestamp)
+            .Take(500)
+            .ToListAsync();
+    }
+
     public IAsyncEnumerable<SensorData> GetSensorsByTimeRangeAsync(DateTime dateTimeFrom, DateTime dateTimeTo)
     {
         return _context.SensorData
@@ -52,12 +61,11 @@ public class SensorDataRepository : ISensorDataRepository
     {
         var data = await _context.SensorData
             .OrderByDescending(x => x.Timestamp)
-            .ToListAsync();
-
-        return data
             .GroupBy(x => x.SensorsId)
             .Select(g => g.First())
             .Take(20)
-            .ToList();
+            .ToListAsync();
+
+        return data;
     }
 }
