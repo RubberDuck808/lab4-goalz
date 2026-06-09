@@ -2,20 +2,25 @@ using Goalz.API.Models;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 
 namespace Goalz.API.Controllers.Dashboard;
 
+[Authorize]
 [Route("api/dashboard/sensors")]
 [ApiController]
 public class SensorController : ControllerBase
 {
     private readonly ISensorService _sensorService;
     private readonly ISensorDataService _sensorDataService;
+    private readonly ILogger<SensorController> _logger;
 
-    public SensorController(ISensorService sensorService, ISensorDataService sensorDataService)
+    public SensorController(ISensorService sensorService, ISensorDataService sensorDataService, ILogger<SensorController> logger)
     {
         _sensorService = sensorService;
         _sensorDataService = sensorDataService;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -55,6 +60,7 @@ public class SensorController : ControllerBase
         return NoContent();
     }
 
+    [AllowAnonymous]
     [HttpPost("data")]
     public async Task<IActionResult> SensorData([FromBody] SensorDataDto sensorDataDto)
     {
@@ -73,14 +79,20 @@ public class SensorController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
+            _logger.LogError(ex, "Unexpected error occurred while processing sensor data.");
+            return StatusCode(500, "An unexpected error occurred.");
         }
     }
 
     [HttpGet("{id}/data")]
-    public async Task<IActionResult> GetSensorData(long id)
+    public async Task<IActionResult> GetSensorData(long id, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? limit)
     {
-        var data = await _sensorDataService.GetBySensorIdAsync(id);
+        DateTime? fromDate = from;
+        if (!from.HasValue && !limit.HasValue)
+        {
+            fromDate = DateTime.UtcNow.AddDays(-7);
+        }
+        var data = await _sensorDataService.GetBySensorIdAsync(id, fromDate, to, limit);
         return Ok(data);
     }
 

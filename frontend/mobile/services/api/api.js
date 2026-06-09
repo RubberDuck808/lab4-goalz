@@ -2,6 +2,14 @@ import { getToken, clearUser } from '../session';
 import { navigationRef } from '../navigationRef';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const REQUEST_TIMEOUT_MS = 10_000;
+
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timeoutId));
+}
 
 async function handle401() {
   await clearUser();
@@ -10,7 +18,7 @@ async function handle401() {
 
 // Wrapper used for all authenticated fetch calls. Triggers auto-logout on 401.
 export async function apiFetch(url, options = {}) {
-  const response = await fetch(url, options);
+  const response = await fetchWithTimeout(url, options);
   if (response.status === 401) await handle401();
   return response;
 }
@@ -26,7 +34,7 @@ export async function authHeaders() {
 // ── Auth ────────────────────────────────────────────────────────────────────
 
 export async function login(email, password) {
-  const response = await fetch(`${BASE_URL}/api/game/auth/login`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/api/game/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -39,7 +47,7 @@ export async function login(email, password) {
 }
 
 export async function signUp(username, email, password) {
-  const response = await fetch(`${BASE_URL}/api/game/auth/signup`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/api/game/auth/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, email, password }),
@@ -63,7 +71,7 @@ export async function searchUsers(query) {
 }
 
 export async function getConnections(username) {
-  const response = await fetch(`${BASE_URL}/api/game/friends/connections/${encodeURIComponent(username)}`);
+  const response = await fetchWithTimeout(`${BASE_URL}/api/game/friends/connections/${encodeURIComponent(username)}`);
   if (response.ok) return { success: true, data: await response.json() };
   return { success: false, data: [] };
 }
@@ -109,7 +117,7 @@ export async function declineFriendRequest(requesterUsername) {
 }
 
 export async function getSensorData(sensorId) {
-  const response = await fetch(`${BASE_URL}/api/game/sensors/${sensorId}/data`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/api/game/sensors/${sensorId}/data`, {
     headers: await authHeaders(),
   });
   if (response.ok) return { success: true, data: await response.json() };
@@ -164,7 +172,7 @@ export async function getLeaderboard(period = null) {
   const url = period
     ? `${BASE_URL}/api/game/leaderboard?period=${period}`
     : `${BASE_URL}/api/game/leaderboard`;
-  const response = await fetch(url);
+  const response = await fetchWithTimeout(url);
   if (response.ok) return { success: true, data: await response.json() };
   return { success: false, data: [] };
 }
@@ -172,7 +180,7 @@ export async function getLeaderboard(period = null) {
 // ── Elements ─────────────────────────────────────────────────────────────────
 
 export async function getElementTypes() {
-  const response = await fetch(`${BASE_URL}/api/game/elements/types`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/api/game/elements/types`, {
     headers: await authHeaders(),
   });
   if (!response.ok) return [];
@@ -181,7 +189,7 @@ export async function getElementTypes() {
 }
 
 export async function submitElement({ elementName, elementType, latitude, longitude, imageUrl, isGreen }) {
-  const response = await fetch(`${BASE_URL}/api/game/elements`, {
+  const response = await fetchWithTimeout(`${BASE_URL}/api/game/elements`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ elementName, elementType, latitude, longitude, imageUrl, isGreen }),

@@ -40,6 +40,7 @@ pnpm-debug.log*
 frontend/**/.env*
 !frontend/**/.env.example
 !frontend/**/.env.production
+frontend/mobile/env
 
 # =========================
 

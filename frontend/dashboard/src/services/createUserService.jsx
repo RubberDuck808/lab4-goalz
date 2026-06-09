@@ -1,16 +1,12 @@
 import { APICall } from "../hooks/useAPI";
-import { authService } from "./authService";
 
 export const createUserService = {
     createStaffUser: async (email, name, password) => {
-        const admin = authService.getUser();
-        if (!admin) throw new Error("Not logged in.");
-
         const response = await APICall(
             "POST",
             "/auth/create-user",
-            JSON.stringify({ adminEmail: admin.email, email, name, password }),
-            null
+            JSON.stringify({ email, name, password }),
+            sessionStorage.getItem("token") ?? ""
         );
 
         if (!response?.ok) {
