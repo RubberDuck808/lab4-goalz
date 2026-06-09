@@ -679,6 +679,7 @@ const DashboardMap = forwardRef(function DashboardMap({
     </div>
   </div>
 )
-export default DashboardMap
 }
 )
+
+export default DashboardMap
