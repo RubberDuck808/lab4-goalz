@@ -19,7 +19,7 @@ export default function PartyLobbyPage({ navigation }) {
   const confirmLeave = useCallback(() => {
     Alert.alert(
       'Leave Party',
-      'Are you sure you want to leave the party?',
+      'This will remove you from the party.',
       [
         { text: 'Stay', style: 'cancel' },
         { text: 'Leave Party', style: 'destructive', onPress: () => { resetGame(); navigation.navigate('PartyMode'); } },
@@ -47,7 +47,7 @@ export default function PartyLobbyPage({ navigation }) {
           </View>
         ))}
         <View style={styles.waiting}>
-          <Text style={styles.waitingText}>waiting for players ...</Text>
+          <Text style={styles.waitingText}>Waiting for everyone...</Text>
         </View>
       </ScrollView>
       <View style={styles.btnWrap}>

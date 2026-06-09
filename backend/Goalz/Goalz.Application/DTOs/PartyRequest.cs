@@ -8,6 +8,7 @@ namespace Goalz.Core.DTOs
         public long? BoundaryId { get; set; }
         public int? ZoneCount { get; set; }
         public int? CheckpointsPerZone { get; set; }
+        public List<string> AllowedRoles { get; set; } = ["Scout", "Trailblazer", "Explorer"];
     }
 }
 //Ein DTO trägt die Daten (hier: Name, Username), die ein Controller entgegennimmt (Request),

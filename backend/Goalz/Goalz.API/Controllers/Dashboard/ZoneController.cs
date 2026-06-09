@@ -1,11 +1,13 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Goalz.Api.Controllers.Dashboard
 {
     [ApiController]
     [Route("api/dashboard/zones")]
+    [Authorize]
     public class ZoneController : ControllerBase
     {
         private readonly IZoneService _zoneService;

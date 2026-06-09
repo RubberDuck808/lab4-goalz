@@ -1,13 +1,26 @@
 import { APICall } from "../hooks/useAPI";
 
+const _cache = {};
+const CACHE_TTL = 60_000;
+
+function cached(key, fetcher) {
+    const entry = _cache[key];
+    if (entry && Date.now() - entry.ts < CACHE_TTL) return Promise.resolve(entry.data);
+    return fetcher().then(data => { _cache[key] = { data, ts: Date.now() }; return data; });
+}
+
+export function invalidateOverviewCache() {
+    delete _cache['overview'];
+}
+
 export const overviewService = {
     getAllElements: async () => {
-        try {
+        return cached('overview', async () => {
             const response = await APICall(
                 "GET",
                 "/overview",
                 null,
-                localStorage.getItem("jwtToken") ?? ""
+                sessionStorage.getItem("token") ?? ""
             );
 
             if (!response?.ok) {
@@ -17,10 +30,8 @@ export const overviewService = {
                     throw new Error("You do not have permission to access this resource.");
                 throw new Error('Failed to fetch overview data');
             }
-            return await response.json();
-        } catch (error) {
-            console.error(error);
-        }
+            return response.json();
+        });
     },
 
     getCheckpoints: async () => {
@@ -29,7 +40,7 @@ export const overviewService = {
                 "GET",
                 "/checkpoints",
                 null,
-                localStorage.getItem("jwtToken") ?? ""
+                sessionStorage.getItem("token") ?? ""
             );
             if (!response?.ok) throw new Error('Failed to fetch checkpoints');
             return await response.json();
@@ -40,9 +51,14 @@ export const overviewService = {
     },
 
     getElementTypes: async () => {
-        const response = await APICall("GET", "/elements/types", null, localStorage.getItem("jwtToken") ?? "");
-        if (!response?.ok) throw new Error('Failed to fetch element types');
-        return await response.json();
+        try {
+            const response = await APICall("GET", "/elements/types", null, sessionStorage.getItem("token") ?? "");
+            if (!response?.ok) throw new Error('Failed to fetch element types');
+            return await response.json();
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
     },
 
     createElement: async (element) => {
@@ -50,9 +66,10 @@ export const overviewService = {
             "POST",
             "/elements",
             JSON.stringify(element),
-            localStorage.getItem("jwtToken") ?? ""
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to create element');
+        invalidateOverviewCache();
         return await response.json();
     },
 
@@ -61,9 +78,10 @@ export const overviewService = {
             "PUT",
             `/elements/${id}`,
             JSON.stringify(element),
-            localStorage.getItem("jwtToken") ?? ""
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to update element');
+        invalidateOverviewCache();
     },
 
     deleteElement: async (id) => {
@@ -71,9 +89,10 @@ export const overviewService = {
             "DELETE",
             `/elements/${id}`,
             null,
-            localStorage.getItem("jwtToken") ?? ""
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to delete element');
+        invalidateOverviewCache();
     },
 
     createSensor: async (sensor) => {
@@ -81,9 +100,10 @@ export const overviewService = {
             "POST",
             "/sensors",
             JSON.stringify(sensor),
-            localStorage.getItem("jwtToken") ?? ""
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to create sensor');
+        invalidateOverviewCache();
         return await response.json();
     },
 
@@ -92,9 +112,10 @@ export const overviewService = {
             "PUT",
             `/sensors/${id}`,
             JSON.stringify(sensor),
-            localStorage.getItem("jwtToken") ?? ""
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to update sensor');
+        invalidateOverviewCache();
     },
 
     deleteSensor: async (id) => {
@@ -102,8 +123,33 @@ export const overviewService = {
             "DELETE",
             `/sensors/${id}`,
             null,
-            localStorage.getItem("jwtToken") ?? ""
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) throw new Error('Failed to delete sensor');
+        invalidateOverviewCache();
+    },
+
+    getPendingElements: async () => {
+        const res = await APICall("GET", "/elements/pending", null, sessionStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to fetch pending elements');
+        return res.json();
+    },
+
+    approveElement: async (id) => {
+        const res = await APICall("PUT", `/elements/${id}/approve`, null, sessionStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to approve element');
+        invalidateOverviewCache();
+    },
+
+    rejectElement: async (id) => {
+        const res = await APICall("PUT", `/elements/${id}/reject`, null, sessionStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to reject element');
+        invalidateOverviewCache();
+    },
+
+    getSensorHistory: async (id, limit = 500) => {
+        const res = await APICall("GET", `/sensors/${id}/data?limit=${limit}`, null, sessionStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to fetch sensor data history');
+        return res.json();
     },
 }

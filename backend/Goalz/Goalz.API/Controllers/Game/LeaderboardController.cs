@@ -15,9 +15,9 @@ namespace Goalz.Api.Controllers.Game
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetLeaderboard()
+        public async Task<IActionResult> GetLeaderboard([FromQuery] string? period = null)
         {
-            var entries = await _userService.GetLeaderboardAsync();
+            var entries = await _userService.GetLeaderboardAsync(period);
             return Ok(entries);
         }
     }

@@ -1,14 +1,42 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DashboardNavBar from "../DashboardNavBar";
 import Map from "../overview/Map";
 import { overviewService } from "../../../services/overviewService";
 import Loading from "../../Loading/Loading";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 const defaultAddForm = { sensorName: "", latitude: "", longitude: "" };
 
-export default function SensorManagement() {
+function getSensorHeight(sensor, editingId, selectedSensorId) {
+  if (selectedSensorId === sensor.id) return 460;
+  if (editingId === sensor.id) return 210;
+  return 165;
+}
+
+function getSensorVisibleItems(items, scrollTop, editingId, selectedSensorId) {
+  const gap = 12;
+  const viewportHeight = 600;
+  const tops = [];
+  let cumulative = 0;
+  for (const item of items) {
+    tops.push(cumulative);
+    cumulative += getSensorHeight(item, editingId, selectedSensorId) + gap;
+  }
+  const totalHeight = cumulative;
+  const visible = [];
+  for (let i = 0; i < items.length; i++) {
+    const top = tops[i];
+    const bottom = top + getSensorHeight(items[i], editingId, selectedSensorId);
+    if (bottom >= scrollTop - 200 && top <= scrollTop + viewportHeight + 200) {
+      visible.push({ item: items[i], top });
+    }
+  }
+  return { visible, totalHeight };
+}
+
+export default function SensorManagement({ setSelectedItem, setBleSelectedSensorId }) {
   const [sensors, setSensors] = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +48,42 @@ export default function SensorManagement() {
   const [editForm, setEditForm] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [flyTo, setFlyTo] = useState(null);
+  const [locating, setLocating] = useState(false);
+  const [searchVal, setSearchVal] = useState('');
+  const [search, setSearch] = useState('');
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+    setScrollTop(0);
+  }, [search]);
+
+  // Sensor data history graph states
+  const [selectedSensorId, setSelectedSensorId] = useState(null);
+  const [sensorHistory, setSensorHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [activeMetrics, setActiveMetrics] = useState({
+    temp: true,
+    humidity: true,
+    light: false,
+    soilMoisture: false,
+    wind: false,
+  });
+
+  useEffect(() => {
+    const h = setTimeout(() => setSearch(searchVal), 250);
+    return () => clearTimeout(h);
+  }, [searchVal]);
+
+  const filteredSensors = useMemo(
+    () => search.trim() ? sensors.filter(s => s.sensorName.toLowerCase().includes(search.toLowerCase())) : sensors,
+    [search, sensors]
+  );
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -38,6 +102,34 @@ export default function SensorManagement() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (selectedSensorId) {
+      setHistoryLoading(true);
+      overviewService.getSensorHistory(selectedSensorId)
+        .then(data => {
+          const sorted = (data ?? []).map(item => ({
+            ...item,
+            formattedTime: new Date(item.timestamp).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+            temp: parseFloat(item.temp.toFixed(2)),
+            humidity: parseFloat(item.humidity.toFixed(2)),
+            light: parseFloat(item.light.toFixed(2)),
+            soilMoisture: parseFloat((item.soilMoisture ?? 0).toFixed(2)),
+            wind: parseFloat((item.wind ?? 0).toFixed(2))
+          })).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+          setSensorHistory(sorted);
+        })
+        .catch(() => {
+          toast.error("Failed to load sensor history graph.");
+          setSensorHistory([]);
+        })
+        .finally(() => {
+          setHistoryLoading(false);
+        });
+    } else {
+      setSensorHistory([]);
+    }
+  }, [selectedSensorId]);
 
   useEffect(() => {
     if (showAddPanel) {
@@ -83,6 +175,28 @@ export default function SensorManagement() {
     setEditingId(null);
     setEditForm({});
     setCoordsPick(null);
+  };
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        setFlyTo(loc);
+        setLocating(false);
+        toast.success("Located! Your position is shown on the map.");
+      },
+      () => {
+        setLocating(false);
+        toast.error("Could not get your location — check browser permissions.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleAddSensor = async () => {
@@ -168,7 +282,7 @@ export default function SensorManagement() {
 
         {/* Map + add panel (mirrors overview layout) */}
         <div className="w-full flex flex-col lg:flex-row items-stretch gap-3">
-          <div className="w-full h-[300px] sm:h-[375px] lg:flex-1">
+          <div className="w-full h-[300px] sm:h-[375px] lg:flex-1 relative">
             <Map
               showExtent={showAddPanel}
               setShowExtent={(v) => { if (v) setShowAddPanel(true); }}
@@ -177,7 +291,19 @@ export default function SensorManagement() {
               closeModal={handleCloseAll}
               onCoordsPick={mapPickActive ? handleCoordsPick : null}
               pickedCoords={mapPickActive ? coordsPick : null}
+              userLocation={userLocation}
+              flyTo={flyTo}
             />
+            <button
+              onClick={handleLocateMe}
+              disabled={locating}
+              title="Show my location"
+              className="absolute bottom-14 right-3 z-10 w-9 h-9 bg-white border border-gray-300 rounded-lg shadow flex items-center justify-center text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition"
+            >
+              {locating
+                ? <i className="fa-solid fa-spinner fa-spin text-sm" />
+                : <i className="fa-solid fa-location-crosshairs text-sm" />}
+            </button>
           </div>
 
           {showAddPanel && (
@@ -217,6 +343,19 @@ export default function SensorManagement() {
                     />
                   </div>
                 </div>
+                {userLocation && (
+                  <button
+                    onClick={() => setAddForm((f) => ({
+                      ...f,
+                      latitude: userLocation.lat.toFixed(6),
+                      longitude: userLocation.lng.toFixed(6),
+                    }))}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 text-sm text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition"
+                  >
+                    <i className="fa-solid fa-location-crosshairs text-xs" />
+                    Use my location
+                  </button>
+                )}
                 <p className="text-gray-500 text-center text-sm italic">
                   Click on the map to fill coordinates automatically.
                 </p>
@@ -241,37 +380,59 @@ export default function SensorManagement() {
         </div>
 
         {/* List header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-800">All Sensors</h2>
             <p className="text-sm text-gray-500">
-              {sensors.length} sensor{sensors.length !== 1 ? "s" : ""} registered
+              {filteredSensors.length} sensor{filteredSensors.length !== 1 ? "s" : ""}{search.trim() ? " found" : " registered"}
             </p>
           </div>
-          <button
-            onClick={() => setShowAddPanel(true)}
-            className="bg-secondary-green text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 transition"
-          >
-            <i className="fa-solid fa-plus" />
-            Add Sensor
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              placeholder="Search sensors…"
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-52"
+            />
+            <button
+              onClick={() => setShowAddPanel(true)}
+              className="bg-secondary-green text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 transition"
+            >
+              <i className="fa-solid fa-plus" />
+              Add Sensor
+            </button>
+          </div>
         </div>
 
         {/* Sensor list */}
-        <div className="flex flex-col gap-3">
-          {!isLoading && sensors.length === 0 && (
-            <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-              No sensors found. Add one to get started.
-            </div>
-          )}
+        {!isLoading && sensors.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            No sensors found. Add one to get started.
+          </div>
+        )}
+        {!isLoading && sensors.length > 0 && filteredSensors.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            No sensors match your search.
+          </div>
+        )}
 
-          {sensors.map((sensor) => {
+        <div
+          ref={containerRef}
+          style={{ height: 600, overflowY: 'auto', position: 'relative' }}
+          onScroll={e => setScrollTop(e.currentTarget.scrollTop)}
+        >
+          {(() => {
+            const { visible, totalHeight } = getSensorVisibleItems(filteredSensors, scrollTop, editingId, selectedSensorId);
+            return (
+              <div style={{ height: totalHeight, position: 'relative' }}>
+                {visible.map(({ item: sensor, top }) => {
             const coords = sensor.geo?.coordinates ?? [];
             const isEditing = editingId === sensor.id;
 
             return (
               <div
                 key={sensor.id}
+                style={{ position: 'absolute', top, left: 0, right: 0 }}
                 className={`bg-white rounded-lg shadow p-4 flex flex-col gap-3 transition-all ${
                   isEditing ? "ring-2 ring-indigo-400" : ""
                 }`}
@@ -315,6 +476,30 @@ export default function SensorManagement() {
                       </>
                     ) : (
                       <>
+                        <button
+                          onClick={() => {
+                            setBleSelectedSensorId?.(sensor.id);
+                            setSelectedItem?.("Sensor Monitor");
+                          }}
+                          title="Open in BLE Scanner"
+                          className="bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1 rounded hover:bg-indigo-200 transition"
+                        >
+                          <i className="fa-brands fa-bluetooth" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSensorId(selectedSensorId === sensor.id ? null : sensor.id);
+                          }}
+                          className={`text-xs font-bold px-3 py-1 rounded transition flex items-center gap-1 ${
+                            selectedSensorId === sensor.id
+                              ? "bg-indigo-600 text-white"
+                              : "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
+                          }`}
+                        >
+                          <i className="fa-solid fa-chart-line" />
+                          Graph
+                        </button>
                         <button
                           onClick={() => startEdit(sensor)}
                           className="bg-secondary-green text-white text-xs font-bold px-3 py-1 rounded hover:opacity-90"
@@ -368,7 +553,7 @@ export default function SensorManagement() {
                 )}
 
                 {/* Readings */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
                     <p className="text-xs text-gray-500">Temperature</p>
                     <p className="font-bold text-red-600 text-sm">
@@ -387,10 +572,106 @@ export default function SensorManagement() {
                       {sensor.light != null ? `${sensor.light} lux` : "N/A"}
                     </p>
                   </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                    <p className="text-xs text-gray-500">Soil Moisture</p>
+                    <p className="font-bold text-green-600 text-sm">
+                      {sensor.soilMoisture != null ? `${sensor.soilMoisture} %` : "N/A"}
+                    </p>
+                  </div>
                 </div>
+
+                {selectedSensorId === sensor.id && (
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-gray-800 flex items-center gap-1.5 font-sans">
+                        <i className="fa-solid fa-chart-line text-indigo-500" />
+                        Historical Readings (ID #{sensor.id})
+                      </h4>
+                      <button
+                        onClick={() => setSelectedSensorId(null)}
+                        className="text-xs text-indigo-600 hover:underline font-bold cursor-pointer"
+                      >
+                        Close Graph
+                      </button>
+                    </div>
+
+                    {historyLoading ? (
+                      <div className="h-48 flex items-center justify-center text-xs font-bold text-gray-400">
+                        <i className="fa-solid fa-circle-notch fa-spin mr-1.5" /> Loading historical data...
+                      </div>
+                    ) : sensorHistory.length === 0 ? (
+                      <div className="h-32 flex items-center justify-center text-xs font-bold text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 p-4">
+                        No telemetry recorded yet for this sensor.
+                      </div>
+                    ) : (
+                      <div className="w-full flex flex-col gap-3">
+                        {/* Toggleable metrics */}
+                        <div className="flex flex-wrap gap-2">
+                          {["temp", "humidity", "light", "soilMoisture", "wind"].map(metric => {
+                            const labelMap = {
+                              temp: "Temperature (°C)",
+                              humidity: "Humidity (%)",
+                              light: "Light (lux)",
+                              soilMoisture: "Soil Moisture (%)",
+                              wind: "Wind (m/s)"
+                            };
+                            const activeColorMap = {
+                              temp: "bg-red-500 text-white border-red-500",
+                              humidity: "bg-blue-500 text-white border-blue-500",
+                              light: "bg-yellow-500 text-white border-yellow-500",
+                              soilMoisture: "bg-green-500 text-white border-green-500",
+                              wind: "bg-purple-500 text-white border-purple-500"
+                            };
+                            const active = activeMetrics[metric];
+                            return (
+                              <button
+                                key={metric}
+                                onClick={() => setActiveMetrics(m => ({ ...m, [metric]: !m[metric] }))}
+                                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition ${
+                                  active ? activeColorMap[metric] : `border-gray-200 text-gray-500 hover:bg-gray-50`
+                                }`}
+                              >
+                                {labelMap[metric]}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Chart container */}
+                        <div className="h-56 w-full pr-4 mt-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={sensorHistory}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                              <XAxis dataKey="formattedTime" tick={{ fontSize: 9 }} stroke="#9ca3af" />
+                              <YAxis tick={{ fontSize: 9 }} stroke="#9ca3af" />
+                              <Tooltip
+                                contentStyle={{
+                                  background: "rgba(255,255,255,0.95)",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "12px",
+                                  fontSize: "11px",
+                                  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)"
+                                }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: "10px" }} />
+                              {activeMetrics.temp && <Line type="monotone" dataKey="temp" name="Temperature (°C)" stroke="#ef4444" strokeWidth={2} activeDot={{ r: 6 }} />}
+                              {activeMetrics.humidity && <Line type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#3b82f6" strokeWidth={2} activeDot={{ r: 6 }} />}
+                              {activeMetrics.light && <Line type="monotone" dataKey="light" name="Light (lux)" stroke="#eab308" strokeWidth={2} activeDot={{ r: 6 }} />}
+                              {activeMetrics.soilMoisture && <Line type="monotone" dataKey="soilMoisture" name="Soil Moisture (%)" stroke="#22c55e" strokeWidth={2} activeDot={{ r: 6 }} />}
+                              {activeMetrics.wind && <Line type="monotone" dataKey="wind" name="Wind (m/s)" stroke="#a855f7" strokeWidth={2} activeDot={{ r: 6 }} />}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
-          })}
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

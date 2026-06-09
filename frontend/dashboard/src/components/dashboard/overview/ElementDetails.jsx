@@ -1,7 +1,17 @@
 import React from 'react'
 import { overviewService } from '../../../services/overviewService'
 
-export default function ElementDetails({ element, onElementSaved, onElementDeleted }) {
+const inputCls = 'w-full border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-game-blue/30 bg-white';
+
+export default function ElementDetails({
+    element,
+    onElementSaved,
+    onElementDeleted,
+    pickedCoords,
+    onCoordsConsumed,
+    onEnableCoordPick,
+    onDisableCoordPick
+}) {
     const [openEditModal, setOpenEditModal] = React.useState(false);
     const [editedElement, setEditedElement] = React.useState(null);
     const [isSaving, setIsSaving] = React.useState(false);
@@ -28,6 +38,33 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
         });
         setPreviewImage(null);
     }, [element]);
+
+    React.useEffect(() => {
+        if (openEditModal) {
+            onEnableCoordPick?.();
+        } else {
+            onDisableCoordPick?.();
+        }
+        return () => {
+            onDisableCoordPick?.();
+        };
+    }, [openEditModal, onEnableCoordPick, onDisableCoordPick]);
+
+    React.useEffect(() => {
+        if (openEditModal && pickedCoords) {
+            setEditedElement((prev) => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    geom: {
+                        ...prev.geom,
+                        coordinates: [pickedCoords.lng, pickedCoords.lat]
+                    }
+                };
+            });
+            onCoordsConsumed?.();
+        }
+    }, [pickedCoords, openEditModal, onCoordsConsumed]);
 
     const handleOpenEdit = () => { setError(''); setOpenEditModal(true); };
 
@@ -110,163 +147,140 @@ export default function ElementDetails({ element, onElementSaved, onElementDelet
 
     if (!element) {
         return (
-            <div className='h-full bg-white rounded-lg shadow flex items-center justify-center'>
-                <p className='text-gray-500'>Select an element to see details.</p>
+            <div className='bg-white rounded-xl border border-border flex items-center justify-center py-12'>
+                <p className='text-text-secondary text-sm'>Select an element to see details.</p>
             </div>
         );
     }
 
-    const displayImage = previewImage || element.imageUrl;
+    const rawImage = previewImage || element.imageUrl;
+    const isAllowed = rawImage && (
+      rawImage.startsWith('/') || rawImage.startsWith('blob:') || rawImage.startsWith('data:') ||
+      (() => { try { return new URL(rawImage).hostname.endsWith('.supabase.co'); } catch { return !rawImage.includes('://'); } })()
+    );
+    const displayImage = isAllowed ? rawImage : null;
 
     return (
-        <div className='h-full bg-white rounded-lg shadow flex flex-col overflow-hidden'>
-            <div className='grow-1 w-full overflow-auto flex flex-col'>
-                {/* Image area — clickable in edit mode */}
-                <input type='file' ref={fileInputRef} onChange={handleFileChange} accept='image/*' className='hidden' />
-                {displayImage ? (
-                    <div className='relative w-full h-[120px]' onClick={handleImageClick}
-                        style={{ cursor: openEditModal ? 'pointer' : 'default' }}>
-                        <img src={displayImage} alt='Element' className='w-full h-[120px] object-cover rounded' />
-                        {openEditModal && (
-                            <div className='absolute inset-0 bg-black/40 flex items-center justify-center rounded'>
-                                <p className='italic text-white text-sm'>Click to change image</p>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div
-                        className='w-full h-[120px] bg-gray-500 flex items-center justify-center rounded'
-                        onClick={handleImageClick}
-                        style={{ cursor: openEditModal ? 'pointer' : 'default' }}
-                    >
-                        <p className='italic text-white text-sm'>
-                            {openEditModal ? 'Click to upload image' : 'No image available'}
-                        </p>
-                    </div>
-                )}
+        <div className='bg-white rounded-xl border border-border flex flex-col overflow-hidden'>
+            <input type='file' ref={fileInputRef} onChange={handleFileChange} accept='image/*' className='hidden' />
 
-                <div className='grow-1 flex gap-3 py-0 px-4 mt-4'>
-                    <div className='flex-col gap-3 grow-1'>
-                        <div className='mt-2'>
-                            <p className='text-sm text-gray-500'>Element name</p>
-                            {openEditModal ? (
-                                <input
-                                    value={editedElement?.elementName ?? ''}
-                                    onChange={(e) => handleFieldChange('elementName', e.target.value)}
-                                    className='w-full rounded border border-gray-300 p-1 text-sm'
-                                />
-                            ) : (
-                                <p>{element.elementName || 'N/A'}</p>
-                            )}
+            {/* Image */}
+            {displayImage ? (
+                <div className='relative w-full h-[120px]' onClick={handleImageClick}
+                    style={{ cursor: openEditModal ? 'pointer' : 'default' }}>
+                    <img src={displayImage} alt='Element' className='w-full h-[120px] object-cover' />
+                    {openEditModal && (
+                        <div className='absolute inset-0 bg-black/40 flex items-center justify-center'>
+                            <p className='italic text-white text-sm'>Click to change image</p>
                         </div>
-
-                        <div className='mt-2'>
-                            <p className='text-sm text-gray-500'>Element type</p>
-                            {openEditModal ? (
-                                <select
-                                    value={editedElement?.elementType?.id ?? editedElement?.elementType ?? ''}
-                                    onChange={(e) => {
-                                        const selected = elementTypes.find((t) => String(t.id) === e.target.value);
-                                        handleFieldChange('elementType', selected ?? e.target.value);
-                                    }}
-                                    className='w-full rounded border border-gray-300 p-1 text-sm bg-white'
-                                >
-                                    <option value=''>Select a type...</option>
-                                    {elementTypes.map((et) => (
-                                        <option key={et.id} value={et.id}>{et.name}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <p>{element.elementType?.name || element.elementType || 'N/A'}</p>
-                            )}
-                        </div>
-
-                        <div className='mt-2'>
-                            <p className='text-sm text-gray-500'>Green element</p>
-                            {openEditModal ? (
-                                <label className='inline-flex items-center gap-2 text-sm cursor-pointer'>
-                                    <input
-                                        type='checkbox'
-                                        checked={!!editedElement?.isGreen}
-                                        onChange={(e) => handleFieldChange('isGreen', e.target.checked)}
-                                        className='h-4 w-4'
-                                    />
-                                    Yes
-                                </label>
-                            ) : (
-                                <p>{element.isGreen ? 'Yes' : 'No'}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className='flex-col gap-3 grow-1'>
-                        <div className='mt-2'>
-                            <p className='text-sm text-gray-500'>Latitude</p>
-                            {openEditModal ? (
-                                <input
-                                    type='text'
-                                    value={editedElement?.geom?.coordinates?.[1] ?? ''}
-                                    onChange={(e) => handleCoordinateChange(1, e.target.value)}
-                                    className='w-full rounded border border-gray-300 p-1 text-sm'
-                                />
-                            ) : (
-                                <p>{element.geom?.coordinates?.[1] ?? 'N/A'}</p>
-                            )}
-                        </div>
-                        <div className='mt-2'>
-                            <p className='text-sm text-gray-500'>Longitude</p>
-                            {openEditModal ? (
-                                <input
-                                    type='text'
-                                    value={editedElement?.geom?.coordinates?.[0] ?? ''}
-                                    onChange={(e) => handleCoordinateChange(0, e.target.value)}
-                                    className='w-full rounded border border-gray-300 p-1 text-sm'
-                                />
-                            ) : (
-                                <p>{element.geom?.coordinates?.[0] ?? 'N/A'}</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {error && <div className='px-4 mt-2 text-sm text-red-600'>{error}</div>}
-
-                <div className='flex items-center justify-evenly pb-4 px-4 gap-3 mt-4'>
-                    {openEditModal ? (
-                        <>
-                            <button
-                                className='bg-secondary-green rounded py-1 grow-1 text-white text-sm font-bold cursor-pointer disabled:opacity-50'
-                                onClick={handleSave}
-                                disabled={isSaving || isDeleting}
-                            >
-                                {isSaving ? 'Saving...' : 'Save'}
-                            </button>
-                            <button
-                                className='bg-gray-200 rounded py-1 grow-1 text-sm font-bold text-gray-700 cursor-pointer'
-                                onClick={handleCancelEdit}
-                                disabled={isSaving || isDeleting}
-                            >
-                                Cancel
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                className='bg-secondary-green rounded py-1 grow-1 text-white text-sm font-bold cursor-pointer'
-                                onClick={handleOpenEdit}
-                            >
-                                Edit
-                            </button>
-                            <button
-                                className='bg-red-500 hover:bg-red-600 rounded py-1 grow-1 text-white text-sm font-bold cursor-pointer disabled:opacity-50'
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                            >
-                                {isDeleting ? 'Deleting...' : 'Delete'}
-                            </button>
-                        </>
                     )}
                 </div>
+            ) : (
+                <div
+                    className='w-full h-[120px] bg-game-blue-soft flex flex-col items-center justify-center gap-1'
+                    onClick={handleImageClick}
+                    style={{ cursor: openEditModal ? 'pointer' : 'default' }}
+                >
+                    <i className='fa-solid fa-image text-game-blue text-2xl' />
+                    <p className='text-game-blue text-xs font-semibold'>
+                        {openEditModal ? 'Click to upload image' : 'No image available'}
+                    </p>
+                </div>
+            )}
+
+            <div className='flex gap-3 py-0 px-4 mt-4'>
+                <div className='flex-1 flex flex-col gap-3'>
+                    <div>
+                        <p className='text-xs text-text-secondary mb-1'>Element name</p>
+                        {openEditModal ? (
+                            <input value={editedElement?.elementName ?? ''} onChange={(e) => handleFieldChange('elementName', e.target.value)} className={inputCls} />
+                        ) : (
+                            <p className='text-sm text-text-primary font-medium'>{element.elementName || 'N/A'}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <p className='text-xs text-text-secondary mb-1'>Element type</p>
+                        {openEditModal ? (
+                            <select
+                                value={editedElement?.elementType?.id ?? editedElement?.elementType ?? ''}
+                                onChange={(e) => {
+                                    const selected = elementTypes.find((t) => String(t.id) === e.target.value);
+                                    handleFieldChange('elementType', selected ?? e.target.value);
+                                }}
+                                className={inputCls}
+                            >
+                                <option value=''>Select a type…</option>
+                                {elementTypes.map((et) => (
+                                    <option key={et.id} value={et.id}>{et.name}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <p className='text-sm text-text-primary'>{element.elementType?.name || element.elementType || 'N/A'}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <p className='text-xs text-text-secondary mb-1'>Green element</p>
+                        {openEditModal ? (
+                            <label className='inline-flex items-center gap-2 text-sm cursor-pointer'>
+                                <input type='checkbox' checked={!!editedElement?.isGreen} onChange={(e) => handleFieldChange('isGreen', e.target.checked)} className='h-4 w-4 accent-game-green' />
+                                Yes
+                            </label>
+                        ) : (
+                            <p className='text-sm text-text-primary'>{element.isGreen ? 'Yes' : 'No'}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className='flex-1 flex flex-col gap-3'>
+                    <div>
+                        <p className='text-xs text-text-secondary mb-1'>Latitude</p>
+                        {openEditModal ? (
+                            <input type='text' value={editedElement?.geom?.coordinates?.[1] ?? ''} onChange={(e) => handleCoordinateChange(1, e.target.value)} className={inputCls} />
+                        ) : (
+                            <p className='text-sm text-text-primary'>{element.geom?.coordinates?.[1] ?? 'N/A'}</p>
+                        )}
+                    </div>
+                    <div>
+                        <p className='text-xs text-text-secondary mb-1'>Longitude</p>
+                        {openEditModal ? (
+                            <input type='text' value={editedElement?.geom?.coordinates?.[0] ?? ''} onChange={(e) => handleCoordinateChange(0, e.target.value)} className={inputCls} />
+                        ) : (
+                            <p className='text-sm text-text-primary'>{element.geom?.coordinates?.[0] ?? 'N/A'}</p>
+                        )}
+                    </div>
+                    {openEditModal && (
+                        <p className='text-[10px] text-game-blue font-bold mt-1 leading-normal'>
+                            <i className="fa-solid fa-map-pin mr-1" />
+                            Click map to update location
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {error && <div className='px-4 mt-2 text-sm text-game-red'>{error}</div>}
+
+            <div className='flex items-center gap-2 pb-4 px-4 mt-4'>
+                {openEditModal ? (
+                    <>
+                        <button className='bg-game-green border-b-[3px] border-game-green-border text-white text-sm font-bold px-3 py-2 rounded-xl flex-1 disabled:opacity-50 cursor-pointer' onClick={handleSave} disabled={isSaving || isDeleting}>
+                            {isSaving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button className='bg-surface border border-border text-text-primary text-sm font-bold px-3 py-2 rounded-xl flex-1 cursor-pointer' onClick={handleCancelEdit} disabled={isSaving || isDeleting}>
+                            Cancel
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button className='bg-game-blue border-b-[3px] border-game-blue-border text-white text-sm font-bold px-3 py-2 rounded-xl flex-1 cursor-pointer' onClick={handleOpenEdit}>
+                            Edit
+                        </button>
+                        <button className='bg-game-red border-b-[3px] border-game-red-dark text-white text-sm font-bold px-3 py-2 rounded-xl flex-1 disabled:opacity-50 cursor-pointer' onClick={handleDelete} disabled={isDeleting}>
+                            {isDeleting ? 'Deleting…' : 'Delete'}
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );

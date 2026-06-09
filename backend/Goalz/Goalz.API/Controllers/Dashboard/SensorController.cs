@@ -1,6 +1,9 @@
+using Goalz.API.Models;
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 
 namespace Goalz.API.Controllers.Dashboard;
 
@@ -9,10 +12,14 @@ namespace Goalz.API.Controllers.Dashboard;
 public class SensorController : ControllerBase
 {
     private readonly ISensorService _sensorService;
+    private readonly ISensorDataService _sensorDataService;
+    private readonly ILogger<SensorController> _logger;
 
-    public SensorController(ISensorService sensorService)
+    public SensorController(ISensorService sensorService, ISensorDataService sensorDataService, ILogger<SensorController> logger)
     {
         _sensorService = sensorService;
+        _sensorDataService = sensorDataService;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -50,5 +57,49 @@ public class SensorController : ControllerBase
             };
         }
         return NoContent();
+    }
+
+    [AllowAnonymous]
+    [HttpPost("data")]
+    public async Task<IActionResult> SensorData([FromBody] SensorDataDto sensorDataDto)
+    {
+        try
+        {
+            await _sensorService.StoreSensorData(sensorDataDto);
+            return Ok("Data successfully stored!");
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (ArgumentNullException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error occurred while processing sensor data.");
+            return StatusCode(500, "An unexpected error occurred.");
+        }
+    }
+
+    [HttpGet("{id}/data")]
+    public async Task<IActionResult> GetSensorData(long id, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? limit)
+    {
+        DateTime? fromDate = from;
+        if (!from.HasValue && !limit.HasValue)
+        {
+            fromDate = DateTime.UtcNow.AddDays(-7);
+        }
+        var data = await _sensorDataService.GetBySensorIdAsync(id, fromDate, to, limit);
+        return Ok(data);
+    }
+
+    [HttpGet("dashboard/sensor-summary")]
+    public async Task<IActionResult> GetSensorSummary()
+    {
+        var data = await _sensorService.GetDataSummary();
+
+        return Ok(data);
     }
 }

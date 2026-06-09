@@ -21,15 +21,29 @@ namespace Goalz.Data.Storage
         public DbSet<PartyGroup> PartyGroups { get; set; }
         public DbSet<PartyGroupAnswer> PartyGroupAnswers { get; set; }
         public DbSet<PartyVisitedCheckpoint> PartyVisitedCheckpoints { get; set; }
-
+        public DbSet<Quiz> Quizzes { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+        public DbSet<UserStatistics> UserStatistics { get; set; }
+        public DbSet<UserPointsLog> UserPointsLogs { get; set; }
+        public DbSet<PopUp> PopUps { get; set; }
+        public DbSet<UserBadge> UserBadges { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasPostgresExtension("postgis");
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.Role)
-                .HasConversion<string>();
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.Property(u => u.Role)
+                    .HasConversion<string>();
+
+                entity.HasIndex(u => u.Email)
+                    .IsUnique();
+
+                entity.HasIndex(u => u.Username)
+                    .IsUnique();
+            });
 
             modelBuilder.Entity<Friendship>(entity =>
             {
@@ -76,25 +90,36 @@ namespace Goalz.Data.Storage
                 entity.HasIndex(c => c.ZoneId);
             });
 
-            modelBuilder.Entity<Sensor>()
-                .Property(s => s.Geo).HasColumnName("Geom");
+            modelBuilder.Entity<Sensor>(entity =>
+            {
+                entity.Property(s => s.Geo).HasColumnName("Geom");
+                entity.HasOne(s => s.PopUp)
+                    .WithOne()
+                    .HasForeignKey<Sensor>(s => s.PopUpId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
             modelBuilder.Entity<SensorData>(entity =>
             {
                 entity.Property(sd => sd.Id).HasColumnName("id");
                 entity.HasOne(sd => sd.Sensor)
-                    .WithMany()
+                    .WithMany(s => s.SensorData)
                     .HasForeignKey(sd => sd.SensorsId)
                     .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(sd => new { sd.SensorsId, sd.Timestamp })
+                    .IsDescending(false, true);
             });
 
             modelBuilder.Entity<ElementType>().ToTable("ElementType");
 
             modelBuilder.Entity<Element>(entity =>
             {
+                entity.Property(e => e.Geom).HasColumnType("geometry");
                 entity.HasOne(e => e.ElementType)
                     .WithMany(et => et.Elements)
                     .HasForeignKey(e => e.ElementTypeId);
+                entity.HasIndex(e => e.IsApproved)
+                    .HasFilter("\"IsApproved\" = false");
             });
 
             modelBuilder.Entity<PartyVisitedCheckpoint>(entity =>
@@ -106,6 +131,57 @@ namespace Goalz.Data.Storage
                 entity.HasOne(pvc => pvc.Checkpoint)
                     .WithMany()
                     .HasForeignKey(pvc => pvc.CheckpointId);
+            });
+
+            modelBuilder.Entity<Question>(entity =>
+            {
+                entity.HasOne(q => q.Quiz)
+                    .WithMany(qz => qz.Questions)
+                    .HasForeignKey(q => q.QuizId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Answer>(entity =>
+            {
+                entity.HasOne(a => a.Question)
+                    .WithMany(q => q.Answers)
+                    .HasForeignKey(a => a.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Party>(entity =>
+            {
+                entity.HasOne(p => p.Quiz)
+                    .WithMany(qz => qz.Parties)
+                    .HasForeignKey(p => p.QuizId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<UserStatistics>(entity =>
+            {
+                entity.HasOne(s => s.User)
+                    .WithOne(u => u.Statistics)
+                    .HasForeignKey<UserStatistics>(s => s.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(s => s.UserId).IsUnique();
+            });
+
+            modelBuilder.Entity<UserPointsLog>(entity =>
+            {
+                entity.HasOne(l => l.User)
+                    .WithMany()
+                    .HasForeignKey(l => l.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(l => new { l.UserId, l.EarnedAt });
+            });
+
+            modelBuilder.Entity<UserBadge>(entity =>
+            {
+                entity.HasOne(b => b.User)
+                    .WithMany()
+                    .HasForeignKey(b => b.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(b => new { b.UserId, b.BadgeId }).IsUnique();
             });
 
             base.OnModelCreating(modelBuilder);

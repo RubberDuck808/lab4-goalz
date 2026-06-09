@@ -20,22 +20,22 @@ export const authService = {
         }
 
         const data = await response.json();
-        localStorage.removeItem("user");
-        localStorage.setItem("token", data.token);
+        sessionStorage.removeItem("user");
+        sessionStorage.setItem("token", data.token);
         return data;
     },
 
     getUser: () => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         return token ? decodeToken(token) : null;
     },
 
     getToken: () => {
-        return localStorage.getItem("token");
+        return sessionStorage.getItem("token");
     },
 
     logout: () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
     }
 }

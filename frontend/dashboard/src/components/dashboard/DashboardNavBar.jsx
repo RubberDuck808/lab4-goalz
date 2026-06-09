@@ -1,27 +1,17 @@
 import React from 'react'
 
-export default function DashboardNavBar({title}) {
+export default function DashboardNavBar({ title }) {
   return (
-    <div className='h-[70px] bg-white w-full border-b border-gray-300 shadow flex items-center justify-between px-[20px]'>
-        <div className='ps-[50px] md:ps-0'>
-          <h1 className="font-bold text-lg md:text-xl">{title}</h1>
-          <p className='text-gray-500 font-extralight text-sm hidden md:block'>Office of Sustainability  ·  Now updated</p>
-        </div>
-        <div className='flex flex-row-reverse items-center justify-between gap-3'>
-          <button 
-            className='hidden md:block w-[128px] h-10 bg-secondary-green text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer'
-          >
-            Export <i className='fa-solid fa-arrow-up-from-bracket'></i>
-          </button>
-          <div className='hidden gap-3 md:flex'>
-            <select name="" id="" className='w-[128px] h-10 border border-gray-300 rounded-lg bg-white px-3 text-sm cursor-pointer'>
-              <option value="">Filter</option>
-            </select>
-            <select name="" id="" className='w-[128px] h-10 border border-gray-300 rounded-lg bg-white px-3 text-sm cursor-pointer'>
-              <option value="">Timeline</option>
-            </select>
-          </div>
-        </div>
+    <div className='h-[60px] bg-white w-full border-b border-border flex items-center justify-between px-5 shrink-0'>
+      <div className='ps-[50px] md:ps-0'>
+        <h1 className='font-bold text-lg text-text-primary'>{title}</h1>
+        <p className='text-text-secondary text-xs hidden md:block'>loggin-dashboard.com</p>
       </div>
+      <div className='hidden md:flex items-center gap-3'>
+        <button className='flex items-center gap-2 bg-game-blue border-b-[3px] border-game-blue-border text-white text-sm font-bold px-4 h-9 rounded-xl cursor-pointer hover:opacity-90 transition'>
+          Export <i className='fa-solid fa-arrow-up-from-bracket text-xs' />
+        </button>
+      </div>
+    </div>
   )
 }

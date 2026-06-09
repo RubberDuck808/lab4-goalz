@@ -3,13 +3,11 @@ import { authService } from "./authService";
 
 export const userManagementService = {
     listUsers: async () => {
-        const admin = authService.getUser();
-        if (!admin) throw new Error("Not logged in.");
         const response = await APICall(
             "GET",
-            `/auth/users?adminEmail=${encodeURIComponent(admin.email)}`,
+            "/auth/users",
             null,
-            null
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) {
             if (response?.status === 401) throw new Error("Only admins can view users.");
@@ -19,13 +17,11 @@ export const userManagementService = {
     },
 
     changeRole: async (userId, newRole) => {
-        const admin = authService.getUser();
-        if (!admin) throw new Error("Not logged in.");
         const response = await APICall(
             "PUT",
             `/auth/users/${userId}/role`,
-            JSON.stringify({ adminEmail: admin.email, newRole }),
-            null
+            JSON.stringify({ newRole }),
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) {
             if (response?.status === 401) throw new Error("Only admins can change user roles.");
@@ -36,13 +32,11 @@ export const userManagementService = {
     },
 
     deleteUser: async (userId) => {
-        const admin = authService.getUser();
-        if (!admin) throw new Error("Not logged in.");
         const response = await APICall(
             "DELETE",
-            `/auth/users/${userId}?adminEmail=${encodeURIComponent(admin.email)}`,
+            `/auth/users/${userId}`,
             null,
-            null
+            sessionStorage.getItem("token") ?? ""
         );
         if (!response?.ok) {
             if (response?.status === 401) throw new Error("Only admins can delete users.");

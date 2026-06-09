@@ -106,11 +106,19 @@
             { dataKey: "light",    color: "#f59e0b", name: "Light lux"  },
         ];
 
+        const soilStatus = (pct) => {
+            if (pct == null) return null;
+            if (pct < 25) return { label: "Dry",       text: "text-orange-600", bg: "bg-orange-50 border-orange-200" };
+            if (pct < 60) return { label: "Optimal",   text: "text-green-600",  bg: "bg-green-50 border-green-200"   };
+            if (pct < 80) return { label: "Moist",     text: "text-blue-600",   bg: "bg-blue-50 border-blue-200"     };
+            return           { label: "Saturated", text: "text-purple-600", bg: "bg-purple-50 border-purple-200" };
+        };
+
         const canopyData = useMemo(() => {
             const trees = elements.filter((e) => e.elementType?.id === TREE_TYPE_ID).length;
             return [
                 { name: "Canopy", value: trees },
-                { name: "Other", value: elements.length - trees },
+                { name: "Non-Canopy", value: elements.length - trees },
             ];
         }, [elements]);
 
@@ -124,7 +132,7 @@
   <div className="flex flex-col min-h-screen h-full relative overflow-hidden">
     {isLoading && <Loading />}
 
-    <DashboardNavBar title="Arboretum Overview" />
+    <DashboardNavBar title="Overview" />
 
     <div className="p-4 md:p-5 flex flex-col gap-5 flex-1 overflow-y-auto">
       <div className="w-full flex flex-col lg:flex-row items-stretch gap-3">
@@ -169,7 +177,7 @@
 
       {error && (
         <div className="flex justify-center items-center text-red-400 text-sm py-10">
-          Could not load data: {error.message}
+          Failed to load data.
         </div>
       )}
 
@@ -215,6 +223,80 @@
               value={`${canopyPercent}% Canopy`}
               data={canopyData}
             />
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && sensors.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">Sensors</h2>
+              <p className="text-sm text-gray-500">{sensors.length} sensor{sensors.length !== 1 ? "s" : ""} · latest readings</p>
+            </div>
+            <button
+              onClick={() => setSelectedItem("Sensor Management")}
+              className="text-sm text-indigo-600 font-semibold hover:underline flex items-center gap-1"
+            >
+              Manage <i className="fa-solid fa-arrow-right text-xs" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {sensors.map((sensor) => {
+              const soil = soilStatus(sensor.soilMoisture);
+              const hasReading = sensor.temp != null || sensor.humidity != null;
+              return (
+                <div key={sensor.id} className="bg-white rounded-lg shadow p-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                        <i className="fa-solid fa-wifi text-indigo-500 text-xs" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-gray-800">{sensor.sensorName}</p>
+                        <p className="text-xs text-gray-400">ID #{sensor.id}</p>
+                      </div>
+                    </div>
+                    {sensor.lastReading ? (
+                      <span className="text-xs text-gray-400">
+                        {new Date(sensor.lastReading).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-300 italic">No data</span>
+                    )}
+                  </div>
+
+                  {hasReading ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
+                        <p className="text-xs text-gray-500">Temperature</p>
+                        <p className="font-bold text-red-600 text-sm">{sensor.temp != null ? `${sensor.temp} °C` : "—"}</p>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
+                        <p className="text-xs text-gray-500">Humidity</p>
+                        <p className="font-bold text-blue-600 text-sm">{sensor.humidity != null ? `${sensor.humidity} %` : "—"}</p>
+                      </div>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-center">
+                        <p className="text-xs text-gray-500">Light</p>
+                        <p className="font-bold text-yellow-600 text-sm">{sensor.light != null ? `${sensor.light} lux` : "—"}</p>
+                      </div>
+                      <div className={`border rounded-lg p-2 text-center ${soil ? soil.bg : "bg-green-50 border-green-200"}`}>
+                        <p className="text-xs text-gray-500">Soil Moisture</p>
+                        <p className={`font-bold text-sm ${soil ? soil.text : "text-green-600"}`}>
+                          {sensor.soilMoisture != null ? `${sensor.soilMoisture} %` : "—"}
+                          {soil && <span className="ml-1 text-xs font-normal opacity-70">· {soil.label}</span>}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-3 text-center text-xs text-gray-400 italic">
+                      Awaiting first reading
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

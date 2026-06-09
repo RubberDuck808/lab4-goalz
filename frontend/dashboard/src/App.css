@@ -4,8 +4,22 @@
   --color-primary-green: #1A6640;
   --color-secondary-green: #33A661;
   --color-light-green: #E0F7E8;
-
   --color-secondary-black: #1A241F;
+
+  /* Game design system colours - Refined & Desaturated for Dashboard UX */
+  --color-game-blue:         #3B82F6; /* Professional Slate Blue instead of neon cyan */
+  --color-game-blue-soft:    #EFF6FF; /* Very soft pastel blue backdrop */
+  --color-game-blue-border:  #2563EB; /* Deep blue border accent */
+  --color-game-green:        #10B981; /* Premium Emerald green instead of neon green */
+  --color-game-green-border: #059669; /* Warm emerald green border */
+  --color-game-amber:        #F59E0B; /* Warmer amber yellow instead of neon yellow */
+  --color-game-amber-soft:   #FEF3C7; /* Softer, low-saturation warm backdrop */
+  --color-game-red:          #EF4444; /* Standard Red instead of neon pink-red */
+  --color-game-red-dark:     #DC2626; /* Warm red border */
+  --color-surface:           #F8FAFC; /* Slate-50 clean backdrop surface */
+  --color-border:            #E2E8F0; /* Slate-200 boundary borders */
+  --color-text-primary:      #0F172A; /* Slate-900 high contrast clean text */
+  --color-text-secondary:    #475569; /* Slate-600 secondary context text */
 }
 
 .font {
@@ -17,4 +31,20 @@ html, body, #root {
   padding: 0;
   height: 100%;
   width: 100%;
+  background-color: var(--color-surface);
+}
+
+@keyframes border-breathe {
+  0%, 100% {
+    border-color: rgba(245, 158, 11, 0.35);
+    box-shadow: 0 0 0 0px rgba(245, 158, 11, 0.12);
+  }
+  50% {
+    border-color: rgba(245, 158, 11, 0.85);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.22);
+  }
+}
+
+.animate-border-breathe {
+  animation: border-breathe 2.5s infinite ease-in-out;
 }

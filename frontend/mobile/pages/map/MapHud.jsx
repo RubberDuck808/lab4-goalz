@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { checkpointColor } from './mapHelpers';
 
-export default function MapHud({ targetCp, remainingCount, zoneCpsLeft }) {
+export default function MapHud({ targetCp, remainingCount, zoneCpsLeft, sensorsLeft }) {
   return (
     <View style={styles.hud}>
       {targetCp ? (
@@ -12,16 +12,22 @@ export default function MapHud({ targetCp, remainingCount, zoneCpsLeft }) {
             <Text style={styles.hudTargetName} numberOfLines={1}>
               {targetCp.name || targetCp.type}
             </Text>
-            <Text style={styles.hudTargetLabel}>
-              {targetCp.type === 'sensor' ? 'Sensor' : 'Element'}
-              {zoneCpsLeft > 1 ? `  ·  ${zoneCpsLeft} in zone` : ''}
+            <Text style={[styles.hudTargetLabel, targetCp.type === 'photo' && styles.hudTargetLabelPhoto]}>
+              {targetCp.type === 'sensor' ? 'Sensor' : targetCp.type === 'photo' ? 'Take a photo here' : 'Element'}
+              {targetCp.type !== 'photo' && zoneCpsLeft > 1 ? `  ·  ${zoneCpsLeft} in zone` : ''}
             </Text>
           </View>
         </View>
       ) : <View style={styles.hudTarget} />}
-      <View style={styles.hudRight}>
-        <Text style={styles.hudCount}>{remainingCount}</Text>
-        <Text style={styles.hudLabel}>{remainingCount === 1 ? 'zone left' : 'zones left'}</Text>
+      <View style={styles.hudStats}>
+        <View style={styles.hudStat}>
+          <Text style={styles.hudCount}>{remainingCount}</Text>
+          <Text style={styles.hudLabel}>{remainingCount === 1 ? 'zone left' : 'zones left'}</Text>
+        </View>
+        <View style={[styles.hudStat, styles.hudStatSensor]}>
+          <Text style={[styles.hudCount, styles.hudCountSensor]}>{sensorsLeft}</Text>
+          <Text style={styles.hudLabel}>{sensorsLeft === 1 ? 'sensor left' : 'sensors left'}</Text>
+        </View>
       </View>
     </View>
   );
@@ -43,8 +49,12 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 3, elevation: 2,
   },
   hudTargetName: { fontSize: 14, fontWeight: '700', color: '#27272a', maxWidth: 160 },
-  hudTargetLabel:{ fontSize: 10, fontWeight: '600', color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
-  hudRight:      { alignItems: 'flex-end' },
-  hudCount:      { color: '#29e87b', fontSize: 22, fontWeight: '900', lineHeight: 24 },
-  hudLabel:      { color: '#71717a', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
+  hudTargetLabel:      { fontSize: 10, fontWeight: '600', color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
+  hudTargetLabelPhoto: { color: '#FF9600' },
+  hudStats:         { flexDirection: 'row', gap: 12, alignItems: 'flex-end' },
+  hudStat:          { alignItems: 'flex-end' },
+  hudStatSensor:    { borderLeftWidth: 1, borderLeftColor: '#e4e4e7', paddingLeft: 12 },
+  hudCount:         { color: '#29e87b', fontSize: 22, fontWeight: '900', lineHeight: 24 },
+  hudCountSensor:   { color: '#1CB0F6' },
+  hudLabel:         { color: '#71717a', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
 });

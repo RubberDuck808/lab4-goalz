@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Goalz.Api.Hubs;
 using Goalz.Api.Services;
+using Goalz.Core.Exceptions;
 using Goalz.Application.Interfaces;
 using Goalz.Core.Interfaces;
 using Goalz.Core.Services;
@@ -50,6 +51,8 @@ builder.Services.AddCors(options =>
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+var jwtIssuer   = builder.Configuration["Jwt:Issuer"]   ?? "goalz-api";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "goalz-mobile";
 //Authentication Token
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -61,14 +64,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
             NameClaimType = JwtRegisteredClaimNames.Sub,
             RoleClaimType = "role",
         };
+        // SignalR WebSocket connections cannot send HTTP headers, so the JWT arrives
+        // as ?access_token= on hub handshake requests.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
+
+builder.Services.AddMemoryCache();
 
 // Dashboard auth
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -88,6 +108,8 @@ builder.Services.AddScoped<ISensorRepository, SensorRepository>();
 builder.Services.AddScoped<ISensorService, SensorService>();
 builder.Services.AddScoped<ISensorDataRepository, SensorDataRepository>();
 builder.Services.AddScoped<ISensorDataService, SensorDataService>();
+builder.Services.AddScoped<IPopUpRepository, PopUpRepository>();
+builder.Services.AddScoped<IPopUpService, PopUpService>();
 
 // Dataset import
 builder.Services.AddScoped<IDatasetService, DatasetService>();
@@ -96,6 +118,8 @@ builder.Services.AddScoped<IDatasetService, DatasetService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserBadgeRepository, UserBadgeRepository>();
+builder.Services.AddScoped<IBadgeService, BadgeService>();
 
 // Friendships
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
@@ -121,8 +145,13 @@ builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
 // Lobby
 builder.Services.AddScoped<ILobbyService, LobbyService>();
-builder.Services.AddHostedService<PartyCleanupService>();
-builder.Services.AddSignalR();
+//builder.Services.AddHostedService<PartyCleanupService>();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy =
+            System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 
 // Rate limiting — 10 requests per minute per IP on auth endpoints
 builder.Services.AddRateLimiter(options =>
@@ -146,6 +175,11 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -164,17 +198,30 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else
+
+app.UseExceptionHandler(error => error.Run(async context =>
 {
-    app.UseExceptionHandler(error => error.Run(async context =>
+    var ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+    if (ex is NotFoundException)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+    else
     {
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
-    }));
-}
+    }
+}));
 
 app.UseCors("AllowFrontend");
+app.UseResponseCompression();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication(); //implements AddAuthentication()

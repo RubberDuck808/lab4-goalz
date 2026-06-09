@@ -10,8 +10,8 @@ export default function CheckBox({name, onChange, checked}) {
               onChange={onChange}
               className="hidden"
             />
-            <span className={`h-5 w-5 border-2 rounded flex items-center justify-center transition-colors ${
-              checked ? 'bg-secondary-green border-secondary-green' : 'border-gray-300 bg-white'
+            <span className={`h-5 w-5 border-2 rounded-md flex items-center justify-center transition-colors ${
+              checked ? 'bg-game-green border-game-green' : 'border-border bg-white'
             }`}>
               {checked && <i className="fa-solid fa-check text-white text-xs"></i>}
             </span>

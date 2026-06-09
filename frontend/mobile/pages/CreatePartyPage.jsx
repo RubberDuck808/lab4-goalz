@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, KeyboardAvoidingView, Platform, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../components/PageHeader';
 import TextInput from '../components/TextInput';
@@ -27,6 +27,7 @@ export default function CreatePartyPage({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <PageHeader title="Party Mode" onBack={() => navigation.goBack()} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={styles.form}>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <TextInput placeholder="Party name" value={partyName} onChangeText={setPartyName} style={styles.inputText}/>
@@ -36,6 +37,7 @@ export default function CreatePartyPage({ navigation }) {
           </GameButtons>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
