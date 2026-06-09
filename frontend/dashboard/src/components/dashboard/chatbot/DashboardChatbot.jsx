@@ -55,11 +55,14 @@ export default function DashboardChatbot() {
     setLoading(true);
 
     try {
+      const headers = {
+          "Authorization": `Bearer ${sessionStorage.getItem("token") ?? ""}`,
+          "Content-Type": "application/json",
+      }
+
       const response = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify({ question: userQuestion }),
       });
 
