@@ -25,7 +25,7 @@ export default function LayerSidebar({ visibility, onToggle }) {
                 >
                   <i className={`fa-solid ${l.icon}`} />
                 </span>
-                <span className={`font text-sm font-medium whitespace-nowrap transition-colors ${on ? 'text-gray-800' : 'text-gray-400'}`}>
+                <span className={`text-sm font-medium whitespace-nowrap transition-colors ${on ? 'text-gray-800' : 'text-gray-400'}`}>
                   {l.label}
                 </span>
               </button>
