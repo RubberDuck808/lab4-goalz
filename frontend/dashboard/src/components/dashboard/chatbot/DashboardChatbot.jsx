@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   MessageCircle,
   X,
@@ -98,15 +99,14 @@ export default function DashboardChatbot() {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
-        className="fixed top-[70px] right-6 z-[500] flex items-center gap-2 rounded-2xl bg-[#14243b] px-3 py-2 text-white shadow-xl transition hover:scale-105 hover:bg-[#1d3352]"
+        onClick={() => setIsOpen(v => !v)}
+        className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#14243b] text-white transition cursor-pointer hover:bg-[#1d3352]"
       >
-        <MessageCircle size={22} />
-        <span className="font-semibold">Ask AI</span>
+        <MessageCircle size={16} />
       </button>
 
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[500] flex h-[520px] w-[380px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+      {isOpen && createPortal(
+        <div className="fixed left-4 right-4 top-[126px] md:top-[76px] bottom-[128px] md:bottom-[4.25rem] z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
           <div className="flex items-center justify-between bg-[#14243b] px-5 py-4 text-white">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
@@ -176,7 +176,7 @@ export default function DashboardChatbot() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 }

@@ -267,7 +267,7 @@ export default function ElementsPanel({
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden min-w-0 w-full">
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 w-full">{/* flex-1 min-h-0: fills remaining panel space after drag handle without overflowing */}
       {isLoading && <Loading />}
 
       {/* Stats */}
@@ -318,7 +318,7 @@ export default function ElementsPanel({
         </div>
         <input
           type="text"
-          placeholder="Search elements..."
+          placeholder="Search"
           value={searchVal}
           onChange={e => setSearchVal(e.target.value)}
           className="flex-1 min-w-[100px] px-3 py-2 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-game-blue/30"
@@ -366,7 +366,7 @@ export default function ElementsPanel({
 
       {/* List */}
       {!isLoading && (
-        <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto relative px-4 pb-8" style={{ minHeight: '300px' }}>
+        <div ref={containerRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto relative px-4 pb-8">{/* scroll container: only the list scrolls; filters above stay visible */}
 
           {/* All tab */}
           {activeTab === 'all' && (

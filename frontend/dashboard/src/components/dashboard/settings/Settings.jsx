@@ -166,20 +166,21 @@ export default function Settings() {
           ) : users.length === 0 ? (
             <p className='text-sm text-text-secondary'>No staff or admin users found.</p>
           ) : (
+            <div className='overflow-x-auto'>{/* overflow-x-auto: horizontal scroll, rows left-aligned at card padding */}
             <table className='w-full text-sm'>
               <thead>
                 <tr className='text-left text-text-secondary border-b border-border'>
-                  <th className='pb-2 font-semibold text-xs uppercase tracking-wide'>Name</th>
-                  <th className='pb-2 font-semibold text-xs uppercase tracking-wide'>Email</th>
-                  <th className='pb-2 font-semibold text-xs uppercase tracking-wide'>Role</th>
+                  {/* merged: name and email shown as "Name / Email" */}
+                  <th className='pb-2 pr-4 font-semibold text-xs uppercase tracking-wide whitespace-nowrap'>Name / Email</th>
+                  <th className='pb-2 pr-4 font-semibold text-xs uppercase tracking-wide'>Role</th>
                   <th className='pb-2' />
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id} className='border-b border-border last:border-0'>
-                    <td className='py-3 pr-4 font-medium text-text-primary text-sm'>{u.name}</td>
-                    <td className='py-3 pr-4 text-text-secondary text-sm'>{u.email}</td>
+                    {/* name / email in one cell, nowrap prevents wrapping beyond scroll container */}
+                    <td className='py-3 pr-4 font-medium text-text-primary text-sm whitespace-nowrap'>{u.name} / {u.email}</td>
                     <td className='py-3 pr-4'>
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
                         u.role === 'Admin' ? 'bg-game-blue-soft text-game-blue' : 'bg-surface text-text-secondary border border-border'
@@ -211,6 +212,7 @@ export default function Settings() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

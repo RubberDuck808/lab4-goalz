@@ -138,6 +138,7 @@ const DashboardMap = forwardRef(function DashboardMap({
   const [mapType, setMapType] = useState('streets')
   const [locating, setLocating]   = useState(false)
   const [locCycle, setLocCycle]   = useState(0)   // 0 = idle, 1 = at user, 2 = at arboretum
+  const [zoomMode, setZoomMode]   = useState(null) // 'in' | 'out' — mirrors Map/Sat toggle pattern
   const internalLocationRef       = useRef(null)
   const userCoordsRef             = useRef(null)
   // checkpoint cluster
@@ -577,6 +578,17 @@ const DashboardMap = forwardRef(function DashboardMap({
     }
   }
 
+  // ── zoom handlers — +: in by 2 levels, -: out to map min zoom ────────────
+  function handleZoomIn() {
+    setZoomMode('in')
+    mapInstanceRef.current?.zoomIn(2) // 2× manual pinch-zoom step
+  }
+  function handleZoomOut() {
+    setZoomMode('out')
+    const map = mapInstanceRef.current
+    if (map) map.setZoom(map.getMinZoom()) // jump to maximum zoom-out position
+  }
+
   // ── render ─────────────────────────────────────────────────────────────
   return (
     <div className="h-full w-full relative overflow-hidden">
@@ -616,26 +628,33 @@ const DashboardMap = forwardRef(function DashboardMap({
           >Cancel</button>
         </div>
       )}
-      {/* Controls — location button above Map/Sat toggle.
-           On mobile: stacked vertically, raised above the collapsed bottom sheet (76px from bottom).
-           On desktop: location button on top, toggle switches to horizontal row. */}
-      <div className="absolute bottom-[76px] md:bottom-4 right-4 z-[500] flex flex-col items-end gap-2">
-      <DashboardChatbot />
+      {/* Chatbot button — left side, same y-axis as map controls; left-4 matches "Overview" nav px-4 */}
+      <div className="absolute bottom-[76px] md:bottom-4 left-4 z-[500]">
+        <DashboardChatbot />
+      </div>
 
+      {/* Map controls — zoom +/- toggle + Map/Sat toggle */}
+      <div className="absolute bottom-[76px] md:bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
 
-      {/* Map Type Switcher */}
-      <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
-
-        <button
-          onClick={handleLocate}
-          disabled={locating}
-          title={locCycle === 0 ? 'Go to my location' : locCycle === 1 ? 'Show full arboretum' : 'Back to my location'}
-          className={`w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
-            locCycle > 0 ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
-          } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-        >
-          <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
-        </button>
+        {/* Zoom +/- toggle — same size/style as Map/Sat buttons; green when selected */}
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={handleZoomIn}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl text-[11px] font-bold transition cursor-pointer ${
+              zoomMode === 'in' ? 'bg-game-green text-white shadow-sm' : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+            }`}
+          >
+            <i className="fa-solid fa-plus text-[10px]" />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl text-[11px] font-bold transition cursor-pointer ${
+              zoomMode === 'out' ? 'bg-game-green text-white shadow-sm' : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+            }`}
+          >
+            <i className="fa-solid fa-minus text-[10px]" />
+          </button>
+        </div>
 
         {/* Map/Satellite toggle — vertical on mobile, horizontal on desktop */}
         <div className="flex flex-col md:flex-row gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
@@ -663,7 +682,6 @@ const DashboardMap = forwardRef(function DashboardMap({
           </button>
         </div>
       </div>
-    </div>
   </div>
 )
 }
