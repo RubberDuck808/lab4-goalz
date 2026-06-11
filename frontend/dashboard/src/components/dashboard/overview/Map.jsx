@@ -567,7 +567,7 @@ const DashboardMap = forwardRef(function DashboardMap({
         (err) => {
           setLocating(false)
           const msg = err.code === 1
-            ? 'Location permission denied — allow it in your browser settings'
+            ? 'Location permission denied — allow it in your browser settings, then log out and log in again. '
             : 'Could not get your location'
           alert(msg)
         },
