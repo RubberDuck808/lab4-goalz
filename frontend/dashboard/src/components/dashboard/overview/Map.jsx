@@ -628,8 +628,18 @@ const DashboardMap = forwardRef(function DashboardMap({
           >Cancel</button>
         </div>
       )}
-      {/* Chatbot button — left side, same y-axis as map controls; left-4 matches "Overview" nav px-4 */}
-      <div className="absolute bottom-[76px] md:bottom-4 left-4 z-[500]">
+      {/* Left-side controls — locate button + chatbot */}
+      <div className="absolute bottom-[76px] md:bottom-4 left-4 z-[500] flex flex-col items-start gap-2">
+        <button
+          onClick={handleLocate}
+          disabled={locating}
+          title={locCycle === 0 ? 'Go to my location' : locCycle === 1 ? 'Show full arboretum' : 'Back to my location'}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl shadow-md border transition ${
+            locCycle > 0 ? 'bg-game-blue text-white border-game-blue' : 'bg-white/85 backdrop-blur-md text-text-secondary border-border/80 hover:bg-surface'
+          } ${locating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        >
+          <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
+        </button>
         <DashboardChatbot />
       </div>
 
