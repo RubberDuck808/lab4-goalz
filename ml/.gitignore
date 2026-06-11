@@ -1,6 +1,15 @@
 data/
 model/*.keras
 model/*.h5
+model/*.pth
+model/*.csv
+model/*.log
+model/torch_cache/
+model/runs/
+logs/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+custom_model/checkpoints/
+custom_model/__pycache__/
+custom_model/_kaggle_push/
