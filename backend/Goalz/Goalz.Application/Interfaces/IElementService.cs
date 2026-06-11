@@ -12,4 +12,6 @@ public interface IElementService
     Task<IEnumerable<PendingElementDto>> GetPendingAsync();
     Task<(bool Success, string? Error)> ApproveAsync(long id);
     Task<(bool Success, string? Error)> RejectAsync(long id);
+    Task RetryMissedAnalysisAsync();
+    Task<(bool Success, string? Error)> TriggerAnalysisAsync(long id, bool force = false);
 }

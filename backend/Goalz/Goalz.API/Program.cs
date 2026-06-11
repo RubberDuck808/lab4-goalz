@@ -8,6 +8,7 @@ using Goalz.Core.Exceptions;
 using Goalz.Application.Interfaces;
 using Goalz.Core.Interfaces;
 using Goalz.Core.Services;
+using Goalz.Domain.Entities;
 using Goalz.Data.Repositories;
 using Goalz.Data.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -102,6 +103,10 @@ builder.Services.AddScoped<INatureElementRepository, NatureElementRepository>();
 // Elements CRUD
 builder.Services.AddScoped<IElementRepository, ElementRepository>();
 builder.Services.AddScoped<IElementService, ElementService>();
+
+// ML image analysis
+builder.Services.AddHttpClient<IImageAnalysisService, ImageAnalysisService>();
+builder.Services.AddHostedService<AnalysisRetryService>();
 
 // Sensors CRUD
 builder.Services.AddScoped<ISensorRepository, SensorRepository>();

@@ -147,6 +147,12 @@ export const overviewService = {
         invalidateOverviewCache();
     },
 
+    triggerAnalysis: async (id, force = false) => {
+        const url = force ? `/elements/${id}/analyse?force=true` : `/elements/${id}/analyse`;
+        const res = await APICall("POST", url, null, sessionStorage.getItem("token") ?? "");
+        if (!res?.ok) throw new Error('Failed to trigger analysis');
+    },
+
     getSensorHistory: async (id, limit = 500) => {
         const res = await APICall("GET", `/sensors/${id}/data?limit=${limit}`, null, sessionStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to fetch sensor data history');

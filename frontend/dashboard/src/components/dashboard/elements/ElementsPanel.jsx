@@ -69,6 +69,8 @@ export default function ElementsPanel({
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [analysingIds, setAnalysingIds] = useState(new Set());
+  const [failedIds, setFailedIds] = useState(new Set());
 
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [coordsPick, setCoordsPick] = useState(null);
@@ -179,6 +181,45 @@ export default function ElementsPanel({
       toast.success('Submission rejected.');
       await fetchData(); onCheckpointsChanged(); onPendingCountChanged?.();
     } catch (e) { toast.error(e.message || 'Failed to reject.'); }
+  };
+
+  const handleAnalyse = async (id) => {
+    setAnalysingIds(prev => new Set(prev).add(id));
+    setFailedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    try {
+      await overviewService.triggerAnalysis(id);
+      setPendingItems(prev => prev.map(el =>
+        el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el
+      ));
+
+      const startTime = Date.now();
+      const poll = setInterval(async () => {
+        if (Date.now() - startTime > 20_000) {
+          clearInterval(poll);
+          setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+          setFailedIds(s => new Set(s).add(id));
+          return;
+        }
+        try {
+          const fresh = await overviewService.getPendingElements();
+          const found = Array.isArray(fresh) ? fresh.find(el => el.id === id) : null;
+          if (!found) {
+            clearInterval(poll);
+            setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            await fetchData();
+            return;
+          }
+          if (found.aiResult) {
+            clearInterval(poll);
+            setAnalysingIds(s => { const n = new Set(s); n.delete(id); return n; });
+            setPendingItems(prev => prev.map(el => el.id === id ? found : el));
+          }
+        } catch { /* ignore transient poll errors */ }
+      }, 2_000);
+    } catch (e) {
+      toast.error(e.message || 'Failed to trigger analysis.');
+      setAnalysingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    }
   };
 
   const handleDeleteApproved = async (el) => {
@@ -415,39 +456,77 @@ export default function ElementsPanel({
           {activeTab === 'pending' && (
             filteredPending.length === 0
               ? <EmptyState icon="fa-check-circle" iconColor="text-game-green" message="No pending submissions" sub="All submissions have been reviewed." />
-              : (() => {
-                  const { visible, totalHeight } = getVisibleItems(filteredPending, scrollTop);
-                  return (
-                    <div className="flex flex-col h-full">
-                      <label className="flex items-center gap-2 text-xs text-text-secondary px-1 mb-2 cursor-pointer shrink-0">
-                        <input type="checkbox" checked={selectedIds.size === filteredPending.length && filteredPending.length > 0} onChange={toggleSelectAll} />
-                        Select all
-                      </label>
-                      <div style={{ height: totalHeight, position: 'relative', width: '100%', flex1: 1 }}>
-                        {visible.map(({ item: el, top }) => (
-                          <div
-                            key={el.id}
-                            onClick={() => { if (el.latitude != null) onFlyTo?.({ lat: el.latitude, lng: el.longitude }); }}
-                            style={{ position: 'absolute', top: `${top}px`, left: 0, right: 0, height: `${itemHeight}px` }}
-                            className={`bg-white rounded-xl border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all overflow-hidden ${selectedIds.has(el.id) ? 'border-game-amber bg-game-amber-soft/40' : 'border-border'}`}
-                          >
-                            <input type="checkbox" checked={selectedIds.has(el.id)} onChange={() => toggleSelect(el.id)} onClick={(e) => e.stopPropagation()} className="mt-1 cursor-pointer" />
-                            <ImageCell imageUrl={el.imageUrl} />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
-                              <p className="text-xs text-text-secondary capitalize">{el.elementType}</p>
-                              <p className="text-xs text-text-secondary truncate">{el.submittedBy ?? '—'} · {new Date(el.createdAt).toLocaleDateString()}</p>
-                              <div className="flex gap-2 mt-3">
-                                <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
-                                <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
+              : <>
+                  <label className="flex items-center gap-2 text-xs text-text-secondary px-1 cursor-pointer">
+                    <input type="checkbox" checked={selectedIds.size === filteredPending.length && filteredPending.length > 0} onChange={toggleSelectAll} />
+                    Select all
+                  </label>
+                  {filteredPending.map(el => (
+                    <div
+                      key={el.id}
+                      onClick={() => { if (el.latitude != null) onFlyTo?.({ lat: el.latitude, lng: el.longitude }); }}
+                      className={`bg-white rounded-xl border p-4 flex gap-3 items-start cursor-pointer hover:shadow-md hover:border-game-blue/40 transition-all ${selectedIds.has(el.id) ? 'border-game-amber bg-game-amber-soft/40' : 'border-border'}`}
+                    >
+                      <input type="checkbox" checked={selectedIds.has(el.id)} onChange={() => toggleSelect(el.id)} onClick={(e) => e.stopPropagation()} className="mt-1 cursor-pointer" />
+                      <ImageCell imageUrl={el.imageUrl} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-text-primary truncate">{el.elementName}</p>
+                        <p className="text-xs text-text-secondary capitalize">{el.elementType}</p>
+                        <p className="text-xs text-text-secondary">{el.submittedBy ?? '—'} · {new Date(el.createdAt).toLocaleDateString()}</p>
+                        <button onClick={(e) => { e.stopPropagation(); onFlyTo({ lat: el.latitude, lng: el.longitude }); }}
+                          className="text-game-blue hover:underline text-xs mt-1 flex items-center gap-1">
+                          <i className="fa-solid fa-map-pin text-[10px]" /> View on map
+                        </button>
+                        <div className="mt-2">
+                          {analysingIds.has(el.id) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                              <i className="fa-solid fa-spinner fa-spin text-[10px]" /> Checking…
+                            </span>
+                          ) : el.aiResult ? (
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                                  el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  <i className="fa-solid fa-robot mr-1 text-[10px]" />
+                                  {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                                   el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                                </span>
+                                <span className="text-xs text-text-secondary font-medium">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
                               </div>
+                              {el.aiSummary && (
+                                <p className="text-xs text-text-secondary italic mt-0.5">{el.aiSummary}</p>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          ) : failedIds.has(el.id) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-500">
+                              <i className="fa-solid fa-triangle-exclamation text-[10px]" /> Analysis failed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                              <i className="fa-solid fa-robot text-[10px]" /> Not checked
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 mt-3 flex-wrap">
+                          <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id); }}
+                            disabled={analysingIds.has(el.id)}
+                            className={`px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1 ${
+                              el.aiResult ? 'bg-gray-400 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            <i className="fa-solid fa-robot" /> {el.aiResult ? 'Re-check' : 'Check with AI'}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  );
-                })()
+                  ))}
+                </>
           )}
 
           {/* Approved tab */}

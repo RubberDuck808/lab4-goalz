@@ -118,6 +118,7 @@ namespace Goalz.Data.Storage
                 entity.HasOne(e => e.ElementType)
                     .WithMany(et => et.Elements)
                     .HasForeignKey(e => e.ElementTypeId);
+                entity.Property(e => e.AiResult).HasConversion<string>();
                 entity.HasIndex(e => e.IsApproved)
                     .HasFilter("\"IsApproved\" = false");
             });

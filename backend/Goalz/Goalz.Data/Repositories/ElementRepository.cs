@@ -74,7 +74,7 @@ public class ElementRepository : IElementRepository
     public async Task<IEnumerable<Element>> GetPendingAsync()
         => await _context.Elements
              .Include(e => e.ElementType)
-             .Where(e => !e.IsApproved)
+             .Where(e => !e.IsApproved && !e.IsRejected)
              .OrderByDescending(e => e.CreatedAt)
              .ToListAsync();
 
@@ -88,6 +88,7 @@ public class ElementRepository : IElementRepository
                 SELECT e.* FROM "Elements" e
                 JOIN "ElementType" et ON et."Id" = e."ElementTypeId"
                 WHERE e."IsApproved" = false
+                  AND e."IsRejected" = false
                   AND lower(et."Name") = lower({0})
                   AND lower(e."ElementName") = lower({1})
                   AND ST_DWithin(
@@ -112,7 +113,16 @@ public class ElementRepository : IElementRepository
     {
         var element = await _context.Elements.FindAsync(id);
         if (element is null) return false;
-        _context.Elements.Remove(element);
+        element.IsRejected = true;
+        element.IsApproved = false;
         return await _context.SaveChangesAsync() > 0;
     }
+
+    public async Task<List<Element>> GetPendingWithoutAiAsync(int limit)
+        => await _context.Elements
+             .Include(e => e.ElementType)
+             .Where(e => !e.IsApproved && !e.IsRejected && e.AiConfidence == null)
+             .OrderBy(e => e.CreatedAt)
+             .Take(limit)
+             .ToListAsync();
 }

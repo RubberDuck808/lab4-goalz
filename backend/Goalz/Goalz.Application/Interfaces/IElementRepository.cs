@@ -18,4 +18,5 @@ public interface IElementRepository
     Task<Element?> FindNearbyPendingAsync(double latitude, double longitude, string elementType, string elementName, double radiusMeters);
     Task<bool> ApproveAsync(long id);
     Task<bool> RejectAsync(long id);
+    Task<List<Element>> GetPendingWithoutAiAsync(int limit);
 }

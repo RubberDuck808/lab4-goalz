@@ -39,6 +39,13 @@ public class ElementController : ControllerBase
     public async Task<IActionResult> GetPending()
         => Ok(await _elementService.GetPendingAsync());
 
+    [HttpPost("{id}/analyse")]
+    public async Task<IActionResult> TriggerAnalysis(long id, [FromQuery] bool force = false)
+    {
+        var (success, error) = await _elementService.TriggerAnalysisAsync(id, force);
+        return success ? Accepted() : error == "not_found" ? NotFound() : BadRequest(error);
+    }
+
     [HttpPut("{id}/approve")]
     public async Task<IActionResult> Approve(long id)
     {

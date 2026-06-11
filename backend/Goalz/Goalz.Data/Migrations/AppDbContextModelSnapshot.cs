@@ -118,6 +118,21 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("AiClassification")
+                        .HasColumnType("text");
+
+                    b.Property<float?>("AiConfidence")
+                        .HasColumnType("real");
+
+                    b.Property<string>("AiResult")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AiSummary")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AnalysedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -141,6 +156,9 @@ namespace Goalz.Data.Migrations
                     b.Property<bool>("IsGreen")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsRejected")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("SubmittedBy")
                         .HasColumnType("text");
 
@@ -151,7 +169,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("IsApproved")
                         .HasFilter("\"IsApproved\" = false");
 
-                    b.ToTable("Elements");
+                    b.ToTable("Elements", (string)null);
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.ElementType", b =>
@@ -513,7 +531,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.UserBadge", b =>
