@@ -106,7 +106,7 @@ export default function DashboardChatbot() {
       </button>
 
       {isOpen && createPortal(
-        <div className="fixed left-4 right-4 top-[126px] md:top-[76px] bottom-[128px] md:bottom-[4.25rem] z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <div className="fixed left-4 right-4 md:right-auto md:w-[420px] top-[126px] md:top-auto md:h-[560px] bottom-[128px] md:bottom-[4.25rem] z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
           <div className="flex items-center justify-between bg-[#14243b] px-5 py-4 text-white">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
