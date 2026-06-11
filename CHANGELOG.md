@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Fix: element creation null ImageUrl crash + mobile map usability](#fix-element-creation-null-imageurl-crash--mobile-map-usability--2026-06-10)
 1. [#105 Fix: dashboard responsive — z-index layering, GPS 3-state cycle, Zones button removal](#105-fix-dashboard-responsive--z-index-layering-gps-3-state-cycle-zones-button-removal--2026-06-05)
 1. [Fix: SonarQube — Dockerfile root user, recursive COPY, JWT NOSONAR](#fix-sonarqube--dockerfile-root-user-recursive-copy-jwt-nosonar--2026-05-20)
 1. [Fix: Block non-Supabase imageUrls in element components](#fix-block-non-supabase-imageurls-in-element-components--2026-05-20)
@@ -18,6 +19,22 @@
 1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+
+---
+
+## Fix: element creation null ImageUrl crash + mobile map usability — 2026-06-10
+
+### Fixed
+- **ImageUrl null DB crash**: `ElementService.CreateAsync` now uses `request.ImageUrl ?? string.Empty` — consistent with `UpdateAsync` — so dashboard elements created without an image no longer hit the `NOT NULL` constraint on the `Elements.ImageUrl` column (`PostgresException 23502`).
+- **Mobile map height**: Map container in `DashboardOverview` raised from `h-[300px] sm:h-[375px]` to `h-[420px] sm:h-[460px]`, giving enough vertical space to see and accurately tap the map on a phone.
+- **Touch-blocking controls overlay**: In `Map.jsx`, the "Map Type Switcher" div was nested inside an outer `absolute` div but also carried its own `absolute bottom-4 right-4 z-[500]` — both positioned relative to the map container, creating an invisible second overlay at `bottom: 16px` that intercepted taps over the map. Removed the redundant absolute positioning from the inner div so it flows naturally inside the outer flex column.
+
+### Rationale
+- Empty string is the established sentinel for "no image" (already used in `UpdateAsync`), avoiding a schema migration.
+- The height increase is the minimum needed to make precise touch targeting practical on common phone viewports.
+- The CSS fix eliminates an unintended tap-eating layer without changing any visible layout.
+
+> Issue closed after 0 min
 
 ---
 
