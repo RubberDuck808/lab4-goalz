@@ -32,7 +32,7 @@ export default function DashboardChatbot() {
           "Hi, I can help you understand sensor data, landscape health and maintenance advice.",
         payload: {},
         suggestedQuestions: [
-          "Show current details of sensor 60",
+          "Show me the sensor details of sensor 60",
           "Which sensor has the lowest health score?",
           "What maintenance action is needed?",
         ],

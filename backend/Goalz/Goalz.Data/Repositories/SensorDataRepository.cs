@@ -59,13 +59,9 @@ public class SensorDataRepository : ISensorDataRepository
 
     public async Task<IEnumerable<SensorData>> GetDataSummary()
     {
-        var data = await _context.SensorData
+        return await _context.SensorData
             .OrderByDescending(x => x.Timestamp)
-            .GroupBy(x => x.SensorsId)
-            .Select(g => g.First())
-            .Take(20)
+            .Take(200)
             .ToListAsync();
-
-        return data;
     }
 }
