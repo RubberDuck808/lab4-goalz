@@ -8,4 +8,6 @@ public interface ISensorRepository
     Task<Sensor?> GetByIdAsync(long id);
     Task<bool> UpdateAsync(Sensor sensor);
     Task<bool> DeleteAsync(long id);
+    Task<IEnumerable<Sensor>> GetByIdsAsync(IEnumerable<long> ids);
+    Task StoreSensorData(SensorData sensorData);
 }

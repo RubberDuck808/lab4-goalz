@@ -1,34 +1,63 @@
 using Goalz.Core.DTOs;
 using Goalz.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Goalz.API.Controllers.Dashboard;
 
 [Route("api/dashboard/elements")]
 [ApiController]
+[Authorize]
 public class ElementController : ControllerBase
 {
     private readonly IElementService _elementService;
-    private readonly IElementRepository _elementRepository;
 
-    public ElementController(IElementService elementService, IElementRepository elementRepository)
+    public ElementController(IElementService elementService)
     {
         _elementService = elementService;
-        _elementRepository = elementRepository;
     }
 
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
     {
-        var types = await _elementRepository.GetAllElementTypesAsync();
+        var types = await _elementService.GetAllTypesAsync();
         return Ok(types);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateElementRequest request)
     {
-        var element = await _elementService.CreateAsync(request);
+        request.IsApproved  = true;
+        request.SubmittedBy = null;
+        var (element, error) = await _elementService.CreateAsync(request);
+        if (element is null)
+            return BadRequest(error);
         return CreatedAtAction(nameof(Create), new { id = element.Id }, element);
+    }
+
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPending()
+        => Ok(await _elementService.GetPendingAsync());
+
+    [HttpPost("{id}/analyse")]
+    public async Task<IActionResult> TriggerAnalysis(long id, [FromQuery] bool force = false)
+    {
+        var (success, error) = await _elementService.TriggerAnalysisAsync(id, force);
+        return success ? Accepted() : error == "not_found" ? NotFound() : BadRequest(error);
+    }
+
+    [HttpPut("{id}/approve")]
+    public async Task<IActionResult> Approve(long id)
+    {
+        var (success, error) = await _elementService.ApproveAsync(id);
+        return success ? NoContent() : error == "not_found" ? NotFound() : BadRequest();
+    }
+
+    [HttpPut("{id}/reject")]
+    public async Task<IActionResult> Reject(long id)
+    {
+        var (success, error) = await _elementService.RejectAsync(id);
+        return success ? NoContent() : error == "not_found" ? NotFound() : BadRequest();
     }
 
     [HttpPut("{id}")]

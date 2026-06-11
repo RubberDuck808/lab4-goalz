@@ -1,28 +1,53 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-const USER_KEY = 'loggin_user';
-const TOKEN_KEY = 'loggin_token';
+const storage = SecureStore;
+
+const USER_KEY  = 'login_user';
+const TOKEN_KEY = 'login_token';
 
 export async function storeUser(user) {
-  const { token, ...profile } = user;
+  // Backend DTOs use PascalCase (Token, Username, ...). Normalize to camelCase
+  // so the rest of the app can consistently use `username`/`token`.
+  const token = user?.token ?? user?.Token ?? null;
+
+  const profile = {
+    username: user?.username ?? user?.Username ?? '',
+    email: user?.email ?? user?.Email ?? '',
+    createdAt: user?.createdAt ?? user?.CreatedAt ?? null,
+    avatarId: user?.avatarId ?? user?.AvatarId ?? 1,
+  };
+
+  if (!token) {
+    await storage.deleteItemAsync(TOKEN_KEY);
+  }
   await Promise.all([
-    AsyncStorage.setItem(USER_KEY, JSON.stringify(profile)),
-    token ? AsyncStorage.setItem(TOKEN_KEY, token) : Promise.resolve(),
+    storage.setItemAsync(USER_KEY, JSON.stringify(profile)),
+    token ? storage.setItemAsync(TOKEN_KEY, token) : Promise.resolve(),
   ]);
 }
 
 export async function getUser() {
-  const json = await AsyncStorage.getItem(USER_KEY);
+  const json = await storage.getItemAsync(USER_KEY);
   return json ? JSON.parse(json) : null;
 }
 
 export async function getToken() {
-  return AsyncStorage.getItem(TOKEN_KEY);
+  return storage.getItemAsync(TOKEN_KEY);
 }
 
 export async function clearUser() {
   await Promise.all([
-    AsyncStorage.removeItem(USER_KEY),
-    AsyncStorage.removeItem(TOKEN_KEY),
+    storage.deleteItemAsync(USER_KEY),
+    storage.deleteItemAsync(TOKEN_KEY),
   ]);
+}
+
+export async function storeToken(token) {
+  if (token) await storage.setItemAsync(TOKEN_KEY, token);
+}
+
+export async function updateStoredUser(patch) {
+  const existing = await getUser();
+  const updated = { ...existing, ...patch };
+  await storage.setItemAsync(USER_KEY, JSON.stringify(updated));
 }

@@ -66,7 +66,7 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
 
     if (!sensor) {
         return (
-            <div className='h-full w-[500px] bg-white rounded-lg shadow flex items-center justify-center'>
+            <div className='h-full bg-white rounded-lg shadow flex items-center justify-center'>
                 <p className='text-gray-500'>Select a sensor to see details.</p>
             </div>
         );
@@ -75,15 +75,15 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
     const coords = sensor.geo?.coordinates ?? [];
 
     return (
-        <div className='h-full w-[500px] bg-white rounded-lg shadow flex flex-col overflow-hidden'>
+        <div className='h-full bg-white rounded-lg shadow flex flex-col overflow-hidden'>
             <div className='w-full h-[40px] bg-[#6366f1] flex items-center px-4'>
                 <i className='fa-solid fa-wifi text-white mr-2 text-sm' />
-                <p className='font text-white text-sm font-bold'>Sensor Details</p>
+                <p className='text-white text-sm font-bold'>Sensor Details</p>
             </div>
 
             <div className='grow-1 w-full overflow-auto flex flex-col px-4 mt-4 gap-3'>
                 <div>
-                    <p className='font text-sm text-gray-500'>Sensor name</p>
+                    <p className='text-sm text-gray-500'>Sensor name</p>
                     {openEditModal ? (
                         <input
                             value={editedSensor?.sensorName ?? ''}
@@ -91,26 +91,13 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
                             className='w-full rounded border border-gray-300 p-1 text-sm'
                         />
                     ) : (
-                        <p className='font text-sm font-medium'>{sensor.sensorName || 'N/A'}</p>
+                        <p className='text-sm font-medium'>{sensor.sensorName || 'N/A'}</p>
                     )}
                 </div>
 
                 <div className='flex gap-4'>
                     <div className='flex-1'>
-                        <p className='font text-sm text-gray-500'>Longitude</p>
-                        {openEditModal ? (
-                            <input
-                                type='text'
-                                value={editedSensor?.editLongitude ?? ''}
-                                onChange={(e) => setEditedSensor((p) => ({ ...p, editLongitude: e.target.value }))}
-                                className='w-full rounded border border-gray-300 p-1 text-sm'
-                            />
-                        ) : (
-                            <p className='font text-sm'>{coords[0] ?? 'N/A'}</p>
-                        )}
-                    </div>
-                    <div className='flex-1'>
-                        <p className='font text-sm text-gray-500'>Latitude</p>
+                        <p className='text-sm text-gray-500'>Latitude</p>
                         {openEditModal ? (
                             <input
                                 type='text'
@@ -119,7 +106,20 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
                                 className='w-full rounded border border-gray-300 p-1 text-sm'
                             />
                         ) : (
-                            <p className='font text-sm'>{coords[1] ?? 'N/A'}</p>
+                            <p className='text-sm'>{coords[1] ?? 'N/A'}</p>
+                        )}
+                    </div>
+                    <div className='flex-1'>
+                        <p className='text-sm text-gray-500'>Longitude</p>
+                        {openEditModal ? (
+                            <input
+                                type='text'
+                                value={editedSensor?.editLongitude ?? ''}
+                                onChange={(e) => setEditedSensor((p) => ({ ...p, editLongitude: e.target.value }))}
+                                className='w-full rounded border border-gray-300 p-1 text-sm'
+                            />
+                        ) : (
+                            <p className='text-sm'>{coords[0] ?? 'N/A'}</p>
                         )}
                     </div>
                 </div>
@@ -128,15 +128,15 @@ export default function SensorDetails({ sensor, onSensorSaved, onSensorDeleted }
                 <div className='grid grid-cols-3 gap-2 mt-1'>
                     <div className='bg-red-50 border border-red-200 rounded-lg p-2 text-center'>
                         <p className='text-xs text-gray-500'>Temperature</p>
-                        <p className='font font-bold text-red-600 text-sm'>{sensor.temp != null ? `${sensor.temp} °C` : 'N/A'}</p>
+                        <p className='font-bold text-red-600 text-sm'>{sensor.temp != null ? `${sensor.temp} °C` : 'N/A'}</p>
                     </div>
                     <div className='bg-blue-50 border border-blue-200 rounded-lg p-2 text-center'>
                         <p className='text-xs text-gray-500'>Humidity</p>
-                        <p className='font font-bold text-blue-600 text-sm'>{sensor.humidity != null ? `${sensor.humidity} %` : 'N/A'}</p>
+                        <p className='font-bold text-blue-600 text-sm'>{sensor.humidity != null ? `${sensor.humidity} %` : 'N/A'}</p>
                     </div>
                     <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-center'>
                         <p className='text-xs text-gray-500'>Light</p>
-                        <p className='font font-bold text-yellow-600 text-sm'>{sensor.light != null ? `${sensor.light} lux` : 'N/A'}</p>
+                        <p className='font-bold text-yellow-600 text-sm'>{sensor.light != null ? `${sensor.light} lux` : 'N/A'}</p>
                     </div>
                 </div>
 

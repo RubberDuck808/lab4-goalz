@@ -13,7 +13,7 @@ export default function QuizAnswerButton({ text, color, selectedAnswer, setSelec
     }
   };
 
-  const isSelected = selectedAnswer.answer === text;
+  const isSelected = selectedAnswer?.text === text;
 
   return (
     <Pressable

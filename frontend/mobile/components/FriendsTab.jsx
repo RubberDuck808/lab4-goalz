@@ -1,42 +1,30 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import AppText from './AppText';
 import UserIcon from '../assets/User.svg';
+import UserRow from './UserRow';
 import { getConnections, getFriendRequests } from '../services/api';
-
-const VISIBLE_LIMIT = 3;
-
-function Avatar() {
-  return <View style={styles.avatar} />;
-}
-
-function FriendRow({ username, onAction, actionLabel }) {
-  return (
-    <View style={styles.row}>
-      <Avatar />
-      <Text style={styles.name}>{username}</Text>
-      <TouchableOpacity style={styles.actionBtn} onPress={onAction} accessibilityLabel={actionLabel}>
-        <UserIcon width={22} height={22} color="#3b82f6" />
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 export default function FriendsTab({ currentUsername, viewedUsername, connectionsOnly = false, onViewProfile }) {
   const targetUsername = viewedUsername ?? currentUsername;
-  const tabs = connectionsOnly ? ['Connections'] : ['Connections', 'Requests'];
+  const tabs = connectionsOnly ? ['Friends'] : ['Friends', 'Requests'];
 
   const [activeTab, setActiveTab] = useState(0);
   const [connections, setConnections] = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const lastFetchedAt = useRef(0);
+  const STALE_MS = 30_000;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!targetUsername) return;
+    if (!force && Date.now() - lastFetchedAt.current < STALE_MS) return;
     setLoading(true);
     const tasks = [getConnections(targetUsername)];
     if (!connectionsOnly) tasks.push(getFriendRequests());
     const [connRes, reqRes] = await Promise.all(tasks);
+    lastFetchedAt.current = Date.now();
     setConnections(connRes.data ?? []);
     setRequests(reqRes?.data ?? []);
     setLoading(false);
@@ -46,8 +34,6 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
   const isConnections = activeTab === 0;
   const items = isConnections ? connections : requests;
-  const visible = items.slice(0, VISIBLE_LIMIT);
-  const extra = items.length - VISIBLE_LIMIT;
 
   return (
     <View style={styles.container}>
@@ -60,9 +46,16 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
             onPress={() => setActiveTab(i)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
-              {tab}
-            </Text>
+            <View style={styles.tabLabelRow}>
+              <AppText style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
+                {tab}
+              </AppText>
+              {tab === 'Requests' && requests.length > 0 && (
+                <View style={styles.badge}>
+                  <AppText style={styles.badgeText}>{requests.length}</AppText>
+                </View>
+              )}
+            </View>
             {activeTab === i && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
         ))}
@@ -72,39 +65,32 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="small" color="#3b82f6" />
+          <ActivityIndicator size="small" color="#1CB0F6" />
         </View>
-      ) : visible.length === 0 ? (
+      ) : items.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyText}>
-            {isConnections ? 'No connections yet' : 'No pending requests'}
-          </Text>
+          <AppText style={styles.emptyText}>
+            {isConnections ? 'No friends yet. Search for players to add them.' : 'No pending requests.'}
+          </AppText>
         </View>
       ) : (
         <View style={styles.list}>
-          {visible.map((item, idx) => (
+          {items.map((item, idx) => (
             <React.Fragment key={item.friendshipId}>
-              <FriendRow
-                username={item.username}
-                actionLabel={isConnections ? 'View profile' : 'View requester profile'}
-                onAction={
-                  isConnections
-                    ? (onViewProfile ? () => onViewProfile(item.username, false) : undefined)
-                    : (onViewProfile ? () => onViewProfile(item.username, true) : undefined)
-                }
-              />
-              {idx < visible.length - 1 && <View style={styles.rowDivider} />}
+              <View style={styles.rowWrap}>
+                <UserRow
+                  username={item.username}
+                  avatarId={item.avatarId}
+                  onPress={
+                    onViewProfile
+                      ? () => onViewProfile(item.username, !isConnections, item.avatarId)
+                      : undefined
+                  }
+                />
+              </View>
+              {idx < items.length - 1 && <View style={styles.rowDivider} />}
             </React.Fragment>
           ))}
-
-          {extra > 0 && (
-            <>
-              <View style={styles.rowDivider} />
-              <View style={styles.moreRow}>
-                <Text style={styles.moreText}>{extra}+</Text>
-              </View>
-            </>
-          )}
         </View>
       )}
     </View>
@@ -113,14 +99,11 @@ export default function FriendsTab({ currentUsername, viewedUsername, connection
 
 const styles = StyleSheet.create({
   container: {
-    width: 361,
-    height: 215,
+    alignSelf: 'stretch',
     backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e4e4e7',
-    overflow: 'hidden',
-    alignSelf: 'center',
   },
 
   tabBar: { flexDirection: 'row' },
@@ -130,43 +113,35 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     position: 'relative',
   },
+  tabLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tabText: { fontSize: 15, color: '#71717a', fontWeight: '500' },
-  tabTextActive: { color: '#3b82f6', fontWeight: '600' },
+  tabTextActive: { color: '#1CB0F6', fontWeight: '600' },
+  badge: {
+    backgroundColor: '#FF4B4B',
+    borderRadius: 9999,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
   tabUnderline: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1CB0F6',
     borderRadius: 1,
   },
 
   divider: { height: 1, backgroundColor: '#e4e4e7' },
 
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { minHeight: 120, alignItems: 'center', justifyContent: 'center' },
   emptyText: { fontSize: 13, color: '#a1a1aa' },
 
-  list: { flex: 1 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
-  },
+  list: { paddingVertical: 4 },
+  rowWrap: { paddingHorizontal: 16 },
   rowDivider: { height: 1, backgroundColor: '#f4f4f5', marginHorizontal: 16 },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#d4d4d8' },
-  name: { flex: 1, fontSize: 16, fontWeight: '600', color: '#27272a' },
-  actionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#f4f4f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  moreRow: { alignItems: 'center', paddingVertical: 8 },
-  moreText: { fontSize: 14, color: '#71717a', fontWeight: '500' },
 });

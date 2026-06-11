@@ -46,7 +46,36 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("Answer", (string)null);
+                    b.ToTable("Answers");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.Boundary", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Geometry>("Geometry")
+                        .IsRequired()
+                        .HasColumnType("geometry");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Geometry");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Geometry"), "gist");
+
+                    b.ToTable("Boundaries");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Checkpoint", b =>
@@ -57,26 +86,28 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Point>("Location")
                         .IsRequired()
                         .HasColumnType("geometry");
 
-                    b.Property<string>("Name")
+                    b.Property<long>("ReferenceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("SectionId")
+                    b.Property<long?>("ZoneId")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SectionId");
+                    b.HasIndex("ZoneId");
 
-                    b.ToTable("Checkpoints", (string)null);
+                    b.HasIndex("Type", "ReferenceId")
+                        .IsUnique();
+
+                    b.ToTable("Checkpoints");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Element", b =>
@@ -87,26 +118,75 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<long>("ElementName")
-                        .HasColumnType("bigint");
+                    b.Property<string>("AiClassification")
+                        .HasColumnType("text");
 
-                    b.Property<long>("ElementType")
-                        .HasColumnType("bigint");
+                    b.Property<float?>("AiConfidence")
+                        .HasColumnType("real");
+
+                    b.Property<string>("AiResult")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AiSummary")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AnalysedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ElementName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ElementTypeId")
+                        .HasColumnType("integer");
 
                     b.Property<Point>("Geom")
                         .IsRequired()
                         .HasColumnType("geometry");
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsGreen")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsRejected")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SubmittedBy")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("ElementTypeId");
+
+                    b.HasIndex("IsApproved")
+                        .HasFilter("\"IsApproved\" = false");
+
                     b.ToTable("Elements", (string)null);
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.ElementType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ElementType", (string)null);
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Friendship", b =>
@@ -140,7 +220,7 @@ namespace Goalz.Data.Migrations
                     b.HasIndex("RequesterId", "AddresseeId")
                         .IsUnique();
 
-                    b.ToTable("Friendships", (string)null);
+                    b.ToTable("Friendships");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Party", b =>
@@ -151,21 +231,44 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("AllowedRoles")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long?>("BoundaryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("CheckpointsPerZone")
+                        .HasColumnType("integer");
+
                     b.Property<long>("Code")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("GroupSize")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("QuizId")
+                    b.Property<long?>("QuizId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ZoneCount")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("QuizId");
 
-                    b.ToTable("Party", (string)null);
+                    b.ToTable("Parties");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyGroup", b =>
@@ -187,7 +290,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("PartyId");
 
-                    b.ToTable("PartyGroup", (string)null);
+                    b.ToTable("PartyGroups");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyGroupAnswer", b =>
@@ -213,7 +316,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("PartyGroupId");
 
-                    b.ToTable("PartyGroupAnswer", (string)null);
+                    b.ToTable("PartyGroupAnswers");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.PartyMember", b =>
@@ -227,6 +330,15 @@ namespace Goalz.Data.Migrations
                     b.Property<long>("PartyGroupId")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("PartyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("text");
+
+                    b.Property<long>("Score")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
@@ -236,7 +348,47 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PartyMember", (string)null);
+                    b.ToTable("PartyMembers");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.PartyVisitedCheckpoint", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CheckpointId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PartyId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckpointId");
+
+                    b.HasIndex("PartyId");
+
+                    b.ToTable("PartyVisitedCheckpoints", (string)null);
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.PopUp", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("InfoText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PopUps");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Question", b =>
@@ -258,7 +410,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("QuizId");
 
-                    b.ToTable("Question", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Quiz", b =>
@@ -271,36 +423,7 @@ namespace Goalz.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Quiz", (string)null);
-                });
-
-            modelBuilder.Entity("Goalz.Domain.Entities.Section", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("CompletionCriteria")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ZoneId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderIndex")
-                        .IsUnique();
-
-                    b.HasIndex("ZoneId")
-                        .IsUnique();
-
-                    b.ToTable("Sections", (string)null);
+                    b.ToTable("Quizzes");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Sensor", b =>
@@ -312,18 +435,62 @@ namespace Goalz.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<Point>("Geo")
-                        .IsRequired()
-                        .HasColumnType("geometry");
+                        .HasColumnType("geometry")
+                        .HasColumnName("Geom");
+
+                    b.Property<long?>("PopUpId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SensorName")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PopUpId")
+                        .IsUnique();
+
+                    b.ToTable("Sensors");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.SensorData", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<long>("Humidity")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("Temp")
+                    b.Property<long>("Light")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("RawMoisture")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("SensorsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("SoilMoisture")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Temp")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("Wind")
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Sensors", (string)null);
+                    b.HasIndex("SensorsId", "Timestamp")
+                        .IsDescending(false, true);
+
+                    b.ToTable("SensorData");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.User", b =>
@@ -334,14 +501,13 @@ namespace Goalz.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<int>("AvatarId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -359,7 +525,97 @@ namespace Goalz.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.UserBadge", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BadgeId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "BadgeId")
+                        .IsUnique();
+
+                    b.ToTable("UserBadges");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.UserPointsLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("EarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PointsEarned")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "EarnedAt");
+
+                    b.ToTable("UserPointsLogs");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.UserStatistics", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CheckpointsVisited")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GamesPlayed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PartiesJoined")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PicturesTaken")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("TotalPoints")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserStatistics");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
@@ -374,6 +630,9 @@ namespace Goalz.Data.Migrations
                         .IsRequired()
                         .HasColumnType("geometry");
 
+                    b.Property<long?>("BoundaryId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasColumnType("text");
@@ -382,24 +641,11 @@ namespace Goalz.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ZoneType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Zones", (string)null);
-                });
+                    b.HasIndex("BoundaryId");
 
-            modelBuilder.Entity("Goalz.Domain.Entities.Checkpoint", b =>
-                {
-                    b.HasOne("Goalz.Domain.Entities.Section", "Section")
-                        .WithMany("Checkpoints")
-                        .HasForeignKey("SectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Section");
+                    b.ToTable("Zones");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Answer", b =>
@@ -411,6 +657,27 @@ namespace Goalz.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.Checkpoint", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.Zone", "Zone")
+                        .WithMany()
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Zone");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.Element", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.ElementType", "ElementType")
+                        .WithMany("Elements")
+                        .HasForeignKey("ElementTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ElementType");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Friendship", b =>
@@ -437,8 +704,7 @@ namespace Goalz.Data.Migrations
                     b.HasOne("Goalz.Domain.Entities.Quiz", "Quiz")
                         .WithMany("Parties")
                         .HasForeignKey("QuizId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Quiz");
                 });
@@ -492,6 +758,25 @@ namespace Goalz.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Goalz.Domain.Entities.PartyVisitedCheckpoint", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.Checkpoint", "Checkpoint")
+                        .WithMany()
+                        .HasForeignKey("CheckpointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Goalz.Domain.Entities.Party", "Party")
+                        .WithMany()
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Checkpoint");
+
+                    b.Navigation("Party");
+                });
+
             modelBuilder.Entity("Goalz.Domain.Entities.Question", b =>
                 {
                     b.HasOne("Goalz.Domain.Entities.Quiz", "Quiz")
@@ -503,15 +788,66 @@ namespace Goalz.Data.Migrations
                     b.Navigation("Quiz");
                 });
 
-            modelBuilder.Entity("Goalz.Domain.Entities.Section", b =>
+            modelBuilder.Entity("Goalz.Domain.Entities.Sensor", b =>
                 {
-                    b.HasOne("Goalz.Domain.Entities.Zone", "Zone")
+                    b.HasOne("Goalz.Domain.Entities.PopUp", "PopUp")
                         .WithOne()
-                        .HasForeignKey("Goalz.Domain.Entities.Section", "ZoneId")
+                        .HasForeignKey("Goalz.Domain.Entities.Sensor", "PopUpId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PopUp");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.SensorData", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.Sensor", "Sensor")
+                        .WithMany("SensorData")
+                        .HasForeignKey("SensorsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Zone");
+                    b.Navigation("Sensor");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.UserBadge", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.UserPointsLog", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.UserStatistics", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.User", "User")
+                        .WithOne("Statistics")
+                        .HasForeignKey("Goalz.Domain.Entities.UserStatistics", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Goalz.Domain.Entities.Zone", b =>
+                {
+                    b.HasOne("Goalz.Domain.Entities.Boundary", null)
+                        .WithMany()
+                        .HasForeignKey("BoundaryId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Answer", b =>
@@ -519,9 +855,9 @@ namespace Goalz.Data.Migrations
                     b.Navigation("PartyGroupAnswers");
                 });
 
-            modelBuilder.Entity("Goalz.Domain.Entities.Section", b =>
+            modelBuilder.Entity("Goalz.Domain.Entities.ElementType", b =>
                 {
-                    b.Navigation("Checkpoints");
+                    b.Navigation("Elements");
                 });
 
             modelBuilder.Entity("Goalz.Domain.Entities.Party", b =>
@@ -548,6 +884,11 @@ namespace Goalz.Data.Migrations
                     b.Navigation("Questions");
                 });
 
+            modelBuilder.Entity("Goalz.Domain.Entities.Sensor", b =>
+                {
+                    b.Navigation("SensorData");
+                });
+
             modelBuilder.Entity("Goalz.Domain.Entities.User", b =>
                 {
                     b.Navigation("PartyMembers");
@@ -555,6 +896,8 @@ namespace Goalz.Data.Migrations
                     b.Navigation("ReceivedFriendships");
 
                     b.Navigation("SentFriendships");
+
+                    b.Navigation("Statistics");
                 });
 #pragma warning restore 612, 618
         }

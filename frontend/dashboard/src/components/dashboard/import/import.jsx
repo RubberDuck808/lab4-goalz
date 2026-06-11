@@ -1,115 +1,124 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import DashboardNavBar from '../DashboardNavBar'
 import { importDatasetService } from '../../../services/importDatasetService';
 import PreviewTable from './PreviewTable';
 import Loading from '../../Loading/Loading';
-import { setOptions } from 'leaflet';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function ImportData() {
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploadedColumns , setUploadedColumns] = useState([]);
-  const [uploadedRecords , setUploadedRecords] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+  const [uploadedRecords, setUploadedRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
-
-  const handleDivClick = () => {
-    fileInputRef.current.click();
-  };
 
   const handleFileChange = async (event) => {
     setIsLoading(true);
     const files = Array.from(event.target.files);
     try {
-        const result = await importDatasetService.uploadCSV(files); 
-        
-        setUploadedRecords(result[0]);
-        setSelectedFiles(files);
-    } 
-    catch (error) {
-        
+      const result = await importDatasetService.uploadCSV(files);
+      setUploadedRecords(result[0]);
+      setSelectedFiles(files);
+    } catch {
+      toast.error('Failed to parse file.');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleStoreData = async () => {
     setIsLoading(true);
     try {
-        const response = await importDatasetService.storeCSV(uploadedRecords);
-        toast.success('Dataset succesfully imported!');
-        setSelectedFiles([]);
-        setUploadedRecords([]);
-        setUploadedColumns([]);
-
+      await importDatasetService.storeCSV(uploadedRecords);
+      toast.success('Dataset successfully imported!');
+      setSelectedFiles([]);
+      setUploadedRecords([]);
     } catch (error) {
-        console.error("Error storing records:", error);
-        toast.error(error.message || 'Failed to create sensor.');
+      toast.error(error.message || 'Failed to import dataset.');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const csvContent = [
+      'elementName;elementType;latitude;longitude;imageUrl;isGreen',
+      'Oak Tree;Tree;43.726000;-79.609900;;true',
+      'Rose Bush;Shrub;43.725500;-79.610500;;false'
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className='flex flex-col relative'>
-        <DashboardNavBar title="Import Dataset" />
-        {
-            isLoading && <Loading />
-        }
-        <ToastContainer position="top-right" autoClose={3000} />
-        <div className='flex flex-col w-full grow-1 p-4 gap-5'>
-            <div className='flex'>
-                <button className='bg-secondary-green hover:bg-green-600 rounded-lg px-4 py-2 text-white cursor-pointer flex items-center gap-2 transition-colors'>
-                    <i className="fa-solid fa-download"></i>
-                    Download template file
-                </button>
-            </div>
-            <div 
-                className='bg-white rounded w-full p-5 border border-gray-300 rounded-lg shadow flex gap-3 cursor-pointer'
-                onClick={handleDivClick}
-            >
-                <div className='w-[100px] h-[100px] rounded bg-secondary-green flex justify-center items-center'>
-                    <i className="fa-solid fa-upload text-white text-4xl"></i>
-                </div>
-                <div className='grow-1 h-full'>
-                    <h1 className='font font-bold text-3xl text-black'>Upload Dataset</h1>
-                    <p className='font text-gray-500 font-light mt-1'>
-                        {selectedFiles.length > 0 
-                          ? `${selectedFiles.length} CSV file(s) selected: ${selectedFiles.map(f => f.name).join(', ')}`
-                          : 'Upload your dataset in CSV format to visualize and analyze it on the map.'
-                        }
-                    </p>
-                    <p className='font text-gray-400 text-sm mt-2'>Accepted file type: CSV</p>
-                </div>
-            </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".csv"
-              multiple
-              style={{ display: 'none' }}
-            />
-            {
-                uploadedRecords.length > 0 && (
-                    <>
-                        <div className='bg-white rounded w-full p-5 border border-gray-300 rounded-lg shadow mt-4'>
-                            <h2 className='text-xl font-bold text-gray-800 mb-4'>Imported Data Preview</h2>
-                            <div className="relative overflow-x-auto shadow-md rounded-lg mt-2">
-                                <PreviewTable uploadedRecords={uploadedRecords} />
-                            </div>
-                        </div>
-                        <div className='flex flex-row-reverse'>
-                            <button className='bg-secondary-green rounded-lg w-[150px] py-2 text-white cursor-pointer' onClick={handleStoreData}>
-                                Import dataset
-                            </button>
-                        </div>
-                    </>
-                )
-            }
-            
+    <div className='flex flex-col relative min-h-screen'>
+      <DashboardNavBar title="Import Dataset" />
+      {isLoading && <Loading />}
+      <ToastContainer position="top-right" autoClose={3000} />
+
+      <div className='flex flex-col w-full p-5 gap-4'>
+
+        {/* Download template */}
+        <div className='flex'>
+          <button
+            onClick={handleDownloadTemplate}
+            className='bg-game-blue border-b-[3px] border-game-blue-border text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 hover:opacity-90 transition cursor-pointer'
+          >
+            <i className="fa-solid fa-download text-xs" />
+            Download template file
+          </button>
         </div>
+
+        {/* Upload area */}
+        <div
+          className='bg-white rounded-xl border border-border p-5 flex gap-4 cursor-pointer hover:border-game-blue/40 transition-colors'
+          onClick={() => fileInputRef.current.click()}
+        >
+          <div className='w-[90px] h-[90px] rounded-xl bg-game-blue-soft flex justify-center items-center shrink-0'>
+            <i className="fa-solid fa-upload text-game-blue text-3xl" />
+          </div>
+          <div className='flex flex-col justify-center gap-1'>
+            <h2 className='font-bold text-lg text-text-primary'>Upload Dataset</h2>
+            <p className='text-text-secondary text-sm'>
+              {selectedFiles.length > 0
+                ? `${selectedFiles.length} file(s) selected: ${selectedFiles.map(f => f.name).join(', ')}`
+                : 'Upload your dataset in CSV format to visualize and analyze it on the map.'
+              }
+            </p>
+            <p className='text-text-secondary text-xs'>Accepted file type: CSV</p>
+          </div>
+        </div>
+
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" multiple className='hidden' />
+
+        {/* Preview */}
+        {uploadedRecords.length > 0 && (
+          <>
+            <div className='bg-white rounded-xl border border-border p-5'>
+              <h2 className='text-sm font-bold text-text-primary mb-3'>Imported Data Preview</h2>
+              <div className="relative overflow-x-auto rounded-xl">
+                <PreviewTable uploadedRecords={uploadedRecords} />
+              </div>
+            </div>
+            <div className='flex justify-end'>
+              <button
+                className='bg-game-green border-b-[3px] border-game-green-border text-white font-bold text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition cursor-pointer'
+                onClick={handleStoreData}
+              >
+                Import Dataset
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
-  )
+  );
 }

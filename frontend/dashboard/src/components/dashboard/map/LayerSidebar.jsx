@@ -1,6 +1,7 @@
 const LAYERS = [
-  { key: 'zones',    label: 'Zones',    icon: 'fa-draw-polygon', color: '#2D7D46' },
-  { key: 'boundary', label: 'Boundary', icon: 'fa-border-all',   color: '#1A5C2E' },
+  { key: 'checkpoints', label: 'Points',      icon: 'fa-location-dot', color: '#6366f1' },
+  { key: 'zones',       label: 'Zones',       icon: 'fa-draw-polygon', color: '#2D7D46' },
+  { key: 'boundary',    label: 'Boundary',    icon: 'fa-border-all',   color: '#1A5C2E' },
 ]
 
 export default function LayerSidebar({ visibility, onToggle }) {
@@ -24,7 +25,7 @@ export default function LayerSidebar({ visibility, onToggle }) {
                 >
                   <i className={`fa-solid ${l.icon}`} />
                 </span>
-                <span className={`font text-sm font-medium whitespace-nowrap transition-colors ${on ? 'text-gray-800' : 'text-gray-400'}`}>
+                <span className={`text-sm font-medium whitespace-nowrap transition-colors ${on ? 'text-gray-800' : 'text-gray-400'}`}>
                   {l.label}
                 </span>
               </button>

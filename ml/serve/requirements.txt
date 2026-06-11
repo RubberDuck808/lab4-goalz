@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+onnxruntime
+pillow>=10.0
+httpx
+numpy
+# tensorflow-cpu removed — was only used for preprocess_input.
+# Preprocessing is now done with pure numpy/pillow (see preprocess_image in app.py).
+# This reduces the Docker image size by ~500 MB.

@@ -1,0 +1,19 @@
+name: goalz-ml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - jupyter
+  - notebook
+  - tensorflow=2.16.*
+  - tf2onnx
+  - onnxruntime
+  - pillow
+  - pandas
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - httpx
+  - numpy
+  - pip

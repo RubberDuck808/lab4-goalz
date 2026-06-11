@@ -2,7 +2,7 @@
 // boundary ring of the arboretum. All coordinates are Leaflet LatLng-like
 // objects: { lat, lng }.
 
-export const SNAP_TOLERANCE_METERS = 15
+export const SNAP_TOLERANCE_METERS = 20
 
 function toRad(d) { return (d * Math.PI) / 180 }
 

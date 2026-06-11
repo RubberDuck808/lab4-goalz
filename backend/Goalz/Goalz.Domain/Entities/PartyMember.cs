@@ -5,6 +5,9 @@ public class PartyMember
     public long Id { get; set; }
     public long PartyGroupId { get; set; }
     public long UserId { get; set; }
+    public string? Role { get; set; }
+
+    public long Score { get; set; } = 0;
 
     public PartyGroup PartyGroup { get; set; } = null!;
     public User User { get; set; } = null!;

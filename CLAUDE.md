@@ -18,6 +18,8 @@ Before starting work, read the files below that are relevant to your task:
 | [agent_docs/api_endpoints.md](agent_docs/api_endpoints.md) | Looking up any existing endpoint — routes, request/response shapes, auth requirements |
 | [agent_docs/gitlab_workflow.md](agent_docs/gitlab_workflow.md) | Starting any new task — check the board first; reference issues in commits |
 | [agent_docs/arboretum_map.md](agent_docs/arboretum_map.md) | Working on the map page — zone drawing, editing, OSM import, Leaflet setup |
+| [agent_docs/realtime_signalr.md](agent_docs/realtime_signalr.md) | Working on party real-time updates — SignalR hub, events, connection lifecycle, adding new events |
+| [agent_docs/ml_pipeline.md](agent_docs/ml_pipeline.md) | Working on the AI image analysis pipeline — ML service, training, backend integration, dashboard UX |
 
 ## Stopping the API
 

@@ -6,8 +6,8 @@ public class Sensor
 {
     public long Id { get; set; }
     public string? SensorName { get; set; }
-    public long Temp { get; set; }
-    public long Humidity { get; set; }
-    public long? Light { get; set; }
-    public Point Geo { get; set; } = null!;
+    public Point? Geo { get; set; }
+    public long? PopUpId { get; set; }
+    public PopUp? PopUp { get; set; }
+    public ICollection<SensorData> SensorData { get; set; } = new List<SensorData>();
 }

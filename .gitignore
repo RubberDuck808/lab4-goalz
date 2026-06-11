@@ -39,6 +39,8 @@ pnpm-debug.log*
 !.env.example
 frontend/**/.env*
 !frontend/**/.env.example
+!frontend/**/.env.production
+frontend/mobile/env
 
 # =========================
 
@@ -145,3 +147,25 @@ postman/
 # =========================
 
 CLAUDE.md
+
+# =========================
+
+# SonarQube analysis
+
+# =========================
+
+backend/Goalz/.sonarqube/
+
+# =========================
+
+# Supabase local dev
+
+# =========================
+
+supabase/.branches/
+supabase/.temp/
+
+# LSCache files
+*.lscache
+
+hardware/sketch_may10a/secrets.h

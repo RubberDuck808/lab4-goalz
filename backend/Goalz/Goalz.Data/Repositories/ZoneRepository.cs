@@ -2,6 +2,7 @@ using Goalz.Core.Interfaces;
 using Goalz.Data.Storage;
 using Goalz.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace Goalz.Data.Repositories
 {
@@ -21,7 +22,7 @@ namespace Goalz.Data.Repositories
 
         public async Task<Zone?> GetByIdAsync(long id)
         {
-            return await _context.Zones.FindAsync(id);
+            return await _context.Zones.AsNoTracking().FirstOrDefaultAsync(z => z.Id == id);
         }
 
         public async Task AddAsync(Zone zone)
@@ -39,5 +40,10 @@ namespace Goalz.Data.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<Zone?> FindContainingZoneAsync(Point point)
+            => await _context.Zones
+                .Where(z => z.Boundary.Contains(point))
+                .FirstOrDefaultAsync();
     }
 }

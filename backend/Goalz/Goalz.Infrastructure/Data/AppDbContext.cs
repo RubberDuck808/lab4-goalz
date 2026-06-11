@@ -13,6 +13,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PartyMember> PartyMembers => Set<PartyMember>();
     public DbSet<User> Users => Set<User>();
     public DbSet<PartyGroupAnswer> PartyGroupAnswers => Set<PartyGroupAnswer>();
+    public DbSet<PartyVisitedCheckpoint> PartyVisitedCheckpoints => Set<PartyVisitedCheckpoint>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,6 +77,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(pga => pga.Answer)
                 .WithMany(a => a.PartyGroupAnswers)
                 .HasForeignKey(pga => pga.AnswerId);
+        });
+
+        modelBuilder.Entity<PartyVisitedCheckpoint>(e =>
+        {
+            e.ToTable("PartyVisitedCheckpoints");
+            e.HasOne(pvc => pvc.Party)
+                .WithMany()
+                .HasForeignKey(pvc => pvc.PartyId);
+            e.HasOne(pvc => pvc.Checkpoint)
+                .WithMany()
+                .HasForeignKey(pvc => pvc.CheckpointId);
         });
     }
 }

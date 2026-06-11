@@ -1,46 +1,77 @@
-import React from 'react';
-import { View, Text, Image, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Alert, BackHandler, Share, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import PageHeader from '../components/PageHeader';
-import TextInput from '../components/TextInput';
 import GameButtons from '../components/GameButtons';
-import avatar from '../assets/UserAvatar_1.png';
-
-const MOCK_PLAYERS = [
-  { id: 1, name: 'maximax',     status: 'Joined' },
-  { id: 2, name: 'frankyfrank', status: 'Joined' },
-  { id: 3, name: 'billyjoe',    status: 'Joined' },
-];
+import UserRow from '../components/UserRow';
+import { useGameContext } from '../context/GameContext';
+import { startGame } from '../services/api/partyApi';
 
 export default function PartyOwnerPage({ navigation }) {
+  const { partyId, partyCode, partyStatus, members, resetGame, triggerPoll } = useGameContext();
+
+  useEffect(() => {
+    if (partyStatus === 'InGame') {
+      navigation.navigate('YourRole', { singlePlayer: false });
+    }
+  }, [partyStatus, navigation]);
+
+  const confirmCancel = useCallback(() => {
+    Alert.alert(
+      'End Party',
+      'This will end the session for everyone.',
+      [
+        { text: 'Stay', style: 'cancel' },
+        { text: 'End Party', style: 'destructive', onPress: () => { resetGame(); navigation.navigate('PartyMode'); } },
+      ]
+    );
+  }, [resetGame, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        confirmCancel();
+        return true;
+      });
+      return () => sub.remove();
+    }, [confirmCancel])
+  );
+
+  async function handleShare() {
+    try {
+      await Share.share({ message: `Join my Goalz party! Code: ${partyCode}` });
+    } catch {}
+  }
+
+  async function handleStart() {
+    if (!partyId) return;
+    await startGame(partyId);
+    // Immediately refresh game state so the role is in context before navigation.
+    triggerPoll();
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
-      <PageHeader title="Party" onBack={() => navigation.goBack()} />
+      <PageHeader title="Party" onBack={confirmCancel} />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.row}>
-          <TextInput placeholder="Type email" style={{ flex: 1, width: undefined }} />
-          <GameButtons variant="task" size="half">Invite</GameButtons>
+        <TouchableOpacity style={styles.codeBox} onPress={handleShare} activeOpacity={0.75}>
+          <Text style={styles.codeLabel}>Your code — tap to share</Text>
+          <Text style={styles.codeValue}>{partyCode}</Text>
+        </TouchableOpacity>
+        <View style={styles.btnCenter}>
+          <GameButtons variant="accept" onPress={handleStart} textStyle={styles.buttonText}>
+            Start
+          </GameButtons>
         </View>
-        <View style={styles.row}>
-          <TextInput placeholder="Type partycode" style={{ flex: 1, width: undefined }} />
-        </View>
-        <GameButtons variant="accept" onPress={() => navigation.navigate('YourRole', { singlePlayer: false })} style={{ width: '100%' }}>
-          Start
-        </GameButtons>
-        <Text style={styles.sectionLabel}>Players in party</Text>
-        {MOCK_PLAYERS.map(({ id, name, status }) => (
-          <View key={id} style={styles.playerRow}>
-            <Text style={styles.num}>{id}</Text>
-            <Image source={avatar} style={styles.avatar} />
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.joined}>{status}</Text>
+        <Text style={styles.sectionLabel}>In the party</Text>
+        {members.map((member, i) => (
+          <View key={i} style={styles.playerRow}>
+            <UserRow username={member} rank={i + 1} badge="Joined" />
           </View>
         ))}
-        <View style={styles.extra}>
-          <Text style={styles.extraText}>+5</Text>
-        </View>
-        <View style={{ marginTop: 16 }}>
-          <GameButtons variant="decline" onPress={() => navigation.navigate('PartyMode')}>
+        <View style={[styles.btnCenter, { marginTop: 16 }]}>
+          <GameButtons variant="decline" onPress={confirmCancel} textStyle={styles.buttonText}>
             End Party
           </GameButtons>
         </View>
@@ -52,13 +83,13 @@ export default function PartyOwnerPage({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   content: { paddingHorizontal: 24, gap: 12, paddingBottom: 40 },
-  row: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  sectionLabel: { fontSize: 15, fontWeight: 'bold', textTransform: 'uppercase', color: '#3f3f46', textAlign: 'center', marginTop: 8 },
-  playerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f4f4f5', gap: 12 },
-  num: { width: 16, color: '#a1a1aa', fontWeight: 'bold', fontSize: 13 },
-  avatar: { width: 38, height: 38, borderRadius: 19 },
-  name: { flex: 1, fontWeight: 'bold', fontSize: 16, color: '#27272a' },
-  joined: { fontSize: 13, fontWeight: 'bold', color: '#1CB0F6' },
+  btnCenter: { alignItems: 'center' },
+  codeBox: { backgroundColor: '#f4f4f5', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
+  codeLabel: { fontSize: 13, color: '#71717a', textTransform: 'uppercase', fontWeight: 'bold' },
+  codeValue: { fontSize: 32, fontWeight: 'bold', color: '#18181b', letterSpacing: 2, marginTop: 4 },
+  sectionLabel: { fontSize: 15, fontWeight: 'bold', textTransform: 'uppercase', color: '#27272a', textAlign: 'center', marginTop: 8 },
+  playerRow: { borderBottomWidth: 1, borderBottomColor: '#f4f4f5' },
   extra: { backgroundColor: '#f4f4f5', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   extraText: { fontSize: 13, color: '#a1a1aa' },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

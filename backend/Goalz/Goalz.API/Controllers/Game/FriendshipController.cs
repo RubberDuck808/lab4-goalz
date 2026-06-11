@@ -28,10 +28,9 @@ namespace Goalz.Api.Controllers.Game
                 return Ok(Array.Empty<UserSearchDto>());
 
             var users = await _userRepository.SearchByUsernameAsync(q.Trim(), CurrentUsername);
-            return Ok(users.Select(u => new UserSearchDto { Username = u.Username }));
+            return Ok(users.Select(u => new UserSearchDto { Username = u.Username, AvatarId = u.AvatarId }));
         }
 
-        [AllowAnonymous]
         [HttpGet("connections/{username}")]
         public async Task<IActionResult> GetConnections(string username)
         {

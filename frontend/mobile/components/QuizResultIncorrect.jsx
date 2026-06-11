@@ -1,8 +1,9 @@
 import React from 'react'
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { FontAwesome } from '@expo/vector-icons';
 
-export default function QuizResultIncorrect() {
+export default function QuizResultIncorrect({ onContinue }) {
 return (
     <SafeAreaView 
         style={{ flex: 1, backgroundColor: '#FF4B4B'}}
@@ -29,15 +30,20 @@ return (
                 <View 
                     className="mt-4"
                 >
-                    <Text className="text-white text-center text-2xl">YOU LOST YOUR STREAK...</Text>
+                    <Text className="text-white text-center text-2xl">Not quite. Streak reset.</Text>
                 </View>
             </View>
             <View className="mt-4 w-full py-5 justify-center items-center">
-                <Text 
+                <Text
                     className="text-white text-center text-xl font-bold m-auto"
                     style={{ width: '80%' }}
-                >Tip: Keep your answer streak going, to get more bonus points!</Text>
+                >Keep going.</Text>
             </View>
+            {onContinue && (
+                <TouchableOpacity onPress={onContinue} style={styles.continueBtn}>
+                    <Text style={styles.continueBtnText}>CONTINUE</Text>
+                </TouchableOpacity>
+            )}
         </View>
     </SafeAreaView>
   )
@@ -49,5 +55,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 80,
-  }
+  },
+  continueBtn: {
+    backgroundColor: '#CA3C3C',
+    borderBottomWidth: 4,
+    borderBottomColor: '#8b2020',
+    borderRadius: 13,
+    alignSelf: 'stretch',
+    maxWidth: 328,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    marginHorizontal: 24,
+  },
+  continueBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+    letterSpacing: 1,
+  },
 });

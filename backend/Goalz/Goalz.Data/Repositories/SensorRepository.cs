@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Goalz.Core.Interfaces;
 using Goalz.Data.Storage;
 using Goalz.Domain.Entities;
@@ -38,5 +39,17 @@ public class SensorRepository : ISensorRepository
         if (sensor is null) return false;
         _context.Sensors.Remove(sensor);
         return await _context.SaveChangesAsync() > 0;
+    }
+
+    public async Task<IEnumerable<Sensor>> GetByIdsAsync(IEnumerable<long> ids)
+    {
+        var idSet = ids.ToHashSet();
+        return await _context.Sensors.Where(s => idSet.Contains(s.Id)).ToListAsync();
+    }
+
+    public async Task StoreSensorData(SensorData sensorData)
+    {
+        _context.SensorData.Add(sensorData);
+        await _context.SaveChangesAsync();
     }
 }

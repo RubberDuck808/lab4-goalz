@@ -63,7 +63,7 @@ namespace Goalz.Test
         }
 
         [TestMethod]
-        [DataRow("C:\\Users\\Giel\\Desktop\\Goalz_dummy_set.csv", 10)]
+        [DataRow("\\TestFiles\\Goalz_dummy_set.csv", 10)]
         public async Task ReadCSVFileTest_CorrectRowCount(string filePath, int expectedRowCount)
         {
             if (File.Exists(filePath))

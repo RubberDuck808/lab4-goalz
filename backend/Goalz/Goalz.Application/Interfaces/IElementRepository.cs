@@ -11,4 +11,12 @@ public interface IElementRepository
     Task<ElementType?> GetElementTypeByNameAsync(string name);
     Task<ElementType> CreateElementTypeAsync(string name);
     Task<List<ElementType>> GetAllElementTypesAsync();
+    Task<IEnumerable<Element>> GetByIdsAsync(IEnumerable<long> ids);
+    Task<IEnumerable<Element>> GetAllAsync();
+    Task<IEnumerable<Element>> GetAllApprovedAsync();
+    Task<IEnumerable<Element>> GetPendingAsync();
+    Task<Element?> FindNearbyPendingAsync(double latitude, double longitude, string elementType, string elementName, double radiusMeters);
+    Task<bool> ApproveAsync(long id);
+    Task<bool> RejectAsync(long id);
+    Task<List<Element>> GetPendingWithoutAiAsync(int limit);
 }

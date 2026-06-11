@@ -4,9 +4,11 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Goalz.Api.Hubs;
 using Goalz.Api.Services;
+using Goalz.Core.Exceptions;
 using Goalz.Application.Interfaces;
 using Goalz.Core.Interfaces;
 using Goalz.Core.Services;
+using Goalz.Domain.Entities;
 using Goalz.Data.Repositories;
 using Goalz.Data.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,15 +22,26 @@ var builder = WebApplication.CreateBuilder(args);
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
-        o => o.UseNetTopologySuite())
+        o =>
+        {
+            o.UseNetTopologySuite();
+            o.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorCodesToAdd: null);
+        })
     .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
+var allowedOrigins = (builder.Configuration["AllowedOrigins"]
+    ?? "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:8081")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -39,22 +52,44 @@ builder.Services.AddCors(options =>
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+var jwtIssuer   = builder.Configuration["Jwt:Issuer"]   ?? "goalz-api";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "goalz-mobile";
 //Authentication Token
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // ASP.NET Core 9 defaults to JsonWebTokenHandler, but JwtService generates tokens
+        // with JwtSecurityTokenHandler. Force the legacy handler so they match.
+        options.UseSecurityTokenValidators = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
             NameClaimType = JwtRegisteredClaimNames.Sub,
             RoleClaimType = "role",
         };
+        // SignalR WebSocket connections cannot send HTTP headers, so the JWT arrives
+        // as ?access_token= on hub handshake requests.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
+
+builder.Services.AddMemoryCache();
 
 // Dashboard auth
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -69,9 +104,17 @@ builder.Services.AddScoped<INatureElementRepository, NatureElementRepository>();
 builder.Services.AddScoped<IElementRepository, ElementRepository>();
 builder.Services.AddScoped<IElementService, ElementService>();
 
+// ML image analysis
+builder.Services.AddHttpClient<IImageAnalysisService, ImageAnalysisService>();
+builder.Services.AddHostedService<AnalysisRetryService>();
+
 // Sensors CRUD
 builder.Services.AddScoped<ISensorRepository, SensorRepository>();
 builder.Services.AddScoped<ISensorService, SensorService>();
+builder.Services.AddScoped<ISensorDataRepository, SensorDataRepository>();
+builder.Services.AddScoped<ISensorDataService, SensorDataService>();
+builder.Services.AddScoped<IPopUpRepository, PopUpRepository>();
+builder.Services.AddScoped<IPopUpService, PopUpService>();
 
 // Dataset import
 builder.Services.AddScoped<IDatasetService, DatasetService>();
@@ -80,14 +123,26 @@ builder.Services.AddScoped<IDatasetService, DatasetService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserBadgeRepository, UserBadgeRepository>();
+builder.Services.AddScoped<IBadgeService, BadgeService>();
 
 // Friendships
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
+builder.Services.AddScoped<IGenerateReportService, GenerateReportService>();
+
 // Zones
 builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
 builder.Services.AddScoped<IZoneService, ZoneService>();
+
+// Boundaries
+builder.Services.AddScoped<IBoundaryRepository, BoundaryRepository>();
+builder.Services.AddScoped<IBoundaryService, BoundaryService>();
+
+// Checkpoints
+builder.Services.AddScoped<ICheckpointRepository, CheckpointRepository>();
+builder.Services.AddScoped<ICheckpointService, CheckpointService>();
 
 // Party
 builder.Services.AddScoped<IPartyService, PartyService>();
@@ -95,7 +150,13 @@ builder.Services.AddScoped<IPartyRepository, PartyRepository>();
 
 // Lobby
 builder.Services.AddScoped<ILobbyService, LobbyService>();
-builder.Services.AddSignalR();
+//builder.Services.AddHostedService<PartyCleanupService>();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy =
+            System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 
 // Rate limiting — 10 requests per minute per IP on auth endpoints
 builder.Services.AddRateLimiter(options =>
@@ -108,7 +169,20 @@ builder.Services.AddRateLimiter(options =>
         limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
     });
 
+    options.AddFixedWindowLimiter("party", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 100; // Allow enough for polling every few seconds
+        limiter.QueueLimit = 0;
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
 });
 
 builder.Services.AddControllers()
@@ -123,26 +197,37 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else
+
+app.UseExceptionHandler(error => error.Run(async context =>
 {
-    app.UseExceptionHandler(error => error.Run(async context =>
+    var ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+    if (ex is NotFoundException)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+    else
     {
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
-    }));
-}
+    }
+}));
 
-app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseResponseCompression();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication(); //implements AddAuthentication()
 app.UseAuthorization();

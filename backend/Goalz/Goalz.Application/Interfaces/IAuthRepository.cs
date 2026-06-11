@@ -6,5 +6,9 @@ namespace Goalz.Core.Interfaces
     {
         Task<User?> GetUserByEmail(string email);
         Task<User> CreateUserAsync(User user);
+        Task<IEnumerable<User>> GetAllStaffAndAdminAsync();
+        Task<User?> GetByIdAsync(long id);
+        Task DeleteUserAsync(User user);
+        Task SaveChangesAsync();
     }
 }
