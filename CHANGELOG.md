@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+1. [Fix: chatbot visibility + Zones nav item](#fix-chatbot-visibility--zones-nav-item--2026-06-11)
 1. [Feat: 9-class data preparation notebook complete — 45,000 balanced images](#feat-9-class-data-preparation-notebook-complete--45000-balanced-images--2026-06-10)
 1. [Feat: 9-class data preparation notebook pushed to Kaggle](#feat-9-class-data-preparation-notebook-pushed-to-kaggle--2026-06-10)
 1. [Feat: Custom multi-class ResNet from scratch — full pipeline](#feat-custom-multi-class-resnet-from-scratch--full-pipeline--2026-06-10)
@@ -24,6 +25,20 @@
 1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+
+---
+
+## Fix: chatbot visibility + Zones nav item — 2026-06-11
+
+### Changed
+- **Chatbot always visible**: Moved `DashboardChatbot` from `Map.jsx` (only rendered on the map view) to `Overview.jsx` as a `fixed` floating button at bottom-left. It is now visible on every dashboard page — Reports, Settings, Sensor Monitor, etc.
+- **Zones accessible from sidebar**: Added a "Zones" nav item (`fa-draw-polygon` icon, `tab: "zones"`) to the MAP section in `Navbar.jsx`. `ZonesPanel` already existed and was fully functional but had no nav entry point.
+
+### Rationale
+- The chatbot button was rendered inside `Map.jsx`, so navigating away from the map unmounted it entirely; moving it to the top-level layout fixes this without any logic changes to the component.
+- The Zones tab was wired up in `MapDashboard.jsx` but omitted from `NAV_SECTIONS`, making it unreachable via the sidebar.
+
+> Issue closed after 0 min
 
 ---
 

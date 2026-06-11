@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/navbar/Navbar';
 import MapDashboard from '../components/dashboard/MapDashboard';
+import DashboardChatbot from '../components/dashboard/chatbot/DashboardChatbot';
 import Reports from '../components/dashboard/reports/reports';
 import ImportData from '../components/dashboard/import/import';
 import Settings from '../components/dashboard/settings/Settings';
@@ -62,6 +63,11 @@ export default function Overview() {
 
   return (
     <main className='h-full w-full flex overflow-hidden'>
+      {/* Fixed floating AI chatbot — visible on all pages */}
+      <div className="fixed bottom-4 left-4 md:left-[228px] z-[600]">
+        <DashboardChatbot />
+      </div>
+
       <div className='h-full shrink-0'>
         <Navbar
           selectedItem={selectedItem}
