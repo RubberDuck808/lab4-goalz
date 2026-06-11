@@ -2,3 +2,10 @@
 **/obj/
 **/.vs/
 **/.idea/
+**/appsettings.Development.json
+**/appsettings.*.json
+**/*.user
+**/.env
+**/.env.*
+**/user-secrets.json
+**/.sonarqube/

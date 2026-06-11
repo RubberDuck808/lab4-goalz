@@ -9,11 +9,13 @@ public class SensorService : ISensorService
 {
     private readonly ISensorRepository _repository;
     private readonly ICheckpointService _checkpointService;
+    private readonly ISensorDataRepository _sensorDataRepository;
 
-    public SensorService(ISensorRepository repository, ICheckpointService checkpointService)
+    public SensorService(ISensorRepository repository, ICheckpointService checkpointService, ISensorDataRepository sensorDataRepository)
     {
         _repository = repository;
         _checkpointService = checkpointService;
+        _sensorDataRepository = sensorDataRepository;
     }
 
     public async Task<Sensor> CreateAsync(CreateSensorRequest request)
@@ -141,5 +143,25 @@ public class SensorService : ISensorService
         {
             throw new ArgumentOutOfRangeException(nameof(sensorData.RawMoisture), "Raw moisture must be between 0 and 1023.");
         }
+    }
+
+    public async Task<List<SensorDataSummaryDto>> GetDataSummary()
+    {
+        var result = await _sensorDataRepository.GetDataSummary();
+
+        var col = result.Select(x => new SensorDataSummaryDto
+        {
+            id = x.Id,
+            sensorId = x.SensorsId,
+            light = x.Light,
+            humidity = x.Humidity,
+            soilMoisture = x.SoilMoisture,
+            temperature = x.Temp,
+            wind = x.Wind,
+            timestamp = x.Timestamp
+            
+        }).ToList();
+
+        return col;
     }
 }

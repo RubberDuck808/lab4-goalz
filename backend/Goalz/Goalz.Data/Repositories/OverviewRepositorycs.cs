@@ -1,4 +1,4 @@
-﻿using Goalz.Core.DTOs;
+using Goalz.Core.DTOs;
 using Goalz.Domain.Entities;
 using Goalz.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -18,17 +18,22 @@ public class OverviewRepository : IOverviewRepository
     public async Task<List<SensorOverviewDto>> GetAllSensorsAsync()
     {
         return await _context.Sensors
-            .Select(s => new SensorOverviewDto
+            .Select(s => new
             {
-                Id          = s.Id,
-                SensorName  = s.SensorName,
-                Geo         = s.Geo,
-                PopUpId     = s.PopUpId,
-                Temp        = s.SensorData.OrderByDescending(d => d.Timestamp).Select(d => (double?)d.Temp).FirstOrDefault(),
-                Humidity    = s.SensorData.OrderByDescending(d => d.Timestamp).Select(d => (double?)d.Humidity).FirstOrDefault(),
-                Light       = s.SensorData.OrderByDescending(d => d.Timestamp).Select(d => (double?)d.Light).FirstOrDefault(),
-                SoilMoisture = s.SensorData.OrderByDescending(d => d.Timestamp).Select(d => (long?)d.SoilMoisture).FirstOrDefault(),
-                LastReading = s.SensorData.OrderByDescending(d => d.Timestamp).Select(d => (DateTime?)d.Timestamp).FirstOrDefault(),
+                Sensor = s,
+                LatestData = s.SensorData.OrderByDescending(d => d.Timestamp).FirstOrDefault()
+            })
+            .Select(x => new SensorOverviewDto
+            {
+                Id          = x.Sensor.Id,
+                SensorName  = x.Sensor.SensorName,
+                Geo         = x.Sensor.Geo,
+                PopUpId     = x.Sensor.PopUpId,
+                Temp        = x.LatestData != null ? (double?)x.LatestData.Temp : null,
+                Humidity    = x.LatestData != null ? (double?)x.LatestData.Humidity : null,
+                Light       = x.LatestData != null ? (double?)x.LatestData.Light : null,
+                SoilMoisture = x.LatestData != null ? (long?)x.LatestData.SoilMoisture : null,
+                LastReading = x.LatestData != null ? (DateTime?)x.LatestData.Timestamp : null,
             })
             .ToListAsync();
     }

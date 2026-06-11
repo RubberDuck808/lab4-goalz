@@ -60,7 +60,7 @@ export default function PartyOwnerPage({ navigation }) {
           <Text style={styles.codeValue}>{partyCode}</Text>
         </TouchableOpacity>
         <View style={styles.btnCenter}>
-          <GameButtons variant="accept" onPress={handleStart}>
+          <GameButtons variant="accept" onPress={handleStart} textStyle={styles.buttonText}>
             Start
           </GameButtons>
         </View>
@@ -71,7 +71,7 @@ export default function PartyOwnerPage({ navigation }) {
           </View>
         ))}
         <View style={[styles.btnCenter, { marginTop: 16 }]}>
-          <GameButtons variant="decline" onPress={confirmCancel}>
+          <GameButtons variant="decline" onPress={confirmCancel} textStyle={styles.buttonText}>
             End Party
           </GameButtons>
         </View>
@@ -91,4 +91,5 @@ const styles = StyleSheet.create({
   playerRow: { borderBottomWidth: 1, borderBottomColor: '#f4f4f5' },
   extra: { backgroundColor: '#f4f4f5', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   extraText: { fontSize: 13, color: '#a1a1aa' },
+  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

@@ -41,6 +41,7 @@ export default function MapDashboard({
   setActiveTab,
   pendingCount,
   onPendingCountChanged,
+  onCloseSidebar,
 }) {
   // ── checkpoint state ───────────────────────────────────────────────────
   const [checkpoints, setCheckpoints] = useState([]);
@@ -83,7 +84,6 @@ export default function MapDashboard({
         overviewService.getElementTypes().catch(() => []),
         overviewService.getPendingElements().catch(() => [])
       ]);
-      console.log("MapDashboard: fetched checkpoints count:", cps?.length, "types count:", types?.length, "pending count:", pending?.length);
       
       const validCps = (Array.isArray(cps) ? cps : []).filter(cp => 
         cp && 
@@ -104,7 +104,6 @@ export default function MapDashboard({
         }));
 
       const combined = [...validCps, ...validPending];
-      console.log("MapDashboard: valid checkpoints count:", validCps.length, "valid pending count:", validPending.length);
       setCheckpoints(combined);
       const resolvedTypes = Array.isArray(types) ? types : [];
       setElementTypes(resolvedTypes);
@@ -236,13 +235,11 @@ export default function MapDashboard({
         list.push({ key: name, bg: getLayerBg(name) });
       });
       list.push({ key: 'Sensors', bg: 'bg-indigo-500' });
-      list.push({ key: 'Zones', bg: 'bg-purple-500' });
       return list;
     } else {
       return [
         { key: 'Elements', bg: 'bg-game-green' },
         { key: 'Sensors',  bg: 'bg-indigo-500' },
-        { key: 'Zones',    bg: 'bg-purple-500' },
       ];
     }
   }, [activeTab, elementTypes]);
@@ -334,6 +331,30 @@ export default function MapDashboard({
     fetchCheckpoints();
   }, [fetchZones, fetchCheckpoints]);
 
+  // ── mobile bottom-sheet state ─────────────────────────────────────────────
+  const [mobileSheetExpanded, setMobileSheetExpanded] = useState(false);
+  const sheetDragStartYRef = useRef(null);
+  const sheetDragDeltaRef  = useRef(0);
+
+  const handleSheetDragStart = useCallback((e) => {
+    sheetDragStartYRef.current = e.touches[0].clientY;
+    sheetDragDeltaRef.current  = 0;
+    onCloseSidebar?.();
+  }, [onCloseSidebar]);
+
+  const handleSheetDragMove = useCallback((e) => {
+    if (sheetDragStartYRef.current == null) return;
+    sheetDragDeltaRef.current = e.touches[0].clientY - sheetDragStartYRef.current;
+  }, []);
+
+  const handleSheetDragEnd = useCallback(() => {
+    const dy = sheetDragDeltaRef.current;
+    if (dy < -40) setMobileSheetExpanded(true);
+    if (dy >  40) setMobileSheetExpanded(false);
+    sheetDragStartYRef.current = null;
+    sheetDragDeltaRef.current  = 0;
+  }, []);
+
   // ── shared panel props ─────────────────────────────────────────────────
   const sharedPanelProps = {
     onCheckpointsChanged: fetchCheckpoints,
@@ -372,20 +393,18 @@ export default function MapDashboard({
       {(isLoading || zonesLoading) && <Loading />}
 
       {/* Top bar */}
-      <div className="bg-white border-b border-border flex flex-col md:flex-row md:items-center justify-between px-5 py-2.5 md:py-0 gap-3 min-h-[60px] md:h-[60px] shrink-0">
-        <div className="ps-[50px] md:ps-0 flex flex-wrap items-center gap-4">
-          <div>
-            <h1 className="font-bold text-base text-text-primary leading-tight truncate">
-              {TAB_LABELS[activeTab] ?? 'Map'}
-            </h1>
-            <p className="text-text-secondary text-[10px] hidden md:block leading-tight mt-0.5">
-              Office of Sustainability · Arboretum
-            </p>
-          </div>
+      <div className="bg-white border-b border-border flex items-center justify-between px-4 gap-3 h-[50px] md:h-[60px] shrink-0">
+        <div className="shrink-0">
+          <h1 className="font-bold text-sm md:text-base text-text-primary leading-tight">
+            {TAB_LABELS[activeTab] ?? 'Map'}
+          </h1>
+          <p className="text-text-secondary text-[10px] hidden md:block leading-tight mt-0.5">
+            Office of Sustainability · Arboretum
+          </p>
         </div>
 
         {/* Layer Toggles */}
-        <div className="flex items-center gap-1 shrink-0 overflow-x-auto no-scrollbar py-1 md:py-0">
+        <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto no-scrollbar">
           {layerDefs.map(({ key, bg }) => (
             <button
               key={key}
@@ -404,9 +423,56 @@ export default function MapDashboard({
       </div>
 
       {/* Body: side panel + persistent map */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left panel */}
-        <div className="w-[380px] shrink-0 bg-surface border-r border-border flex flex-col overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Panel — desktop: 380 px left sidebar  |  mobile: bottom sheet */}
+        <div
+          className={[
+            // ── mobile: absolute bottom sheet ──────────────────────────────
+            'absolute inset-x-0 bottom-0 z-[1100] w-full h-[65vh]',
+            // ── desktop: static sidebar ────────────────────────────────────
+            'md:static md:inset-auto md:z-auto md:w-[380px] md:h-auto md:flex-1',
+            // ── shared appearance ──────────────────────────────────────────
+            'bg-surface flex flex-col overflow-hidden',
+            'rounded-t-2xl md:rounded-none',
+            'border-t border-border md:border-t-0 md:border-r md:border-border',
+            'shadow-[0_-4px_24px_rgba(0,0,0,0.10)] md:shadow-none',
+            // ── mobile snap animation (max-md: keeps desktop unaffected) ───
+            'transition-transform duration-300 ease-in-out',
+            !mobileSheetExpanded ? 'max-md:translate-y-[calc(100%_-_60px)]' : '',
+          ].join(' ')}
+        >
+          {/* Drag handle — mobile only ─────────────────────────────────── */}
+          <div
+            className="md:hidden shrink-0 bg-white rounded-t-2xl touch-none select-none cursor-grab active:cursor-grabbing"
+            onTouchStart={handleSheetDragStart}
+            onTouchMove={handleSheetDragMove}
+            onTouchEnd={handleSheetDragEnd}
+          >
+            {/* Visual pill */}
+            <div className="flex justify-center pt-2.5 pb-1">
+              <div className="w-10 h-1 rounded-full bg-slate-200" />
+            </div>
+            {/* Title bar */}
+            <div className="px-5 pb-3 flex items-center justify-between">
+              <div>
+                <h1 className="font-bold text-sm text-text-primary leading-tight">
+                  {TAB_LABELS[activeTab] ?? 'Map'}
+                </h1>
+                <p className="text-[10px] text-text-secondary leading-tight mt-0.5">
+                  Office of Sustainability · Arboretum
+                </p>
+              </div>
+              <button
+                onClick={() => setMobileSheetExpanded(x => !x)}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-surface border border-border cursor-pointer"
+                aria-label={mobileSheetExpanded ? 'Collapse panel' : 'Expand panel'}
+              >
+                <i className={`fa-solid fa-chevron-up text-[10px] text-text-secondary transition-transform duration-200 ${mobileSheetExpanded ? '' : 'rotate-180'}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Panel content (same on desktop and mobile) */}
           {activeTab === 'overview' && <OverviewPanel {...sharedPanelProps} />}
           {activeTab === 'elements' && (
             <ElementsPanel
@@ -424,8 +490,8 @@ export default function MapDashboard({
           {activeTab === 'zones' && <ZonesPanel {...zonesPanelProps} />}
         </div>
 
-        {/* Persistent map — never remounts */}
-        <div className="flex-1 overflow-hidden">
+        {/* relative z-0 scopes Leaflet's internal z-indexes so sheet/sidebar can overlay the map */}
+        <div className="relative z-0 flex-1 overflow-hidden">
           <Map
             ref={mapRef}
             checkpoints={filteredCheckpoints}

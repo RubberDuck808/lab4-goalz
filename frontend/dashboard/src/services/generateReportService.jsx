@@ -40,7 +40,7 @@ export const generateReportSerivce = {
             "POST",
             "/generate",
             JSON.stringify(requestBody),
-            null
+            sessionStorage.getItem("token") ?? ""
         );
 
         if (!response?.ok) {

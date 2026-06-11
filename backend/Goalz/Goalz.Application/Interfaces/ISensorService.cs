@@ -9,4 +9,5 @@ public interface ISensorService
     Task<(bool Success, string? Error)> UpdateAsync(long id, UpdateSensorRequest request);
     Task<(bool Success, string? Error)> DeleteAsync(long id);
     Task StoreSensorData(SensorDataDto sensorData);
+    Task<List<SensorDataSummaryDto>> GetDataSummary();
 }

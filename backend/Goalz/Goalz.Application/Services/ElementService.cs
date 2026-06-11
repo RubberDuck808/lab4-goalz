@@ -73,7 +73,7 @@ public class ElementService : IElementService
             ElementName   = request.ElementName,
             ElementTypeId = elementType.Id,
             Geom          = new Point(request.Longitude, request.Latitude) { SRID = 4326 },
-            ImageUrl      = request.ImageUrl,
+            ImageUrl      = request.ImageUrl ?? string.Empty,
             IsGreen       = request.IsGreen,
             IsApproved    = request.IsApproved,
             SubmittedBy   = request.SubmittedBy,

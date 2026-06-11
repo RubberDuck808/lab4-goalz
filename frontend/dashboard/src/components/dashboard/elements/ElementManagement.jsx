@@ -8,8 +8,10 @@ import ElementDetails from '../overview/ElementDetails';
 import Loading from '../../Loading/Loading';
 import { overviewService } from '../../../services/overviewService';
 
+import { isAllowedImageUrl } from '../../../utils/imageUrl';
+
 function ImageCell({ imageUrl }) {
-  return imageUrl ? (
+  return isAllowedImageUrl(imageUrl) ? (
     <img src={imageUrl} alt="element" className="w-12 h-12 object-cover rounded-md border border-gray-200" />
   ) : (
     <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center text-gray-300">

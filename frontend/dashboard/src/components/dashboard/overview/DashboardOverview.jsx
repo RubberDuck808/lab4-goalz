@@ -136,7 +136,7 @@
 
     <div className="p-4 md:p-5 flex flex-col gap-5 flex-1 overflow-y-auto">
       <div className="w-full flex flex-col lg:flex-row items-stretch gap-3">
-        <div className="w-full h-[300px] sm:h-[375px] lg:flex-1">
+        <div className="w-full h-[420px] sm:h-[460px] lg:flex-1">
           <Map
             showExtent={!!sidePanel}
             setShowExtent={setIsModalOpen}
@@ -177,7 +177,7 @@
 
       {error && (
         <div className="flex justify-center items-center text-red-400 text-sm py-10">
-          Could not load data: {error.message}
+          Failed to load data.
         </div>
       )}
 

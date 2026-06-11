@@ -1,3 +1,6 @@
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 .leaflet-control-zoom {
   border: 1px solid rgba(226, 232, 240, 0.8) !important;
   border-radius: 12px !important;

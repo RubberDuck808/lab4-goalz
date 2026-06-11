@@ -20,7 +20,7 @@ namespace Goalz.Api.Services
             if (secret.Length < 32)
                 throw new InvalidOperationException("Jwt:Secret must be at least 32 characters.");
 
-            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)); // NOSONAR - secret is injected via IConfiguration (env var / user-secrets), never hardcoded
             _issuer   = config["Jwt:Issuer"]   ?? "goalz-api";
             _audience = config["Jwt:Audience"] ?? "goalz-mobile";
         }
@@ -36,7 +36,7 @@ namespace Goalz.Api.Services
                     new Claim(JwtRegisteredClaimNames.Sub, username),
                     new Claim("role", role),
                 ],
-                expires: DateTime.UtcNow.AddDays(30),
+                expires: DateTime.UtcNow.AddHours(24),
                 signingCredentials: creds
             );
             return new JwtSecurityTokenHandler().WriteToken(token);

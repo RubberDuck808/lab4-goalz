@@ -160,6 +160,9 @@ namespace Goalz.Data.Migrations
 
                     b.HasIndex("ElementTypeId");
 
+                    b.HasIndex("IsApproved")
+                        .HasFilter("\"IsApproved\" = false");
+
                     b.ToTable("Elements", (string)null);
                 });
 
@@ -478,7 +481,8 @@ namespace Goalz.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SensorsId");
+                    b.HasIndex("SensorsId", "Timestamp")
+                        .IsDescending(false, true);
 
                     b.ToTable("SensorData", (string)null);
                 });
@@ -514,6 +518,12 @@ namespace Goalz.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
                 });
