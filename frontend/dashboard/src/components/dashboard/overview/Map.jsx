@@ -7,7 +7,6 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { snapClosingSegment, isInsideRing, nearestPointOnRing, SNAP_TOLERANCE_METERS } from '../map/boundarySnap'
-import DashboardChatbot from '../chatbot/DashboardChatbot'
 
 // ── tile providers ─────────────────────────────────────────────────────────
 const TILE_PROVIDERS = {
@@ -634,7 +633,7 @@ const DashboardMap = forwardRef(function DashboardMap({
           >Cancel</button>
         </div>
       )}
-      {/* Left-side controls — locate button + chatbot */}
+      {/* Left-side controls — locate button */}
       <div className="absolute bottom-[76px] md:bottom-4 left-4 z-[500] flex flex-col items-start gap-2">
         <button
           onClick={handleLocate}
@@ -646,7 +645,6 @@ const DashboardMap = forwardRef(function DashboardMap({
         >
           <i className={`fa-solid ${locating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'} text-sm`} />
         </button>
-        <DashboardChatbot />
       </div>
 
       {/* Map controls — zoom +/- + Map/Sat toggle */}
