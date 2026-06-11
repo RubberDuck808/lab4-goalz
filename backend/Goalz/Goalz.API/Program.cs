@@ -18,28 +18,15 @@ using NetTopologySuite.IO.Converters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database — cap Npgsql pool to stay within Supabase session-mode limit (15 total).
-// NoResetOnClose skips the reset command PgBouncer doesn't support, returning
-// connections to the pool faster. Keepalive detects stale connections in 30 s.
-var connString = new Npgsql.NpgsqlConnectionStringBuilder(
-    builder.Configuration.GetConnectionString("DefaultConnection"))
-{
-    MaxPoolSize       = 10,   // leave 5 headroom for migrations / admin / other processes
-    MinPoolSize       = 0,
-    KeepAlive         = 30,
-    NoResetOnClose    = true,
-}.ConnectionString;
-
-var dataSource = new Npgsql.NpgsqlDataSourceBuilder(connString).Build();
-
+// Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(dataSource,
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         o =>
         {
             o.UseNetTopologySuite();
             o.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorCodesToAdd: null);
         })
     .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
