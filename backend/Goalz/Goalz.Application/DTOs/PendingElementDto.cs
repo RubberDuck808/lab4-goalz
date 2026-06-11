@@ -14,4 +14,6 @@ public class PendingElementDto
     public float? AiConfidence { get; set; }
     public string? AiSummary { get; set; }
     public string? AiResult { get; set; }
+    public string? AiClassification { get; set; }
+    public DateTime? AnalysedAt { get; set; }
 }

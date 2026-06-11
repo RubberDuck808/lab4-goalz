@@ -20,6 +20,15 @@ function ImageCell({ imageUrl }) {
   );
 }
 
+function timeAgo(dateStr) {
+  if (!dateStr) return null;
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 function EmptyState({ icon = 'fa-inbox', iconColor = 'text-gray-300', message = 'No elements found', sub = '' }) {
   return (
     <div className="flex flex-col items-center justify-center h-48 text-gray-400">
@@ -163,13 +172,13 @@ export default function ElementManagement() {
   };
 
   // ── AI analysis ───────────────────────────────────────────────────────────
-  const handleAnalyse = async (id) => {
+  const handleAnalyse = async (id, force = false) => {
     setAnalysingIds(prev => new Set(prev).add(id));
     setFailedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     try {
-      await overviewService.triggerAnalysis(id);
+      await overviewService.triggerAnalysis(id, force);
       setPendingItems(prev => prev.map(el =>
-        el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el
+        el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null, aiClassification: null, analysedAt: null } : el
       ));
 
       const startTime = Date.now();
@@ -599,6 +608,18 @@ export default function ElementManagement() {
                                   </span>
                                   <span className="text-xs text-gray-500 font-medium">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
                                 </div>
+                                {el.aiClassification && (
+                                  <span className="text-xs text-indigo-600 font-medium capitalize">
+                                    <i className="fa-solid fa-tag mr-1 text-[10px]" />
+                                    {el.aiClassification.replace(/_/g, ' ')}
+                                  </span>
+                                )}
+                                {el.analysedAt && (
+                                  <span className="text-xs text-gray-400">
+                                    <i className="fa-solid fa-clock mr-1 text-[10px]" />
+                                    {timeAgo(el.analysedAt)}
+                                  </span>
+                                )}
                                 {el.aiSummary && (
                                   <p className="text-xs text-gray-400 italic">{el.aiSummary}</p>
                                 )}
@@ -618,7 +639,7 @@ export default function ElementManagement() {
                               <button onClick={() => handleApprove(el.id)} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-md transition-colors">Approve</button>
                               <button onClick={() => handleReject(el.id)} className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-md transition-colors">Reject</button>
                               <button
-                                onClick={() => handleAnalyse(el.id)}
+                                onClick={() => handleAnalyse(el.id, !!el.aiResult)}
                                 disabled={analysingIds.has(el.id)}
                                 className={`px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-md transition-colors ${
                                   el.aiResult ? 'bg-gray-400 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'

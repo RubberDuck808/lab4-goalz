@@ -2,6 +2,10 @@
 
 ## Table of Contents
 
+1. [Feat: 9-class data preparation notebook complete — 45,000 balanced images](#feat-9-class-data-preparation-notebook-complete--45000-balanced-images--2026-06-10)
+1. [Feat: 9-class data preparation notebook pushed to Kaggle](#feat-9-class-data-preparation-notebook-pushed-to-kaggle--2026-06-10)
+1. [Feat: Custom multi-class ResNet from scratch — full pipeline](#feat-custom-multi-class-resnet-from-scratch--full-pipeline--2026-06-10)
+1. [Feat: AI classification field, AnalysedAt timestamp, re-analysis guard](#feat-ai-classification-field-analysedat-timestamp-re-analysis-guard--2026-06-08)
 1. [Fix: ML dashboard feedback — live polling, dedup, summary display, ElementManagement AI column](#fix-ml-dashboard-feedback--live-polling-dedup-summary-display-elementmanagement-ai-column--2026-06-05)
 1. [Fix: element creation null ImageUrl crash + mobile map usability](#fix-element-creation-null-imageurl-crash--mobile-map-usability--2026-06-10)
 1. [#105 Fix: dashboard responsive — z-index layering, GPS 3-state cycle, Zones button removal](#105-fix-dashboard-responsive--z-index-layering-gps-3-state-cycle-zones-button-removal--2026-06-05)
@@ -173,6 +177,104 @@ Ran two parallel deep-dives across the dashboard (React + Vite) and mobile (Expo
 - Code splitting cuts login-page parse time by ~650 kB.
 
 > Issue closed after 0 min (no issue tracked)
+
+---
+
+## Feat: 9-class data preparation notebook complete — 45,000 balanced images — 2026-06-10
+
+### Final state
+- All 9 classes at exactly 5,000 images — perfectly balanced
+- Train: 31,500 (3,500/class) | Val: 6,750 (750/class) | Test: 6,750 (750/class)
+- Runtime: ~60 seconds on Kaggle CPU (no GPU needed)
+- Kaggle kernel: `rubberduck808/goalz-9-class-data-preparation` (v13)
+
+### Data sources per class
+| Class | Source | Notes |
+|---|---|---|
+| not_nature | Places365 (292 urban/indoor categories) | Excludes all nature/landscape categories |
+| tree | PlantNet-300K (liriodendron, metasequoia, nothofagus) + Places365 tree_farm | PlantNet lacks most Canadian tree genera; tree_farm fills to 5,000 |
+| shrub | PlantNet-300K (lavandula, daphne, hypericum, and others) | 8,842 available — capped at 5,000 |
+| grass_lawn | Places365 (lawn, golf_course, pasture, athletic_field) | PlantNet grass genera absent from dataset |
+| mulch | Places365 (topiary_garden, zen_garden, courtyard) | Closest proxy — check QA grid for contamination |
+| garden_bed | Places365 (botanical_garden, formal_garden, japanese_garden, vegetable_garden) | |
+| ground_cover | PlantNet-300K (sedum, trifolium, fragaria, lamium, hypericum) | 56,964 available — capped at 5,000 |
+| green_roof | Places365 (roof_garden, rooftop) | |
+| water_body | Places365 (lake, river, pond, ocean, coast, waterfall, fishpond, creek, lagoon, etc.) | |
+
+### Key engineering decisions
+- **train.txt parsing instead of filesystem walking**: Places365 has 1.8M images; `rglob` hung for 7+ minutes on Kaggle's network FS. Parsing the 144MB text index takes ~12 seconds.
+- **Targeted directory reads**: `collect_from_places365` only reads the directories of matched categories (1–10 dirs), not all 365.
+- **Deployment context**: app is primarily Canadian — genus mapping updated to include Canadian arboretum species (vaccinium, rubus, amelanchier, syringa, etc.) even though PlantNet-300K didn't have them.
+
+> Issue closed after 0 min
+
+---
+
+## Feat: 9-class data preparation notebook pushed to Kaggle — 2026-06-10
+
+### Added
+- **`ml/custom_model/notebooks/01_data_preparation.ipynb`** — Kaggle notebook that builds `train.csv`, `val.csv`, `test.csv` for the 9-class ResNet. Scans PlantNet-300K images, maps genera to classes (tree/shrub/grass_lawn/garden_bed/ground_cover) via a 130-genus lookup, then extracts `water_body` and `not_nature` buckets from Places365 using keyword matching on category names. Balances to 5,000 images per class, performs a stratified 70/15/15 split, and includes a class-balance bar chart + 5-image sample grid per class.
+- **`ml/custom_model/notebooks/kernel-metadata.json`** — Kaggle kernel config; slug `rubberduck808/goalz-9-class-data-preparation`, GPU disabled (CPU-only scan), datasets: `noahbadoa/plantnet-300k-images` + `benjaminkz/places365`.
+
+### Rationale
+- `mulch` and `green_roof` have no automated public-dataset source; the notebook flags them as sparse and documents manual curation options (Unsplash/Flickr scrape → new Kaggle dataset).
+- Reuses the two datasets already attached to the binary classifier notebook — no new dataset downloads needed.
+
+> Issue closed after 0 min
+
+---
+
+## Feat: Custom multi-class ResNet from scratch — full pipeline — 2026-06-10
+
+### Added
+- **`ml/custom_model/environment.yml`** — PyTorch 2.4 + CUDA 12.1 conda environment. Includes `nvidia` and `pytorch` channels required for GPU PyTorch; `pytorch-cuda=12.1` line is mandatory (omitting it silently installs CPU-only).
+- **`ml/custom_model/dataset.py`** — `NatureDataset` (PyTorch Dataset class), full transform pipelines (train + val), `make_dataloaders` factory. Includes bounded corrupt-image retry (MAX_RETRIES=5), `worker_init_fn` for independent per-worker augmentation seeds, and `pin_memory` CUDA guard.
+- **`ml/custom_model/model.py`** — `ResidualBlock` and `NatureResNet`. 9 classes, 22 conv/linear layers, ~2.8M parameters. `inplace=False` in residual blocks (shortcut backward safety). Includes standalone sanity check (`python model.py`).
+- **`ml/custom_model/train.py`** — Full two-phase training loop. Phase A: AdamW lr=1e-3, 20 epochs. Phase B: lr=1e-4, 10 epochs, fresh scheduler. AMP with `torch.amp` (not deprecated `torch.cuda.amp`), gradient clipping, `torch.compile`, cuDNN benchmark, TensorBoard, early stopping with counter reset between phases, explicit LR override after checkpoint load.
+- **`ml/custom_model/evaluate.py`** — Per-class classification report, normalised 9×9 confusion matrix, AutoApprove precision metric, calibration plot (overconfidence check), per-class error analysis grids.
+- **`ml/custom_model/export.py`** — ONNX export from `raw_model` (not compiled model), structural verification, numerically stable parity check (max diff < 1e-4).
+- **`ml/custom_model/notebooks/00_verify_setup.ipynb`** — GPU check, import verification, architecture sanity check notebook.
+
+### Changed
+- **`ml/serve/app.py`** — Full rewrite: lifespan startup pattern (replaces deprecated `on_event`), `preprocess_image` with correct Resize(256)→CenterCrop(224)→[-1,1]→channels-first transpose, multi-class output (9-class softmax), asymmetric recommendation thresholds (not_nature gate at 0.55 vs AutoApprove at 0.85), `classification` field returned in response.
+- **`ml/serve/requirements.txt`** — Removed `tensorflow-cpu` (~500 MB); added `pillow>=10.0` (Resampling API change).
+- **`ml/.gitignore`** — Added `logs/`, `custom_model/checkpoints/`, `custom_model/__pycache__/`.
+- **`IImageAnalysisService.cs`** — Added `string? Classification` to `ImageAnalysisResult` record.
+- **`ImageAnalysisService.cs`** — Parses `classification` field from ML response with graceful fallback to null (backward compatible with old binary model).
+- **`ElementService.cs`** — Sets `element.AiClassification = result.Classification` in `AnalyseAndActAsync`.
+
+### Rationale
+- Building from scratch rather than fine-tuning teaches the full ML pipeline: dataset loading, architecture design, training loop mechanics, evaluation, and ONNX export.
+- Multi-class output (9 classes) replaces the binary gate, enabling identification of the specific element type — populating `AiClassification` in the database.
+- Asymmetric thresholds reflect the asymmetric cost: a wrongly AutoApproved non-nature image bypasses all review; wrongly sending a nature image to review is a minor inconvenience.
+- All critical review issues addressed: torch.compile/ONNX incompatibility (export from raw_model), preprocessing shape mismatch (transpose added), taxonomy-based PlantNet labelling (not random slicing), numerically stable softmax throughout.
+
+> Issue closed after 0 min
+
+---
+
+## Feat: AI classification field, AnalysedAt timestamp, re-analysis guard — 2026-06-08
+
+### Added
+- **`Element.cs`**: Added `AiClassification` (`string?`) and `AnalysedAt` (`DateTime?`) properties. `AiClassification` will store the predicted class name (e.g. `"tree"`, `"water_body"`) once the multi-class model is deployed. `AnalysedAt` records when analysis last ran.
+- **`PendingElementDto.cs`**: Exposed both new fields so the dashboard receives them.
+- **Migration `AddAiClassificationAndAnalysedAt`**: Adds `AiClassification` (text, nullable) and `AnalysedAt` (timestamptz, nullable) columns to the `Elements` table.
+
+### Changed
+- **`ElementService.cs` — `AnalyseAndActAsync`**: Added pre-flight guard — if `element.AiResult` is already set and `force` is false, the background task returns immediately without calling the ML service, preventing unnecessary re-analysis. Sets `AnalysedAt = DateTime.UtcNow` on every completed analysis.
+- **`ElementService.cs` — `TriggerAnalysisAsync` / `FireAnalysis`**: Both accept a `bool force = false` parameter that bypasses the pre-flight guard for explicit staff re-checks.
+- **`IElementService.cs`**: Updated `TriggerAnalysisAsync` signature to include `force`.
+- **`ElementController.cs`**: `POST /api/dashboard/elements/{id}/analyse` now accepts `?force=true` query param and passes it through.
+- **`overviewService.jsx`**: `triggerAnalysis(id, force)` appends `?force=true` to the URL when force is true.
+- **`ElementManagement.jsx`**: AI column now shows predicted classification (indigo tag, `fa-tag`) and "Checked X ago" timestamp when `analysedAt` is set. `handleAnalyse` clears both new fields on re-trigger. "Re-check" button passes `force=true`.
+- **`PendingElements.jsx`**: Same classification and checked-time display additions. "Check with AI" becomes "Re-check" (gray) when already analysed and passes `force=true`.
+
+### Rationale
+- Without `AnalysedAt`, staff had no way to know if a result was fresh or stale (e.g. from a previous model version). The timestamp makes this explicit.
+- Without the pre-flight guard, `AnalyseAndActAsync` would overwrite valid existing results on every retry-service run, wasting ML calls and potentially degrading results if model output is non-deterministic.
+- `AiClassification` is wired end-to-end (DB → DTO → dashboard) now, ready to populate once the multi-class model is deployed — no backend changes needed at that point.
+
+> Issue closed after 0 min
 
 ---
 

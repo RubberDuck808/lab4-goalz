@@ -147,8 +147,9 @@ export const overviewService = {
         invalidateOverviewCache();
     },
 
-    triggerAnalysis: async (id) => {
-        const res = await APICall("POST", `/elements/${id}/analyse`, null, sessionStorage.getItem("token") ?? "");
+    triggerAnalysis: async (id, force = false) => {
+        const url = force ? `/elements/${id}/analyse?force=true` : `/elements/${id}/analyse`;
+        const res = await APICall("POST", url, null, sessionStorage.getItem("token") ?? "");
         if (!res?.ok) throw new Error('Failed to trigger analysis');
     },
 

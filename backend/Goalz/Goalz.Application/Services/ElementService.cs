@@ -128,9 +128,11 @@ public class ElementService : IElementService
             IsGreen     = e.IsGreen,
             SubmittedBy = e.SubmittedBy,
             CreatedAt   = e.CreatedAt,
-            AiConfidence = e.AiConfidence,
-            AiSummary    = e.AiSummary,
-            AiResult     = e.AiResult?.ToString(),
+            AiConfidence     = e.AiConfidence,
+            AiSummary        = e.AiSummary,
+            AiResult         = e.AiResult?.ToString(),
+            AiClassification = e.AiClassification,
+            AnalysedAt       = e.AnalysedAt,
         });
     }
 
@@ -150,23 +152,23 @@ public class ElementService : IElementService
         }
     }
 
-    public async Task<(bool Success, string? Error)> TriggerAnalysisAsync(long id)
+    public async Task<(bool Success, string? Error)> TriggerAnalysisAsync(long id, bool force = false)
     {
         var element = await _repository.GetByIdAsync(id);
         if (element is null) return (false, "not_found");
         if (element.ImageUrl is null) return (false, "no_image");
-        FireAnalysis(element.Id, element.ImageUrl, element.ElementName, element.ElementType?.Name ?? "");
+        FireAnalysis(element.Id, element.ImageUrl, element.ElementName, element.ElementType?.Name ?? "", force);
         return (true, null);
     }
 
-    private void FireAnalysis(long id, string imageUrl, string name, string type)
+    private void FireAnalysis(long id, string imageUrl, string name, string type, bool force = false)
     {
         if (_imageAnalysis is null) return;
         if (!_inFlightIds.TryAdd(id, 0)) return; // already in flight
-        _ = Task.Run(() => AnalyseAndActAsync(id, imageUrl, name, type));
+        _ = Task.Run(() => AnalyseAndActAsync(id, imageUrl, name, type, force));
     }
 
-    private async Task AnalyseAndActAsync(long id, string imageUrl, string name, string type)
+    private async Task AnalyseAndActAsync(long id, string imageUrl, string name, string type, bool force = false)
     {
         await _analysisSemaphore.WaitAsync();
         try
@@ -178,15 +180,23 @@ public class ElementService : IElementService
             var repository       = scope.ServiceProvider.GetRequiredService<IElementRepository>();
             var imageAnalysis    = scope.ServiceProvider.GetRequiredService<IImageAnalysisService>();
 
+            // Skip analysis if already done unless explicitly forced
+            var element = await repository.GetByIdAsync(id);
+            if (element is null || element.IsRejected) return;
+            if (!force && element.AiResult is not null) return;
+
             var result = await imageAnalysis.AnalyseElementAsync(imageUrl, name, type);
             if (result is null) return;
 
-            var element = await repository.GetByIdAsync(id);
+            // Re-fetch after the (potentially long) ML call to get the latest state
+            element = await repository.GetByIdAsync(id);
             if (element is null || element.IsRejected) return;
 
-            element.AiConfidence = result.Confidence;
-            element.AiSummary    = result.Summary;
-            element.AiResult     = result.Recommendation;
+            element.AiConfidence     = result.Confidence;
+            element.AiSummary        = result.Summary;
+            element.AiResult         = result.Recommendation;
+            element.AiClassification = result.Classification;  // null until multi-class model deployed
+            element.AnalysedAt       = DateTime.UtcNow;
             await repository.UpdateAsync(element);
 
             if (result.Recommendation == AiRecommendation.AutoApprove)

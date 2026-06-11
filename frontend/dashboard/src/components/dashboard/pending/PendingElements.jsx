@@ -4,6 +4,15 @@ import 'react-toastify/dist/ReactToastify.css';
 import DashboardNavBar from '../DashboardNavBar';
 import { overviewService } from '../../../services/overviewService';
 
+function timeAgo(dateStr) {
+    if (!dateStr) return null;
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
+
 export default function PendingElements() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,11 +36,11 @@ export default function PendingElements() {
         }
     }
 
-    async function handleAnalyse(id) {
+    async function handleAnalyse(id, force = false) {
         setAnalysingIds(prev => new Set(prev).add(id));
         try {
-            await overviewService.triggerAnalysis(id);
-            setItems(prev => prev.map(el => el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el));
+            await overviewService.triggerAnalysis(id, force);
+            setItems(prev => prev.map(el => el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null, aiClassification: null, analysedAt: null } : el));
             toast.info('AI analysis triggered — result will appear shortly.');
         } catch (e) {
             toast.error(e.message || 'Failed to trigger analysis.');
@@ -106,15 +115,29 @@ export default function PendingElements() {
                                         <td className="px-4 py-3">
                                             {el.aiResult ? (
                                                 <div className="flex flex-col gap-1">
-                                                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                                        el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
-                                                        el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
-                                                        'bg-red-100 text-red-700'
-                                                    }`}>
-                                                        {el.aiResult === 'AutoApprove' ? 'Likely valid' :
-                                                         el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                                            el.aiResult === 'AutoApprove' ? 'bg-green-100 text-green-700' :
+                                                            el.aiResult === 'NeedsReview' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-red-100 text-red-700'
+                                                        }`}>
+                                                            {el.aiResult === 'AutoApprove' ? 'Likely valid' :
+                                                             el.aiResult === 'NeedsReview' ? 'Needs review' : 'Suspicious'}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400">{Math.round((el.aiConfidence ?? 0) * 100)}%</span>
+                                                    </div>
+                                                    {el.aiClassification && (
+                                                        <span className="text-xs text-indigo-600 font-medium capitalize">
+                                                            <i className="fa-solid fa-tag mr-1 text-[10px]" />
+                                                            {el.aiClassification.replace(/_/g, ' ')}
+                                                        </span>
+                                                    )}
+                                                    {el.analysedAt && (
+                                                        <span className="text-xs text-gray-400">
+                                                            <i className="fa-solid fa-clock mr-1 text-[10px]" />
+                                                            {timeAgo(el.analysedAt)}
+                                                        </span>
+                                                    )}
                                                     {el.aiSummary && (
                                                         <span className="text-xs text-gray-500 italic max-w-[180px]">{el.aiSummary}</span>
                                                     )}
@@ -144,12 +167,16 @@ export default function PendingElements() {
                                                 </div>
                                                 {el.imageUrl && (
                                                     <button
-                                                        onClick={() => handleAnalyse(el.id)}
+                                                        onClick={() => handleAnalyse(el.id, !!el.aiResult)}
                                                         disabled={analysingIds.has(el.id)}
-                                                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-md transition-colors flex items-center gap-1"
+                                                        className={`px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-md transition-colors flex items-center gap-1 ${
+                                                            el.aiResult ? 'bg-gray-400 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'
+                                                        }`}
                                                     >
                                                         {analysingIds.has(el.id) ? (
                                                             <><i className="fa-solid fa-spinner fa-spin"></i> Checking…</>
+                                                        ) : el.aiResult ? (
+                                                            <><i className="fa-solid fa-robot"></i> Re-check</>
                                                         ) : (
                                                             <><i className="fa-solid fa-robot"></i> Check with AI</>
                                                         )}
