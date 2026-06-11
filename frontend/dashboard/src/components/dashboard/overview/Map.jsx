@@ -624,7 +624,7 @@ const DashboardMap = forwardRef(function DashboardMap({
 
 
       {/* Map Type Switcher */}
-      <div className="absolute bottom-4 right-4 z-[500] flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
+      <div className="flex gap-1 bg-white/85 backdrop-blur-md border border-border/80 rounded-xl p-1 shadow-md">
 
         <button
           onClick={handleLocate}
