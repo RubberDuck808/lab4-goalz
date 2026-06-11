@@ -101,17 +101,19 @@ export default function DashboardChatbot() {
   function handleToggle() {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) {
-        setPanelStyle({});
-      } else {
-        setPanelStyle({
-          left: rect.left,
-          bottom: window.innerHeight - rect.top + 8,
-          width: 420,
-          height: Math.min(560, rect.top - 16),
-        });
-      }
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const panelW = Math.min(420, vw - 16);
+      const panelH = Math.min(560, rect.top - 16);
+      // Anchor left to the button, then clamp so it never overflows either edge
+      const rawLeft = rect.left;
+      const left = Math.max(8, Math.min(rawLeft, vw - panelW - 8));
+      setPanelStyle({
+        left,
+        bottom: vh - rect.top + 8,
+        width: panelW,
+        height: panelH,
+      });
     }
     setIsOpen(v => !v);
   }
@@ -128,11 +130,8 @@ export default function DashboardChatbot() {
 
       {isOpen && createPortal(
         <div
-          className={`fixed z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl
-            ${Object.keys(panelStyle).length === 0
-              ? 'left-4 right-4 top-[126px] bottom-[128px]'
-              : ''}`}
-          style={Object.keys(panelStyle).length > 0 ? panelStyle : undefined}
+          className="fixed z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+          style={panelStyle}
         >
           <div className="flex items-center justify-between bg-[#14243b] px-5 py-4 text-white">
             <div className="flex items-center gap-3">
