@@ -682,7 +682,8 @@ const DashboardMap = forwardRef(function DashboardMap({
           </button>
         </div>
       </div>
-)
+    </div>
+  )
 }
 )
 
