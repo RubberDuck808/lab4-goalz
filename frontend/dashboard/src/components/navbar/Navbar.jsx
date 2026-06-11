@@ -152,10 +152,10 @@ export default function Navbar({ selectedItem, setSelectedItem, setActiveTab, ac
         </div>
 
         {/* Logout */}
-        <div className="shrink-0 p-3 border-t border-slate-700/40">
+        <div className="shrink-0 px-3 py-2 border-t border-slate-700/40">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-xl transition-colors duration-200 cursor-pointer"
+            className="w-full h-9 flex items-center gap-2.5 px-3 text-slate-300 hover:text-white hover:bg-slate-800/40 rounded-xl transition-colors duration-200 cursor-pointer"
           >
             <i className="fa-solid fa-right-from-bracket text-sm w-4" />
             <span className="text-sm font-semibold">Log Out</span>
