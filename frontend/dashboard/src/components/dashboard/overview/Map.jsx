@@ -564,8 +564,14 @@ const DashboardMap = forwardRef(function DashboardMap({
           setLocCycle(1)
           setLocating(false)
         },
-        () => setLocating(false),
-        { enableHighAccuracy: true, timeout: 10000 }
+        (err) => {
+          setLocating(false)
+          const msg = err.code === 1
+            ? 'Location permission denied — allow it in your browser settings'
+            : 'Could not get your location'
+          alert(msg)
+        },
+        { enableHighAccuracy: false, timeout: 15000 }
       )
     } else if (locCycle === 1) {
       // Zoom out to full arboretum view, keep marker

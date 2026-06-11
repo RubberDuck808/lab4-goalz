@@ -104,8 +104,9 @@ export default function DashboardChatbot() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const panelW = Math.min(420, vw - 16);
-      const panelH = Math.min(560, rect.top - 16);
-      // Anchor left to the button, then clamp so it never overflows either edge
+      // Reserve 68px at the top (60px navbar + 8px gap) so panel never hides behind it
+      const safeTop = 68;
+      const panelH = Math.min(560, Math.max(200, rect.top - safeTop - 8));
       const rawLeft = rect.left;
       const left = Math.max(8, Math.min(rawLeft, vw - panelW - 8));
       setPanelStyle({
