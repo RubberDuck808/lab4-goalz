@@ -2,23 +2,13 @@
 
 Entities live in `backend/Goalz/Goalz.Domain/Entities/`.
 
-## Registered DbSets (active in AppDbContext)
+## Source of truth
 
-Only these four are registered in `Goalz.Data/Storage/AppDbContext.cs`:
+For the full list of registered entities/DbSets, table columns, FKs, and indexes: see **[`docs/db_schema.sql`](../docs/db_schema.sql)** (generated DDL — regenerate with `dotnet ef migrations script --project Goalz.Data --startup-project Goalz.API --configuration Release -o ../../docs/db_schema.sql` from `backend/Goalz`, API stopped) and **[PROJECT_DETAILS.md §6](../PROJECT_DETAILS.md#6-backend--domain-model)** for a one-line-per-entity purpose summary.
 
-| Entity | Key fields |
-|---|---|
-| **User** | `long Id`, `Username`, `Name`, `Email`, `PasswordHash`, `Role` (enum), `CreatedAt` |
-| **Friendship** | `long Id`, `RequesterId` → User, `AddresseeId` → User, `Status` (enum), `CreatedAt`, `UpdatedAt` |
-| **Sensor** | `long Id`, `Temp`, `Humidity`, `Point Geo` (PostGIS) |
-| **Element** | `long Id`, `Point Geom` (PostGIS), `ImageUrl`, `IsGreen` |
+Don't re-list entities here — that's exactly how this doc went stale before (it once claimed only 4 entities were registered; there are 21).
 
-## Unregistered Entities (domain only — no DbSet, no table)
-
-These exist as domain entities but are **not** in `AppDbContext` and have no migration:
-`Quiz`, `Question`, `Answer`, `Party`, `PartyGroup`, `PartyMember`, `PartyGroupAnswer`
-
-To use any of these: add a `DbSet<T>` to `AppDbContext` and run a migration first.
+The only entity genuinely **not** in the active `AppDbContext`: `Information` — orphaned, no DbSet, no migration, safe to ignore.
 
 ## Enums
 

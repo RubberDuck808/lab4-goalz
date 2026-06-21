@@ -59,13 +59,14 @@ When Loggy woke up, he had forgotten both the answers to the questions and the l
 
 1. The system divides users into groups
 2. Each group is given a name or number (e.g. Group 1, Group 2...)
-3. Within each group, the system assigns one of two roles to each user
+3. Within each group, the system assigns one of **three** roles to each user (randomly, from whichever roles the host allowed at setup)
 4. Users see their group and role on their screen
 
 | Role | Story Equivalent | Task |
 |---|---|---|
 | **Scout** (1-2 users) | Finding the torn paper pieces | Locate and scan sensors to collect hint fragments for the quiz |
 | **Trailblazer** (1-2 users) | Helping Loggy remember where he hid his nuts | Photograph predefined nature elements at preset locations |
+| **Explorer** | Doing it all | Does both — sensors and photo checkpoints (the role available when "no groups" is selected, or when a host allows it) |
 
 - All groups follow the **same route** through sections, progressing independently at their own pace
 - All group members can see each other's progress in real time
@@ -131,15 +132,11 @@ When Loggy woke up, he had forgotten both the answers to the questions and the l
 
 > The group stands in front of Loggy's locked box. The Scouts' memorized hints hold the answers.
 
-1. A set of **multiple choice questions** appears, drawn from the hint fragments collected by the Scouts
-2. The group decides who answers each question, or they can let the **system randomly assign** a question to a member
-3. Users select their answer from the provided options. The hint fragments are no longer visible
-4. **Scoring rules:**
-   - Correct answer: points awarded based on speed
-   - Incorrect answer: no points, and the **streak resets immediately**
-   - Answering correctly **multiple times in a row** builds a **streak**, which multiplies the points earned per correct answer
-   - Faster correct answers score higher within the streak bonus
-5. Once all questions are answered, **the box unlocks**
+1. A multiple-choice question appears
+2. Users select their answer from the provided options
+3. Once answered, **the box unlocks**
+
+> **Implementation status:** the design intent above (questions drawn from Scout-collected hints, speed/streak-based scoring) is not what's currently built. As implemented, `GET /api/game/quiz/question` (`QuizController.cs`) serves one random question from the **entire** question pool, unrelated to which sensors were scanned — there's no mechanism linking hint fragments to specific questions. Scoring is flat: a correct answer is worth 100 points, an incorrect answer 0 — no speed bonus, no streak multiplier.
 
 > **Device sharing:** Every user is expected to use their own phone. If not everyone in a group has a device, they may share. This is left to the group to coordinate themselves.
 
@@ -149,7 +146,7 @@ When Loggy woke up, he had forgotten both the answers to the questions and the l
 
 1. The box plays an **opening animation**. Loggy retrieves his nuts
 2. The section is marked as complete for this group
-3. Scores are recorded: correctness, speed, and streak multipliers
+3. Scores are recorded (currently: flat correctness only — see implementation note in Phase 6)
 4. The group proceeds to the **next section**, flow repeats from Phase 3
 5. All groups follow the same route and complete sections at their own pace
 
@@ -168,10 +165,7 @@ When Loggy woke up, he had forgotten both the answers to the questions and the l
 
 ### Winner Announcement
 1. The **leaderboard** is displayed showing all group scores
-2. Scores are calculated from:
-   - **Correctness:** only correct answers earn points
-   - **Speed:** faster correct answers score higher
-   - **Streaks:** consecutive correct answers multiply points per question
+2. Scores are calculated from correctness only (currently — see implementation note in Phase 6; speed/streak bonuses are design intent, not yet built)
 3. The winning group is announced
 
 ### Nut Distribution (Final Reward)
@@ -282,7 +276,7 @@ Badges are awarded automatically when a user meets a defined criteria. They are 
 | **Dedicated** | Participate in sessions across 4 different weeks |
 | **Collector** | Earn a total of X nuts across all sessions |
 
-> Badge criteria and the full badge list are to be defined. The examples above are illustrative.
+> Badge criteria and the full badge list are to be defined. The examples above are illustrative. **Currently implemented:** 4 badges — `first_steps`, `trail_blazer`, `nut_hoarder`, `party_animal` (see `BadgeService.cs` / `frontend/mobile/utils/badges.js`) — none of which match the streak/speed-based examples above, since those mechanics don't exist yet either.
 
 ---
 

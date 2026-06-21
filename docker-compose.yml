@@ -53,13 +53,6 @@ services:
       minio:
         condition: service_healthy
 
-  app:
-    build:
-      context: ./frontend/app
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"
-
   dashboard:
     build:
       context: ./frontend/dashboard

@@ -55,7 +55,7 @@ export default function PlayerSearch({ currentUsername }) {
       <View style={styles.inputRow}>
         <SearchIcon />
         <TextInput
-          style={[styles.input, styles.inputText]}
+          style={styles.input}
           placeholder="Search players..."
           placeholderTextColor="#a1a1aa"
           value={query}
@@ -187,6 +187,4 @@ const styles = StyleSheet.create({
   addBtnTextSent: {
     color: '#71717a',
   },
-  subtext: { color: '#4B4B4B', textAlign: 'left', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Demi', fontSize: 16, fontWeight: '600', letterSpacing: -0.32 },
-  inputText: { color: '#777', fontFamily: 'Inter', fontSize: 16, fontWeight: '500', letterSpacing: 0.48 },
 });

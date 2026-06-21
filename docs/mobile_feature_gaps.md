@@ -25,14 +25,12 @@ Screens reviewed: all 23 registered routes. Components reviewed: all in `compone
 
 ## 1. Badges / Achievements
 
-**Status:** UI shell exists; no logic implemented.
+**Status:** Implemented — 4 badges, computed client-side from stats.
 
-`ProfilePage.jsx` renders a "Badges" counter hardcoded to `0`. No achievement system is defined anywhere in the codebase.
+`frontend/mobile/utils/badges.js` defines `BADGES` (`first_steps`, `trail_blazer`, `nut_hoarder`, `party_animal`) and `computeBadges(stats)`, which checks `GET /api/game/users/stats`'s `badges` array (backed by `BadgeService.cs` + `UserBadge` entity). `ProfilePage.jsx` uses `computeBadges` to render earned state.
 
-**Missing:**
-- Define badge criteria (e.g. first checkpoint, 10 zones completed, all roles used, perfect quiz score)
-- Backend endpoint to fetch earned badges per user
-- Badge icons / display on profile
+**Still missing:**
+- More badge criteria beyond the 4 existing ones (e.g. all roles used, perfect quiz score, zone-count milestones)
 - Unlock animation when a badge is earned
 - Notification of new badge after game completion
 
@@ -154,10 +152,12 @@ There is no notification infrastructure in the app.
 
 ## 10. Account Security
 
-**Status:** Basic auth implemented; no secondary security measures.
+**Status:** Basic auth + in-app password change/profile update implemented; no secondary security measures.
+
+`POST /api/game/users/change-password` (`UsersController.cs`) and `EditProfilePage.jsx` let a logged-in user change their password or update their profile. What's still missing is everything that doesn't assume the user is already logged in:
 
 **Missing:**
-- **Forgot password / reset via email** — Login screen has no reset path
+- **Forgot password / reset via email** — Login screen has no reset path (the existing change-password flow requires the current password, so it doesn't help a locked-out user)
 - **Email verification** — accounts are created without verifying ownership of the email
 - **Session timeout** — JWT is stored but there is no expiry check or forced re-login after a period of inactivity
 - **Biometric / PIN unlock** — no option to protect the app with Face ID / fingerprint
@@ -190,7 +190,6 @@ The project README references a staff admin dashboard. The mobile app is player-
 
 | Location | What exists | What is missing |
 |---|---|---|
-| `ProfilePage.jsx` — Badges count | Counter renders, hardcoded to `0` | Badge data fetch + display |
 | `StatisticsCard.jsx` | Component renders stats card | Historical breakdown (per-game detail) |
 | `SettingsPage.jsx` — Text Size | Radio options render and persist | Full coverage — only `AppText` uses scale; most `StyleSheet` font sizes are fixed |
 | `MapPage.jsx` — Browse mode | Zones visible on map | Tap-to-inspect interaction |
@@ -198,4 +197,4 @@ The project README references a staff admin dashboard. The mobile app is player-
 
 ---
 
-*Generated: 2026-05-16 — based on codebase state at branch `feature/pending-element-submission`*
+*Generated: 2026-05-16 — based on codebase state at branch `feature/pending-element-submission`. §1 and §10 corrected 2026-06-22 against `feature/image-analysis-cv` (badges and password-change/profile-update were implemented since the original audit). Other sections not re-verified beyond that pass.*

@@ -1,0 +1,16 @@
+{
+  "id": "rubberduck808/goalz-9-class-training",
+  "title": "Goalz 9 Class Training",
+  "code_file": "02_training.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": [
+    "noahbadoa/plantnet-300k-images",
+    "benjaminkz/places365"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

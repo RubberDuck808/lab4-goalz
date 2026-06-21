@@ -62,6 +62,17 @@ Any user can create a party and become the **Party Owner**.
 
 ---
 
+### Playing Solo
+
+No party needed — play by yourself, anywhere, anytime.
+
+1. Tap **Solo** from the route-mode screen instead of Create/Join Party.
+2. Pick a play area (boundary) and how many checkpoints per zone you want.
+3. Tap **Start Solo Game** — you're assigned a random role (Scout, Trailblazer, or Explorer) and dropped straight onto the map.
+4. Play through zones and checkpoints exactly like party mode, just on your own — no groups, no waiting in a lobby, no other players to coordinate with.
+
+---
+
 ### Playing the Game
 
 The game is divided into **sections** (areas of the arboretum). All groups follow the same route through sections, but progress independently at their own pace.
@@ -73,12 +84,13 @@ Everyone opens Loggin, signs up or logs in, and waits in the lobby.
 A user creates the party and shares the code. Participants join. The Party Owner starts the session.
 
 #### Phase 2 — Group & Role Assignment
-The system automatically divides players into groups and assigns each person one of two roles:
+The system automatically divides players into groups and assigns each person one of three roles:
 
 | Role | Your Task |
 |---|---|
-| **Scout** (1–2 per group) | Find hidden sensors scattered across the section and collect hint fragments for the quiz |
+| **Scout** (1–2 per group) | Find hidden sensors scattered across the section and check them |
 | **Trailblazer** (1–2 per group) | Navigate to preset locations and photograph the specified nature elements |
+| **Explorer** | Does both — sensors and photo checkpoints |
 
 You will see your group and role on screen before the section starts.
 
@@ -90,18 +102,15 @@ You will see your group and role on screen before the section starts.
 
 #### Phase 4A — Scout Flow
 1. Search the section for physical sensors hidden in the environment.
-2. Interact with a sensor (via QR code, NFC, or Bluetooth proximity).
-3. A **hint fragment** appears on screen briefly — memorise it. It disappears after viewing.
-4. The app marks the sensor as found and updates group progress (e.g. "2 of 4 fragments found").
-5. Repeat until all sensors in the section are collected.
-
-> Hints are like torn pieces of paper — they fade away. Scouts must remember what they read.
+2. Check the sensor in the app — it shows its live readings.
+3. The app marks the checkpoint as visited and updates group progress.
+4. Repeat until all sensor checkpoints in the section are visited.
 
 #### Phase 4B — Trailblazer Flow
 1. Navigate to your assigned location using the map.
 2. Photograph the target nature element (a particular tree, rock, plant, etc.).
-3. The photo is verified automatically by AI.
-4. Once all assigned photos pass verification, the **box appears on the map** for your whole group.
+3. The checkpoint is marked complete as soon as the photo uploads — there's no wait for review. (Staff can separately run an AI check on submitted photos from the dashboard later, but that's a backend/staff workflow, not something that blocks you in the moment.)
+4. Once all assigned photos are taken, the **box appears on the map** for your whole group.
 
 > If Scouts haven't finished yet, the box is shown as **locked** with a status message.
 
@@ -111,15 +120,9 @@ You will see your group and role on screen before the section starts.
 3. Once Scouts complete their task and the full group arrives, the **quiz automatically appears**.
 
 #### Phase 6 — Quiz
-1. Multiple-choice questions appear, drawn from the hint fragments the Scouts collected.
-2. Decide as a group who answers each question, or let the system assign randomly.
-3. Select your answer — hint fragments are no longer visible at this point.
-
-**Scoring:**
-- Correct answer: points awarded, scaled by speed
-- Incorrect answer: no points, streak resets immediately
-- Consecutive correct answers build a **streak** that multiplies points per question
-- Once all questions are answered, the **box unlocks**
+1. A multiple-choice question appears (drawn at random from the question pool — not tied to which sensors you scanned).
+2. Select your answer.
+3. Correct = 100 points, incorrect = 0 points. Once answered, the **box unlocks**.
 
 #### Phase 7 — Box Opens & Section Complete
 1. The box plays an opening animation — Loggy retrieves his nuts.
@@ -129,20 +132,8 @@ You will see your group and role on screen before the section starts.
 #### Phase 8 — Session End
 The session ends when all groups complete all sections, the time limit is reached, or the Party Owner force-stops the party.
 
-- A **leaderboard** displays all group scores.
-- Scoring factors: correctness, speed, and streak multipliers.
+- A **leaderboard** displays all group scores, based on correctness.
 - The winning group is announced.
-- Loggy distributes nuts to all groups proportionally — no one leaves empty-handed.
-
----
-
-### Scoring & Streaks
-
-| Action | Effect |
-|---|---|
-| Correct answer | Points awarded (amount scales with speed) |
-| Incorrect answer | Zero points, streak resets to 0 |
-| Consecutive correct answers | Streak multiplier applied to each correct answer |
 
 ---
 
@@ -154,16 +145,14 @@ Access your profile from the main screen at any time:
 - **Friends** — see friend rankings in the leaderboard
 - **Nuts** — your total nut count across all sessions
 
-**Example badges:**
+**Badges currently available:**
 
 | Badge | Criteria |
 |---|---|
-| First Steps | Complete your first section |
-| Full House | Complete all sections in a session |
-| On Fire | Reach a streak of 5 in a single quiz |
-| Speedy Squirrel | Answer a question correctly in under 10 seconds |
-| Top of the Tree | Finish 1st in a session |
-| Dedicated | Participate in sessions across 4 different weeks |
+| First Steps | Play your first game |
+| Trail Blazer | Visit 5 checkpoints |
+| Nut Hoarder | Earn 100 total points |
+| Party Animal | Join a party |
 
 ---
 

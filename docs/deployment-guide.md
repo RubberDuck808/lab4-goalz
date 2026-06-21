@@ -27,7 +27,7 @@ dotnet tool install -g dotnet-ef
 |---|---|---|
 | Backend API | 8080 | Swagger UI at `/swagger` |
 | Dashboard | 3001 (Docker) / 5173 (Vite dev) | |
-| Web app | 3000 (Docker) | |
+| ML service | 8001 (Docker, maps to container 8000) | FastAPI + ONNX image classifier |
 | Mobile | device / emulator | Expo Metro on 8081 |
 | PostgreSQL | 5432 | |
 | MinIO API | 9000 | S3-compatible object storage |
@@ -69,7 +69,7 @@ JWT_SECRET=<random-string-at-least-32-characters>
 
 ### 2. Full Stack with Docker
 
-Start all services (database, object storage, backend, web app, dashboard):
+Start all services (database, object storage, backend, dashboard, ML service):
 ```bash
 docker compose up
 ```

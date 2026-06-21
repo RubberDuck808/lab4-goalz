@@ -183,11 +183,11 @@ export default function ElementsPanel({
     } catch (e) { toast.error(e.message || 'Failed to reject.'); }
   };
 
-  const handleAnalyse = async (id) => {
+  const handleAnalyse = async (id, force = false) => {
     setAnalysingIds(prev => new Set(prev).add(id));
     setFailedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     try {
-      await overviewService.triggerAnalysis(id);
+      await overviewService.triggerAnalysis(id, force);
       setPendingItems(prev => prev.map(el =>
         el.id === id ? { ...el, aiResult: null, aiConfidence: null, aiSummary: null } : el
       ));
@@ -514,7 +514,7 @@ export default function ElementsPanel({
                           <button onClick={(e) => { e.stopPropagation(); handleApprove(el.id); }} className="px-3 py-1.5 bg-game-green border-b-[3px] border-game-green-border text-white text-xs font-semibold rounded-lg">Approve</button>
                           <button onClick={(e) => { e.stopPropagation(); handleReject(el.id); }} className="px-3 py-1.5 bg-game-red border-b-[3px] border-game-red-dark text-white text-xs font-semibold rounded-lg">Reject</button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id); }}
+                            onClick={(e) => { e.stopPropagation(); handleAnalyse(el.id, !!el.aiResult); }}
                             disabled={analysingIds.has(el.id)}
                             className={`px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg flex items-center gap-1 ${
                               el.aiResult ? 'bg-gray-400 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'
