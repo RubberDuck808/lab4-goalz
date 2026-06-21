@@ -31,7 +31,7 @@ frontend/dashboard/src/
 │       │   ├── Chart.jsx           — chart type router
 │       │   └── charts/             — AreaChart, BarChart, LineChart, PieChart
 │       ├── elements/
-│       │   └── ElementsPanel.jsx   — element list with approval flow
+│       │   └── ElementsPanel.jsx   — element list with approval flow + AI review ("Check with AI")
 │       ├── sensors/
 │       │   └── SensorsPanel.jsx    — sensor CRUD + BLE link
 │       ├── map/
@@ -285,6 +285,7 @@ Shows every element. Pending elements show Approve + Reject + a "Pending" badge.
 Shows only pending submissions. Features:
 - Select-all checkbox
 - Per-row: submitter name, date, "View on map" button (calls `onFlyTo`)
+- **"Check with AI" / "Re-check" button** — calls `POST /api/dashboard/elements/{id}/analyse` (`handleAnalyse`), tracked per-element in `analysingIds` state while in flight. Result (`el.aiResult`) renders as a badge: 🟢 "Likely valid" (`AutoApprove`), 🟡 "Needs review" (`NeedsReview`), 🔴 "Suspicious" (anything else/`AutoReject`) — see `agent_docs/ml_pipeline.md` for the model behind this.
 - Approve / Reject per row
 - **Bulk bar** — appears when ≥1 row is selected; Approve all / Reject all buttons
 
@@ -300,9 +301,14 @@ Element enters "pending" state (stored in DB)
         ↓
 Staff sees it in the Pending tab
         ↓
+(optional) Staff clicks "Check with AI" → POST /elements/{id}/analyse
+           → AI classification + recommendation badge appears (advisory only)
+        ↓
 Approve → PUT /elements/{id}/approve  → element becomes visible on the map
 Reject  → PUT /elements/{id}/reject   → submission deleted
 ```
+
+Elements awaiting analysis are also picked up automatically by a backend retry loop (`AnalysisRetryService`, every 2 min) — staff don't have to click "Check with AI" for every element. See `agent_docs/ml_pipeline.md` for the full flow.
 
 ### Coord pick & map click
 
