@@ -1,15 +1,17 @@
 {
-  "id": "rubberduck808/goalz-cv-complete-pipeline",
+  "id": "rubberduck808/loggin-project-classifier",
   "id_no": 122451226,
-  "title": "Goalz CV Complete Pipeline",
-  "code_file": "goalz-cv-complete-pipeline.ipynb",
+  "title": "Loggin Project Classifier",
+  "code_file": "loggin-project-classifier.ipynb",
   "language": "python",
   "kernel_type": "notebook",
-  "is_private": true,
-  "enable_gpu": true,
+  "is_private": false,
+  "enable_gpu": false,
   "enable_tpu": false,
-  "enable_internet": true,
-  "keywords": [],
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
   "dataset_sources": [
     "benjaminkz/places365",
     "noahbadoa/plantnet-300k-images"
@@ -18,5 +20,5 @@
   "competition_sources": [],
   "model_sources": [],
   "docker_image": "gcr.io/kaggle-images/python@sha256:e5452ce6268c2e8345cfe5141f31ca7ff47032aca46a7ea532bbb87481281d0c",
-  "machine_shape": "Gpu"
+  "machine_shape": "None"
 }
