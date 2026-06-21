@@ -1,16 +1,39 @@
-MIT License
+Goalz Non-Commercial License
 
 Copyright (c) 2026 Goalz contributors
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. NON-COMMERCIAL USE — FREE
 
-The above copyright notice and this permission notice shall be included in all
+Permission is granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to use,
+copy, modify, merge, publish, and distribute copies of the Software, for
+any purpose that does not constitute Commercial Use as defined below,
+including personal projects, coursework, research, and non-commercial
+educational use by schools, universities, or other institutions.
+
+The above copyright notice and this license shall be included in all
 copies or substantial portions of the Software.
+
+2. COMMERCIAL USE — REQUIRES PRIOR ARRANGEMENT
+
+"Commercial Use" means any use of the Software, in whole or in part, where
+the user or any third party derives monetary or other financial gain from
+that use — directly or indirectly. This includes, without limitation:
+selling, licensing, or sublicensing the Software or derivative works;
+using it to provide a paid product or service; using it internally at a
+for-profit organization; or use by a school, university, or other
+institution in connection with paid programs, grants, sponsorships, or
+any other arrangement involving financial compensation tied to the
+Software's use.
+
+Commercial Use is NOT permitted under this license. Any party wishing to
+make Commercial Use of the Software must first contact the copyright
+holder to obtain a separate commercial license and agree on compensation
+terms:
+
+    Oscar Rashid — o.rashid@student.fontys.nl
+
+3. NO WARRANTY
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

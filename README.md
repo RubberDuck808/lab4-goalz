@@ -1,6 +1,6 @@
 # Goalz — Loggin Sustainability Platform
 
-> Developed under the Office of Sustainability program as a university–high school collaboration.
+> Built as the stakeholder project for **Global Acting in IT**, an international minor (Feb–June 2026) run jointly by Fontys ICT Eindhoven, FH Technikum Wien, Hellenic Mediterranean University Chania, and Humber Polytechnic Toronto.
 
 Goalz is a location-based sustainability game built around the Humber Arboretum. Players (the **Loggin** mobile app) explore the grounds in small groups, scan IoT sensors, photograph nature elements, answer quiz questions, and earn points. Staff manage zones, sensors, and reporting from the **Dashboard**.
 
@@ -24,6 +24,7 @@ For the deep reference (every entity, every endpoint, every service, every confi
 - [Common Commands](#common-commands)
 - [Contributing](#contributing)
 - [Documentation Map](#documentation-map)
+- [Project Context & Stakeholders](#project-context--stakeholders)
 
 ---
 
@@ -304,9 +305,40 @@ All eight ADRs live in [docs/adr/](docs/adr/):
 
 ---
 
+## Project Context & Stakeholders
+
+<p align="center">
+  <img src="docs/assets/Fontys-Logo.svg_.png" alt="Fontys ICT Eindhoven" height="60">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/FH_Technikum_Wien_logo.svg.png" alt="FH Technikum Wien" height="60">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/Hellenic-Mediterranean-University-HMU.png" alt="Hellenic Mediterranean University" height="60">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/Humber-Logo.png" alt="Humber Polytechnic" height="60">
+</p>
+
+This repo is the team project for **Global Acting in IT**, a semester-long international minor (February–June 2026) combining four 9-/6-ECTS modules taught across four partner institutes, each contributing one layer of the system:
+
+| Module | Institute | Contribution |
+|---|---|---|
+| Human Centered Design | Fontys ICT Eindhoven (Netherlands) | UX research, wireframes, prototypes |
+| Software Engineering | FH Technikum Wien (Austria) | Backend architecture, REST APIs, CI/CD |
+| Internet of Things | Hellenic Mediterranean University, Chania (Greece) | Sensor hardware/data pipeline |
+| Artificial Intelligence | Humber Polytechnic, Toronto (Canada) | Nature-element image classification |
+
+**Built by:** 3 students from Fontys ICT Eindhoven + 1 student from FH Technikum Wien, supervised (teaching only, no code contributions) by lecturers from all four institutes.
+
+**Real-world stakeholders** the project serves (per the minor's official brief — a "Healthy Landscape & Biodiversity Plan" tool for Humber Polytechnic):
+- Humber Office of Sustainability
+- Humber Arboretum
+- Municipal and conservation authorities (e.g. Toronto and Region Conservation Authority)
+- Educational institutions, community groups, citizen scientists, and landscape professionals
+
+---
+
 ## License
 
-[MIT](LICENSE) — free to use, copy, modify, and distribute, including commercially, as long as the copyright notice is kept.
+[Goalz Non-Commercial License](LICENSE) — free to use, copy, modify, and distribute for non-commercial purposes (including coursework and non-commercial educational use). Any commercial use — anywhere money changes hands, including between institutions — requires contacting the copyright holder first to arrange a separate commercial license.
 
 ## Contact
 
