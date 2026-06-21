@@ -64,6 +64,7 @@ module.exports = {
     plugins: [
       'expo-secure-store',
       'expo-location',
+      'expo-font',
       [
         'expo-camera',
         {

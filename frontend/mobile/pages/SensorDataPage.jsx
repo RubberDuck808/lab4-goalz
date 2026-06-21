@@ -47,7 +47,7 @@ export default function SensorDataPage({ navigation, route }) {
             <Text style={styles.popupTitle}>Sensor Detected!</Text>
             <Text style={styles.popupSubtitle}>{sensorName} is nearby and collecting data.</Text>
             <View style={{ marginTop: 20 }}>
-              <GameButtons variant="accept" onPress={handleCheckSensor} textStyle={styles.buttonText}>
+              <GameButtons variant="accept" onPress={handleCheckSensor}>
                 Check Sensor
               </GameButtons>
             </View>
@@ -86,7 +86,7 @@ export default function SensorDataPage({ navigation, route }) {
           )}
 
           <View style={{ marginTop: 16 }}>
-            <GameButtons variant="task" onPress={() => navigation.goBack()} textStyle={styles.buttonText}>
+            <GameButtons variant="task" onPress={() => navigation.goBack()}>
               Back
             </GameButtons>
           </View>
@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
   dataItem: { alignItems: 'center', gap: 2 },
   dataValue: { fontSize: 20, fontWeight: 'bold' },
   dataLabel: { fontSize: 11, color: '#71717a', textTransform: 'uppercase', letterSpacing: 0.5 },
-  error: { color: '#ef4444', fontFamily: 'Inter', fontSize: 13, fontWeight: '500' },
+  error: { fontSize: 14, color: '#ef4444', textAlign: 'center', marginTop: 40 },
   empty: { fontSize: 14, color: '#71717a', textAlign: 'center', marginTop: 40 },
-  buttonText: { color: '#FFF', textAlign: 'center', fontFamily: 'FONTSPRING DEMO - DIN 2014 Rounded Bold', fontSize: 16, fontWeight: '700', letterSpacing: -0.32, textTransform: 'uppercase' },
 });

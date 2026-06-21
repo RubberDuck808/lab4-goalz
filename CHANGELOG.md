@@ -2,6 +2,13 @@
 
 ## Table of Contents
 
+1. [#104 Docs: add LICENSE and CNN model explainer](#104-docs-add-license-and-cnn-model-explainer--2026-06-22)
+1. [#104 Docs: second consolidation pass — ml_pipeline, game_flow, user-guide, dashboard_overview, deployment-guide](#104-docs-second-consolidation-pass--ml_pipeline-game_flow-user-guide-dashboard_overview-deployment-guide--2026-06-22)
+1. [#104 Docs: domain model, API endpoints, migration history, architecture consolidation](#104-docs-domain-model-api-endpoints-migration-history-architecture-consolidation--2026-06-21)
+1. [#104 Chore: ml/ notebook cleanup — sync with deployed NatureResNet9 pipeline](#104-chore-ml-notebook-cleanup--sync-with-deployed-natureresnet9-pipeline--2026-06-21)
+1. [#104 Fix: quiz questions never loading (Party.QuizId never assigned)](#104-fix-quiz-questions-never-loading-partyquizid-never-assigned--2026-06-21)
+1. [#104 Fix: map never centers on player + zone/task selection ignores role eligibility](#104-fix-map-never-centers-on-player--zonetask-selection-ignores-role-eligibility--2026-06-21)
+1. [#104 Fix: Expo dependency mismatches blocking mobile dev server](#104-fix-expo-dependency-mismatches-blocking-mobile-dev-server--2026-06-21)
 1. [Fix: chatbot visibility + Zones nav item](#fix-chatbot-visibility--zones-nav-item--2026-06-11)
 1. [Feat: 9-class data preparation notebook complete — 45,000 balanced images](#feat-9-class-data-preparation-notebook-complete--45000-balanced-images--2026-06-10)
 1. [Feat: 9-class data preparation notebook pushed to Kaggle](#feat-9-class-data-preparation-notebook-pushed-to-kaggle--2026-06-10)
@@ -25,6 +32,117 @@
 1. [Fix: User 2 stuck in infinite role screen after game start](#fix-user-2-stuck-in-infinite-role-screen--2026-05-13)
 1. [Feat: SignalR real-time push — replace 3s REST polling](#feat-signalr-real-time-push--2026-05-13)
 1. [Fix: Mobile/backend flow audit — multi-zone, redundancy, over-requesting](#fix-mobilebackend-flow-audit--2026-05-13)
+
+---
+
+## #104 Docs: add LICENSE and CNN model explainer — 2026-06-22
+
+### Added
+- **`LICENSE`** (MIT, copyright "Goalz contributors") — the repo had no actual LICENSE file; `README.md` previously said "not currently licensed for external distribution," which contradicted the decision to make this MIT. Updated the README's License section to match.
+- **`docs/cnn_model_explained.md`** — a plain-language explainer of the NatureResNet9 CNN (what a CNN/ResNet is, why residual connections help, walking through this model's actual Stem→4 Stages→GAP→Classifier structure, how it was trained, how a confidence score becomes an approve/reject/review decision). Linked from `agent_docs/ml_pipeline.md` (as the conceptual companion to its technical reference) and from `README.md`'s documentation map.
+
+### Fixed
+- **`ml/test_inference.py`**: was broken against the currently-deployed model — resized images directly to 224×224 (skipping the `Resize(256)→CenterCrop(224)` the model needs), never transposed to channels-first, and read the ONNX output as a single scalar instead of the real 9-class array. Rewrote it to match `ml/serve/app.py`'s `preprocess_image` and `get_recommendation` exactly. Found and fixed while writing the Key Files table for `agent_docs/ml_pipeline.md` — documenting it as a working tool would have been a new inaccuracy otherwise.
+
+### Rationale
+- A LICENSE file (not just README prose) is what GitHub/GitLab and most readers actually check; MIT was chosen so other students/classes can freely build on this work.
+- The CNN explainer was requested specifically because no existing doc explained the model conceptually for a non-ML-background reader — `agent_docs/ml_pipeline.md`'s architecture section (added the day before) is accurate but written for an AI coding agent, not a teacher or incoming student.
+
+> Issue closed after 25 min
+
+---
+
+## #104 Docs: second consolidation pass — ml_pipeline, game_flow, user-guide, dashboard_overview, deployment-guide — 2026-06-22
+
+### Changed
+- **`agent_docs/ml_pipeline.md`**: was describing the **wrong model entirely** — EfficientNetB0 (binary, ~5.3M params, MBConv blocks, Dense+Sigmoid) throughout the overview, sequence diagram, confidence table, and architecture section. The deployed model has been NatureResNet9 (9-class ResNet, ~2.8M params) since before this session (commit `5242cca`). Rewrote the confidence-threshold table to match the real asymmetric `not_nature` gate (0.55 vs the 0.85 `AutoApprove` bar) and the architecture section to match `model.py`'s actual Stem→Stage1-4→GAP→Classifier structure. Fixed the Key Files table, which pointed at the `ml/notebooks/` files deleted in the prior session's cleanup.
+- **`docs/mobile_feature_gaps.md`** §1 (Badges) and §10 (Account Security): both claimed features that are actually implemented (`BadgeService.cs` + `frontend/mobile/utils/badges.js` for badges; `UsersController.cs` change-password/profile endpoints for account security). Corrected both, including a duplicate of the badges claim in the "Partially Wired" table.
+- **`docs/game_flow.md`**: documented only 2 roles (Scout/Trailblazer) — there are 3 (Explorer). Described quiz questions as "drawn from hint fragments collected by Scouts" with a speed/streak scoring multiplier — actual implementation serves a random question from the entire pool with flat 100/0 points, no streak system. Added implementation-status notes rather than deleting the design narrative, since the speed/streak/nut-distribution content reads as intentional future design vision, not a claim about current behavior.
+- **`docs/user-guide.md`**: same role/quiz/scoring corrections as `game_flow.md` (this one is player-facing, so the gap is more consequential — it was setting real expectations for actual players). Also corrected a genuine inaccuracy: it claimed photos are "verified automatically by AI" before the box appears — in reality `MapPage.jsx`'s `completeCheckpoint()` fires unconditionally on photo upload; AI review is a separate, asynchronous staff-dashboard workflow, not a real-time gate. Replaced the illustrative badge list with the 4 actually-implemented badges, and removed the nut-distribution promise (unimplemented — appropriate to keep as design vision in `game_flow.md`, not as a promise to end users in a guide they'll actually read).
+- **`docs/dashboard_overview.md`**: added the "Check with AI" element-review feature (`ElementsPanel.jsx`), which was missing entirely from the Elements Panel description and approval-flow diagram.
+- **`docs/deployment-guide.md`**: removed the dead "Web app" Docker service reference (port 3000 — same dead service removed from `docker-compose.yml` in the prior consolidation pass) and added the missing ML service port (8001).
+
+### Rationale
+- Found via a second, more thorough audit (3 parallel Explore passes covering `docs/mobile_feature_gaps.md`, `docs/game_flow.md`, and a spot-check of `docs/dashboard_overview.md`/`design_system.md`/`user-guide.md`/`deployment-guide.md`) after the first consolidation pass — the first pass only checked docs directly tied to contradictions already found, not the full `docs/` directory.
+- Distinguished "design vision not yet built" (kept, with a status note) from "actively misleading claim" (corrected or removed) rather than treating all staleness the same way — particularly for the player-facing user guide vs. the internal design spec.
+
+> Issue closed after 60 min
+
+---
+
+## #104 Docs: domain model, API endpoints, migration history, architecture consolidation — 2026-06-21
+
+### Changed
+- **Generated `docs/db_schema.sql`** via `dotnet ef migrations script` — the actual DDL, now the single source of truth for the schema.
+- **`agent_docs/domain_model.md`** and **`PROJECT_DETAILS.md` §6**: both independently claimed only 4-5 entities were registered DbSets (`User`, `Friendship`, `Sensor`, `Element`); there are actually 21. Replaced both hand-maintained entity lists with a short purpose summary that points at `docs/db_schema.sql` instead of re-describing columns that will inevitably drift again.
+- **`CLAUDE.md` and `PROJECT_DETAILS.md` §7 "Migration History"**: both hand-listed only 3-4 migrations; there are 32. Replaced with a pointer to `dotnet ef migrations list` / the migrations folder, keeping only the one genuinely non-obvious fact (`InitialCreate` has an empty `Up()`).
+- **`agent_docs/api_and_auth.md`**: corrected the claim that dashboard login "does not issue a JWT" and that dashboard controllers have "no `[Authorize]` attribute" — both are now false; `AuthService.CheckAuth` does issue a JWT, and most dashboard controllers carry `[Authorize]`.
+- **`agent_docs/project_architecture.md`**: removed a documented `frontend/app/` web app (port 3000) that doesn't exist on disk, and fixed a stale `localhost:5049` API port example to `8080`.
+- **`agent_docs/api_endpoints.md`**: added ~20 endpoints that existed in code but were entirely undocumented (`UsersController`, dashboard `ElementController`'s AI-review workflow, `BoundaryController`, `CheckpointController`, `SensorController`, `GenerateReportsController`, dashboard `PopUpController`, `PartyController.GetParty`), and corrected several `Auth: —` rows that should have read `JWT` now that those controllers carry `[Authorize]`.
+- **`docker-compose.yml` / `docker-compose.override.yml`**: removed the dead `app` service pointing at the nonexistent `./frontend/app` — `README.md` already documented this as safe to prune.
+
+### Rationale
+- The recurring failure mode was the same fact (entity list, migration list, auth status) hand-copied into 2-3 places that then drifted independently. Fixed by making exactly one doc/generated-artifact the source of truth per fact, with everything else pointing at it instead of re-stating it.
+- Chosen after an explicit audit (3 parallel Explore passes over `agent_docs/`, `PROJECT_DETAILS.md`, and the actual controller/entity code) surfaced concrete, verifiable contradictions rather than vague staleness — each fix above is backed by a file:line citation against current code.
+
+> Issue closed after 75 min
+
+---
+
+## #104 Chore: ml/ notebook cleanup — sync with deployed NatureResNet9 pipeline — 2026-06-21
+
+### Changed
+- Safety-committed `ml/custom_model/` (NatureResNet9 training pipeline — dataset.py, model.py, train.py, evaluate.py, export.py, notebooks) and `ml/test_inference.py`, which had been sitting untracked with no git history.
+- Deleted `ml/notebooks/` (the old 2-class EfficientNetB0 pipeline: `goalz_cv_pipeline.ipynb` + the `01_data_preparation`/`02_eda`/`03_training`/`04_evaluation` series) and the gitignored `ml/logs/` run artifacts from the same pipeline — both fully superseded by the NatureResNet9 model now deployed in `ml/serve/`.
+- Pulled `rubberduck808/loggin-project-classifier` from Kaggle (same kernel ID as the old `goalz-cv-complete-pipeline` slug, renamed for the Loggin rebrand) and replaced the local 19-cell draft notebook with the real 25-cell version that produced the deployed model — the local copy was missing the onnxscript/onnxruntime install cells and the PyTorch-vs-ONNX-Runtime parity-check cell referenced in commit `5242cca`'s "parity diff 0.00000000".
+
+### Rationale
+- `ml/custom_model/` had zero git history despite being the active pipeline — any local-disk loss would have destroyed it. Committing it first made the subsequent deletion of the old pipeline safe to do without a "purge everything and re-pull from Kaggle" fallback.
+- Verified cell-by-cell (not just by title) that the Kaggle kernel was a genuine content difference, not just a rename, before overwriting anything.
+
+> Issue closed after 20 min
+
+---
+
+## #104 Fix: quiz questions never loading (Party.QuizId never assigned) — 2026-06-21
+
+### Fixed
+- `GET /api/game/quiz/question` and `POST /api/game/quiz/answer` (`QuizController.cs`) required the calling user to be in an active `Party` whose `QuizId` matched the question. Audited the entire backend and dashboard frontend: **nothing anywhere ever assigns `Party.QuizId`** — no admin UI, no default at creation. Solo play has no `Party` at all, so the endpoint always returned `403 Forbid` for everyone; `QuizPage.jsx` silently swallowed the error, leaving the screen stuck on "Loading question..." indefinitely.
+- Removed the broken party/QuizId gating; both endpoints now serve/validate against the entire question pool directly.
+
+### Rationale
+- The party-quiz linkage was dead, unreachable machinery — no feature exists anywhere to assign distinct quizzes per party, so gating on it could never have worked for any game mode, not just solo.
+
+> Issue closed after 15 min
+
+---
+
+## #104 Fix: map never centers on player + zone/task selection ignores role eligibility — 2026-06-21
+
+### Fixed
+- **Map never showed the player's actual location**: `MapPage.jsx` fetched GPS (`userLocation`) but never animated the camera toward it — only `fitToCoordinates` calls on zone boundaries existed. Added an auto-recenter effect that fires once `mapReady` + a GPS fix are both available, independent of zone/game data loading, plus a manual "locate" button as a fallback. `flyToZone` now also includes the current checkpoint and the player's live position in its fit, not just the zone outline.
+- **Task HUD silently went blank**: zone/checkpoint selection (both the initial zone assignment and the post-quiz zone-advance flow) picked the nearest zone by distance alone, with no regard for whether that zone had any checkpoints eligible for the player's randomly-assigned role (`getCpsForZone` filters by role: Scout→sensor only, Trailblazer→non-sensor only). If the nearest zone had nothing for the assigned role, `targetCp` was set to `null` and stayed `null` forever — `MapHud.jsx` renders an empty placeholder when `targetCp` is null, and the action button is gated on it too. Solo play hit this often since the role is picked at random.
+- Added `findZoneWithTasks`/`pickZoneWithTasks` to `mapHelpers.js`: walks zone candidates sorted by distance and returns the first with a real task for the role, auto-marking skipped zones as complete (since there's genuinely nothing to do there) instead of stalling. Used in both the initial-assignment effect and the zone-advance flow (`completeCheckpoint` + the post-quiz `useFocusEffect`), replacing the old role-blind `nearestLocked` helper (now removed — fully superseded).
+
+### Rationale
+- Centering on the player and selecting a role-eligible zone are both "the map shows nothing useful" symptoms with the same root pattern: code that picked a location/zone without checking it was actually relevant to what the player could see or do there.
+- Auto-skipping role-ineligible zones (rather than erroring or stalling) matches the existing design intent already visible in `GameSetupPage.jsx`'s `roleWarnings`, which warns hosts about exactly this case at setup time but the runtime never handled it gracefully.
+
+> Issue closed after 90 min
+
+---
+
+## #104 Fix: Expo dependency mismatches blocking mobile dev server — 2026-06-21
+
+### Fixed
+- `frontend/mobile`'s `expo`, `expo-font`, `expo-updates`, `expo-file-system` were patch-versions behind what the installed Expo SDK 54 expected; `npx expo install --fix` resolved them (`expo` → `~54.0.35`, `expo-font` → `~14.0.12`, `expo-updates` → `~29.0.18`), with a matching `overrides.expo-font` bump to avoid an `EOVERRIDE` conflict.
+- Added `'expo-font'` to the `plugins` array in `app.config.js` — Expo couldn't auto-edit that file (it's a dynamic JS config) but now requires the plugin registered.
+- Identified that the earlier confusing "expo@55", "typescript", and Metro-bundler prompts were unrelated to the real app — they came from a stale, orphaned `package.json`/`app.json`/`tsconfig.json` at the repo root (left over from before the app moved into `frontend/mobile/`), which `npx expo start` was accidentally being run against when launched from the repo root instead of `frontend/mobile/`.
+
+### Rationale
+- Fixed the real app's dependency versions rather than the dead root-level project, which was never the actual mobile app and shouldn't be developed against.
+
+> Issue closed after 30 min
 
 ---
 

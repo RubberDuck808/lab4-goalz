@@ -1,0 +1,24 @@
+{
+  "id": "rubberduck808/loggin-project-classifier",
+  "id_no": 122451226,
+  "title": "Loggin Project Classifier",
+  "code_file": "loggin-project-classifier.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "benjaminkz/places365",
+    "noahbadoa/plantnet-300k-images"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-images/python@sha256:e5452ce6268c2e8345cfe5141f31ca7ff47032aca46a7ea532bbb87481281d0c",
+  "machine_shape": "None"
+}

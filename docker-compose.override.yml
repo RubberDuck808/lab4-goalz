@@ -11,17 +11,6 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:8080
 
-  app:
-    build:
-      target: build
-    volumes:
-      - ./frontend/app:/app
-      - /app/node_modules
-    working_dir: /app
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "80"]
-    ports:
-      - "3000:80"
-
   dashboard:
     build:
       target: build

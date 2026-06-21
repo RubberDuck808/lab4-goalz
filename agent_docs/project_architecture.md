@@ -21,18 +21,19 @@ Five folders under `backend/Goalz/`, but only four are active:
 - Active DbContext: `backend/Goalz/Goalz.Data/Storage/AppDbContext.cs`
 - Entities: `backend/Goalz/Goalz.Domain/Entities/`
 
-## Frontend — Three Apps
+## Frontend — Two Apps
+
+There is no `frontend/app/` — `docker-compose.yml` historically had a third service pointing at it, but that folder doesn't exist; the mobile app replaced it. Only two real frontends:
 
 | App | Path | Stack | Dev port | Purpose |
 |---|---|---|---|---|
-| Mobile | `frontend/mobile/` | Expo React Native | device/emulator | Primary game UI for players |
-| Web app | `frontend/app/` | React + Vite | 3000 | Player web interface |
-| Dashboard | `frontend/dashboard/` | React + Vite + Leaflet | 3001 | Staff/admin UI with maps |
+| Mobile (Loggin) | `frontend/mobile/` | Expo React Native | device/emulator (Metro on 8081) | Primary game UI for players |
+| Dashboard | `frontend/dashboard/` | React + Vite + Leaflet | 5173 | Staff/admin UI with maps |
 
 **Mobile specifics:**
 - Env vars must be prefixed `EXPO_PUBLIC_` to be accessible in client code
-- API base URL in `frontend/mobile/.env` (gitignored) — copy from `.env.example`: `EXPO_PUBLIC_API_BASE_URL=http://localhost:5049`
+- API base URL in `frontend/mobile/.env` (gitignored) — copy from `.env.example`: `EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:8080` (must be a LAN IP, not `localhost` — a phone can't resolve that)
 - Session stored in AsyncStorage — keys `loggin_user` and `loggin_token` (typo is intentional; changing it would break existing installs)
 - All API calls go through `frontend/mobile/services/api.js`; session helpers in `frontend/mobile/services/session.js`
 
-**Web app & dashboard:** API URL is typically hardcoded or set at build time; no `.env.example` is checked in for these.
+**Dashboard:** API URL is typically hardcoded or set at build time; no `.env.example` is checked in for it.

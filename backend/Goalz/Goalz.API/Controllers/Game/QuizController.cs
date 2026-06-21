@@ -22,16 +22,6 @@ public class QuizController(AppDbContext db) : ControllerBase
         var question = await db.Questions.FirstOrDefaultAsync(q => q.Id == req.QuestionId);
         if (question == null) return NotFound("Question not found");
 
-        var activeParty = await db.PartyMembers
-            .Where(pm => pm.UserId == user.Id)
-            .Select(pm => pm.PartyGroup.Party)
-            .FirstOrDefaultAsync(p => p.Status == "InGame");
-
-        if (activeParty == null || activeParty.QuizId != question.QuizId)
-        {
-            return Forbid("You are not currently in an active game assigned to this question.");
-        }
-
         var answer = await db.Answers
             .FirstOrDefaultAsync(a => a.Id == req.AnswerId && a.QuestionId == req.QuestionId);
 
@@ -47,24 +37,15 @@ public class QuizController(AppDbContext db) : ControllerBase
         var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username);
         if (user == null) return Unauthorized();
 
-        var activeParty = await db.PartyMembers
-            .Where(pm => pm.UserId == user.Id)
-            .Select(pm => pm.PartyGroup.Party)
-            .FirstOrDefaultAsync(p => p.Status == "InGame");
-
-        if (activeParty == null || activeParty.QuizId == null)
-        {
-            return Forbid("You are not in an active game with an assigned quiz.");
-        }
-
-        var quizId = activeParty.QuizId.Value;
-        var count = await db.Questions.CountAsync(q => q.QuizId == quizId);
-        if (count == 0) return NotFound("No questions found for this quiz.");
+        // Questions aren't currently scoped per-party/quiz in any way the app sets up
+        // (no party is ever assigned a QuizId, and solo play has no party at all) —
+        // serve at random from the whole question pool instead of gating on that.
+        var count = await db.Questions.CountAsync();
+        if (count == 0) return NotFound("No questions found.");
 
         var skip = Random.Shared.Next(0, count);
         var question = await db.Questions
             .Include(q => q.Answers)
-            .Where(q => q.QuizId == quizId)
             .Skip(skip)
             .FirstOrDefaultAsync();
 

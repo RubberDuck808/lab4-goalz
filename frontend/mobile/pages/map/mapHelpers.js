@@ -105,15 +105,42 @@ export function boundaryDistanceMeters(boundary, user) {
   return Infinity;
 }
 
-export function nearestLocked(fromZone, allZones, doneIds) {
-  const locked = allZones.filter(z => !doneIds.has(z.id) && z.id !== fromZone.id);
-  if (!locked.length) return null;
-  const from = zoneCentroid(fromZone);
-  if (!from) return locked[0];
-  return locked.sort((a, b) => {
-    const ca = zoneCentroid(a), cb = zoneCentroid(b);
-    return (ca ? haversineMeters(from, ca) : Infinity) - (cb ? haversineMeters(from, cb) : Infinity);
-  })[0];
+// Returns real checkpoints for the zone, or a synthetic photo spot when
+// Trailblazer/Explorer has no element checkpoints to visit there.
+export function getEligibleCps(zone, allCps, role) {
+  const cps = getCpsForZone(zone, allCps, role);
+  if (cps.length === 0 && (role === 'Trailblazer' || role === 'Explorer')) {
+    const spot = generatePhotoSpot(zone);
+    return spot ? [spot] : [];
+  }
+  return cps;
+}
+
+// Walks `candidates` (already sorted in whatever order the caller wants — proximity,
+// nearest-locked, etc.) and returns the first zone that actually has a task for `role`.
+// Zones with nothing for this role are skipped (and returned in `skippedZoneIds` so the
+// caller can mark them complete instead of leaving the player stuck).
+export function findZoneWithTasks(candidates, allCps, role) {
+  const skippedZoneIds = [];
+  for (const zone of candidates) {
+    const cps = getEligibleCps(zone, allCps, role);
+    if (cps.length > 0) return { zone, cps, skippedZoneIds };
+    skippedZoneIds.push(zone.id);
+  }
+  return { zone: null, cps: [], skippedZoneIds };
+}
+
+// Sorts `candidates` by distance from `refPoint` (a {latitude, longitude}, or any
+// zone — its centroid is used), then returns the first with a real task for `role`.
+export function pickZoneWithTasks(refPoint, candidates, allCps, role) {
+  const from = refPoint?.latitude != null ? refPoint : zoneCentroid(refPoint);
+  const sorted = from
+    ? [...candidates].sort((a, b) => {
+        const ca = zoneCentroid(a), cb = zoneCentroid(b);
+        return (ca ? haversineMeters(from, ca) : Infinity) - (cb ? haversineMeters(from, cb) : Infinity);
+      })
+    : candidates;
+  return findZoneWithTasks(sorted, allCps, role);
 }
 
 export function checkpointColor(cp) {

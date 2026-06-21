@@ -146,8 +146,6 @@ When `docker compose up` is running:
 | Dashboard (dev) | <http://localhost:5173> | Vite dev server |
 | Mobile (Expo) | <http://localhost:8081> | Metro bundler |
 
-> The old `frontend/app` service in `docker-compose.yml` has been removed from the tree — the mobile app replaced it. The Compose service can be ignored or pruned.
-
 ---
 
 ## Environment Variables
@@ -271,6 +269,7 @@ Full rules: [docs/branch_conventions.md](docs/branch_conventions.md) · [docs/co
 |---|---|
 | [PROJECT_DETAILS.md](PROJECT_DETAILS.md) | **The comprehensive reference** — architecture, entities, endpoints, auth, migrations, known issues |
 | [docs/game_flow.md](docs/game_flow.md) | The full Loggin game design: phases, roles, scoring, leaderboard |
+| [docs/cnn_model_explained.md](docs/cnn_model_explained.md) | How the AI nature-element classifier (CNN/ResNet) works — no ML background needed |
 | [CLAUDE.md](CLAUDE.md) | Operational notes — stopping the API, running EF, dual DbContext warning |
 
 ### Architecture Decision Records
@@ -307,7 +306,7 @@ All eight ADRs live in [docs/adr/](docs/adr/):
 
 ## License
 
-Internal project — not currently licensed for external distribution.
+[MIT](LICENSE) — free to use, copy, modify, and distribute, including commercially, as long as the copyright notice is kept.
 
 ## Contact
 

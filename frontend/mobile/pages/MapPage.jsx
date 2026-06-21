@@ -20,8 +20,8 @@ import {
   extractRings,
   coordsToLatLng,
   getCpsForZone,
-  generatePhotoSpot,
-  nearestLocked,
+  getEligibleCps,
+  pickZoneWithTasks,
   checkpointColor,
   zoneCentroid,
 } from './map/mapHelpers';
@@ -98,32 +98,25 @@ export default function MapPage({ navigation, route }) {
       if (!zoneId) return;
       clearPostQuizZone();
       let nextZone = gameZonesRef.current.find(z => z.id === zoneId);
-      if (!nextZone) {
-        // gameZones changed (e.g. SignalR config update) — fall back to nearest unlocked zone
-        nextZone = gameZonesRef.current.find(z => !completedZoneIdsRef.current.has(z.id));
+      let nextCps = nextZone ? getEligibleCps(nextZone, checkpointsRef.current, roleRef.current) : [];
+      if (!nextZone || nextCps.length === 0) {
+        // zoneId is stale or has nothing for this role (e.g. gameZones changed via
+        // SignalR) — fall back to the nearest remaining zone that has a real task.
+        const candidates = gameZonesRef.current.filter(
+          z => !completedZoneIdsRef.current.has(z.id) && z.id !== zoneId,
+        );
+        const picked = pickZoneWithTasks(nextZone ?? null, candidates, checkpointsRef.current, roleRef.current);
+        if (picked.skippedZoneIds.length) {
+          setCompletedZoneIds(prev => new Set([...prev, ...picked.skippedZoneIds]));
+        }
+        nextZone = picked.zone;
+        nextCps = picked.cps;
         if (!nextZone) return;
-      }
-      const cps = getCpsForZone(nextZone, checkpointsRef.current, roleRef.current);
-      let nextCps = cps;
-      if (cps.length === 0 && (roleRef.current === 'Trailblazer' || roleRef.current === 'Explorer')) {
-        const spot = generatePhotoSpot(nextZone);
-        nextCps = spot ? [spot] : [];
       }
       setActiveZone(nextZone);
       setTargetCp(nextCps[0] ?? null);
       setPendingZoneCps(nextCps.slice(1));
-      const geom = safeParseGeometry(nextZone.boundary);
-      if (geom) {
-        const coords = extractRings(geom).flatMap(coordsToLatLng);
-        if (coords.length) {
-          setTimeout(() => {
-            mapRef.current?.fitToCoordinates(coords, {
-              edgePadding: { top: 100, right: 80, bottom: 120, left: 80 },
-              animated: true,
-            });
-          }, 400);
-        }
-      }
+      flyToZone(nextZone, nextCps[0] ?? null);
     }, [clearPostQuizZone, navigation])
   );
 
@@ -153,10 +146,15 @@ export default function MapPage({ navigation, route }) {
   }
 
   // ── Fly to zone ─────────────────────────────────────────────────────────────
-  function flyToZone(zone) {
+  // Fits the camera to the zone boundary plus the current task checkpoint and the
+  // player's live GPS position, so the player can always see both where they are
+  // and where they need to go — not just the zone outline.
+  function flyToZone(zone, cp) {
     const geom = safeParseGeometry(zone.boundary);
-    if (!geom) return;
-    const coords = extractRings(geom).flatMap(coordsToLatLng);
+    const coords = geom ? extractRings(geom).flatMap(coordsToLatLng) : [];
+    if (cp?.latitude != null) coords.push({ latitude: cp.latitude, longitude: cp.longitude });
+    const userCoords = lastCoordsRef.current ?? userLocation;
+    if (userCoords) coords.push({ latitude: userCoords.latitude, longitude: userCoords.longitude });
     if (!coords.length) return;
     setTimeout(() => {
       mapRef.current?.fitToCoordinates(coords, {
@@ -164,6 +162,18 @@ export default function MapPage({ navigation, route }) {
         animated: true,
       });
     }, 400);
+  }
+
+  // ── Recenter on the player's current GPS position ───────────────────────────
+  function recenterOnMe() {
+    const coords = lastCoordsRef.current ?? userLocation;
+    if (!coords) return;
+    mapRef.current?.animateToRegion({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      latitudeDelta: 0.004,
+      longitudeDelta: 0.004,
+    }, 500);
   }
 
   // ── Location permission + initial position ──────────────────────────────────
@@ -178,6 +188,16 @@ export default function MapPage({ navigation, route }) {
       })
       .catch(() => {});
   }, []);
+
+  // ── Auto-center on the player as soon as both the map and a GPS fix are ready ──
+  // Runs independent of zone/checkpoint loading, so the player never has to tap
+  // the recenter button just to see where they are.
+  const autoCenteredRef = useRef(false);
+  useEffect(() => {
+    if (autoCenteredRef.current || !mapReady || !userLocation) return;
+    autoCenteredRef.current = true;
+    recenterOnMe();
+  }, [mapReady, userLocation]);
 
   // ── Location watcher ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -254,47 +274,32 @@ export default function MapPage({ navigation, route }) {
     return scoped.slice(0, cap);
   }, [zones, gameConfig, userLocation]);
 
-  // ── Photo-spot fallback ─────────────────────────────────────────────────────
-  // Returns real checkpoints for the zone, or a synthetic photo spot when
-  // Trailblazer/Explorer has no element checkpoints to visit there.
-  function getTargetCpsForZone(zone) {
-    const cps = getCpsForZone(zone, checkpoints, role);
-    if (cps.length === 0 && (role === 'Trailblazer' || role === 'Explorer')) {
-      const spot = generatePhotoSpot(zone);
-      return spot ? [spot] : [];
-    }
-    return cps;
-  }
-
   // ── Initial zone assignment ─────────────────────────────────────────────────
   useEffect(() => {
     if (!role || initRef.current || !gameZones.length || !checkpoints.length) return;
     initRef.current = true;
 
     async function init() {
-      let startZone = gameZones[0];
-      try {
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        }).catch(() => null);
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      }).catch(() => null);
 
-        if (loc) {
-          const user = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-          let minDist = Infinity;
-          for (const z of gameZones) {
-            const centroid = zoneCentroid(z);
-            if (!centroid) continue;
-            const dist = haversineMeters(user, centroid);
-            if (dist < minDist) { minDist = dist; startZone = z; }
-          }
-        }
-      } catch { /* keep fallback */ }
+      let user = null;
+      if (loc) {
+        user = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+        lastCoordsRef.current = loc.coords;
+      }
 
-      const startCps = getTargetCpsForZone(startZone);
+      // Pick the nearest zone that actually has a task for this role — skipping
+      // (and marking complete) any zone with nothing eligible along the way.
+      const { zone: startZone, cps: startCps, skippedZoneIds } = pickZoneWithTasks(user, gameZones, checkpoints, role);
+      if (skippedZoneIds.length) {
+        setCompletedZoneIds(prev => new Set([...prev, ...skippedZoneIds]));
+      }
       setActiveZone(startZone);
       setTargetCp(startCps[0] ?? null);
       setPendingZoneCps(startCps.slice(1));
-      flyToZone(startZone);
+      if (startZone) flyToZone(startZone, startCps[0] ?? null);
     }
 
     init();
@@ -314,10 +319,13 @@ export default function MapPage({ navigation, route }) {
       return;
     }
 
-    // Zone complete — show quiz before advancing
+    // Zone complete — pick the next zone that actually has a task for this role,
+    // skipping (and marking complete) any zone with nothing eligible along the way.
     const newDone = new Set(completedZoneIds).add(zone.id);
+    const candidates = gameZones.filter(z => !newDone.has(z.id));
+    const { zone: nextZone, skippedZoneIds } = pickZoneWithTasks(zone, candidates, checkpoints, role);
+    skippedZoneIds.forEach(id => newDone.add(id));
     setCompletedZoneIds(newDone);
-    const nextZone = nearestLocked(zone, gameZones, newDone);
     // Store in context (survives remount): 0 = all done, N = advance to zone N
     setPostQuizZoneId(nextZone ? nextZone.id : 0);
     showFlash('Zone Complete! 🎉');
@@ -434,6 +442,10 @@ export default function MapPage({ navigation, route }) {
             </View>
           );
         })()}
+
+        <TouchableOpacity style={styles.recenterBtn} onPress={recenterOnMe} activeOpacity={0.85}>
+          <Ionicons name="locate" size={22} color="#27272a" />
+        </TouchableOpacity>
 
         {flashMsg && (
           <Animated.View style={[styles.flash, { opacity: flashAnim, transform: [{ scale: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }]}>
@@ -556,6 +568,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8ede8',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  recenterBtn: {
+    position: 'absolute', bottom: 20, right: 16, zIndex: 15,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, elevation: 6,
   },
 
   actionBtnWrap: { position: 'absolute', bottom: 20, left: 0, right: 0, zIndex: 15, alignItems: 'center' },
