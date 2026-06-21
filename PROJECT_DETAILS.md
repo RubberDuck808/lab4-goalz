@@ -270,78 +270,30 @@ Entities live in `backend/Goalz/Goalz.Domain/Entities/`. Enums live in `Goalz.Do
 
 ### Entities registered as DbSets (active)
 
-Exactly five entities are registered in `Goalz.Data/Storage/AppDbContext.cs` and have migrations:
+**Source of truth: [`docs/db_schema.sql`](docs/db_schema.sql)** — the actual generated DDL (regenerate any time with `dotnet ef migrations script --project Goalz.Data --startup-project Goalz.API --configuration Release -o docs/db_schema.sql` from `backend/Goalz`, with the API stopped). Exact column types, constraints, and indexes belong there, not hand-copied here — that's how this section went stale before (it once claimed only 5 entities were registered; there are 21).
 
-#### `User`
-```csharp
-long Id
-string Username                        // unique in practice, not enforced at DB level
-string Name
-string Email
-string PasswordHash                    // BCrypt hash via BCrypt.Net-Next
-Role Role = Role.Player                // stored as string (HasConversion)
-DateTime CreatedAt = DateTime.UtcNow
-ICollection<PartyMember> PartyMembers
-ICollection<Friendship> SentFriendships
-ICollection<Friendship> ReceivedFriendships
-```
+Entities live in `Goalz.Domain/Entities/`. Quick map of DbSet → purpose:
 
-#### `Friendship`
-```csharp
-long Id
-long RequesterId
-User Requester                         // FK, Cascade delete
-long AddresseeId
-User Addressee                         // FK, Cascade delete
-FriendshipStatus Status = Pending      // stored as string
-DateTime CreatedAt = DateTime.UtcNow
-DateTime? UpdatedAt
-```
-Unique index on `(RequesterId, AddresseeId)` — a directional pair can exist only once.
+| DbSet (`AppDbContext`) | Purpose |
+|---|---|
+| `Users` | Player/staff/admin accounts |
+| `Friendships` | Directional friend requests between users |
+| `Sensors`, `SensorData` | IoT sensor locations + their readings |
+| `Elements`, `ElementTypes` | Nature elements players photograph, and their categories |
+| `Zones`, `Boundaries` | Arboretum sub-zones and play-area boundaries (PostGIS) |
+| `Checkpoints` | Per-zone tasks (sensor / photo / element) a player visits |
+| `Parties`, `PartyMembers`, `PartyGroups` | Multiplayer game sessions and their members/groups |
+| `PartyGroupAnswers` | Quiz answers submitted per group |
+| `PartyVisitedCheckpoints` | Which checkpoints a party has completed |
+| `Quizzes`, `Questions`, `Answers` | Quiz question bank — served from the whole pool, not scoped per-party (see §10 known quirks) |
+| `UserStatistics`, `UserPointsLogs`, `UserBadges` | Player stats, points history, earned badges |
+| `PopUps` | Informational pop-ups shown after visiting a sensor/element |
 
-#### `Sensor`
-```csharp
-long Id
-long Temp
-long Humidity
-Point Geo                              // NetTopologySuite / PostGIS geometry
-// long InformationId                  // commented out — not active
-// Information Information             // commented out
-```
+### Entities NOT in the active DbContext
 
-#### `Element`
-```csharp
-long Id
-long ElementName                       // note: long, not string (likely an ID into a lookup table)
-long ElementType
-Point Geom                             // NetTopologySuite / PostGIS geometry
-string ImageUrl
-bool IsGreen
-```
+Only one: `Information` (`Goalz.Domain/Entities/Information.cs`) — no `DbSet`, no migration, not referenced by any other entity. Fully orphaned; safe to ignore or delete.
 
-#### `Zone`
-```csharp
-long Id
-string Name
-string ZoneType                        // "boundary" | "area" | "path" (soft enum)
-string Color = "#33A661"
-Geometry Boundary                      // PostGIS — Polygon, MultiPolygon, or LineString
-```
-
-### Entities defined but NOT in the active DbContext
-
-These exist in `Goalz.Domain/Entities/` but there's **no `DbSet` and no migration** in `Goalz.Data`. To use them, add a `DbSet<T>` to `AppDbContext` and create a migration first.
-
-- `Quiz` — `Id`, `Questions`, `Parties`
-- `Question` — `Id`, `QuizId`, `QuestionTxt`, `Quiz`, `Answers`
-- `Answer` — `Id`, `QuestionId`, `AnswerTxt`, `IsCorrect`, navigation collections
-- `Party` — `Id`, `QuizId`, `Name`, `Code` (long), `Quiz`, `PartyGroups`
-- `PartyGroup` — `Id`, `PartyId`, `Name`, `Party`, `PartyMembers`, `PartyGroupAnswers`
-- `PartyMember` — `Id`, `PartyGroupId`, `UserId`, navigations
-- `PartyGroupAnswer` — `Id`, `PartyGroupId`, `AnswerId`, `ReceivedPoints`, navigations
-- `Information` — `Id`, `InfoTxt` (long), `NewColumn` (long), `Sensors` — fully orphaned, not even referenced by other entities
-
-The legacy `Goalz.Infrastructure/Data/AppDbContext.cs` **does** register Quiz/Question/Answer/Party/etc., but that context is dormant.
+The legacy `Goalz.Infrastructure/Data/AppDbContext.cs` is a separate, dormant context — see [CLAUDE.md](CLAUDE.md)'s "Dual DbContext Warning."
 
 ### Enums
 
@@ -406,12 +358,9 @@ All repositories live in `Goalz.Data/Repositories/` and implement interfaces in 
 
 ### Migrations — active chain (`Goalz.Data/Migrations/`)
 
-Applied in order:
+32 migrations and counting — don't hand-list them here (that's exactly how this section went stale before). To see the current chain: `ls backend/Goalz/Goalz.Data/Migrations/*.cs` or `dotnet ef migrations list --project Goalz.Data --startup-project Goalz.API`. For the resulting schema, see **[`docs/db_schema.sql`](docs/db_schema.sql)** (source of truth, regenerate per the command in §6).
 
-1. **`20260415105321_InitialCreate`** — Effectively a placeholder. The tables already existed from the legacy Infrastructure migrations; this one carries no schema changes on `Up()`.
-2. **`20260415105504_AddUserCreatedAt`** — Adds `Users.CreatedAt` (`timestamptz NOT NULL`).
-3. **`20260415111426_AddFriendships`** — Creates `Friendships` with PK, both User FKs (Cascade), `Status text`, `CreatedAt timestamptz`, `UpdatedAt timestamptz null`, indexes `IX_Friendships_AddresseeId` and `IX_Friendships_RequesterId_AddresseeId` (unique).
-4. **`20260420112432_AddZones`** — Creates `Zones` with `Id`, `Name`, `ZoneType`, `Color`, `Boundary` (PostGIS `geometry`, NOT NULL).
+One genuinely non-obvious fact worth keeping here: **`20260415105321_InitialCreate` is a placeholder** — the tables already existed from the legacy Infrastructure migrations, so it carries no schema changes on `Up()`.
 
 ### Migrations — legacy chain (`Goalz.Infrastructure/Migrations/`)
 

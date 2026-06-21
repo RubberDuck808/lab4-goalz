@@ -79,12 +79,9 @@ Despite living in the `Goalz.Application/` project folder, all files there use `
 
 ## Migration History
 
-`Goalz.Data/Migrations/` is the active migration chain:
-1. `InitialCreate` — empty Up() (schema already existed from Infrastructure migrations)
-2. `AddUserCreatedAt` — adds `CreatedAt` to Users
-3. `AddFriendships` — creates `Friendships` table with both User FKs and unique index on `(RequesterId, AddresseeId)`
+`Goalz.Data/Migrations/` is the active migration chain (32+ migrations and growing — don't hand-list them here; run `dotnet ef migrations list --project Goalz.Data --startup-project Goalz.API` or `ls backend/Goalz/Goalz.Data/Migrations/*.cs` for the current chain). For the resulting schema, see [`docs/db_schema.sql`](docs/db_schema.sql) (regenerate with the command in `PROJECT_DETAILS.md` §6/§7 — API must be stopped first).
 
-`Goalz.Infrastructure/Migrations/` is an older, separate chain — do not add to it.
+The first migration, `InitialCreate`, has an empty `Up()` — the schema already existed from the legacy `Goalz.Infrastructure/Migrations/` chain, which is older, separate, and dormant — do not add to it.
 
 ## Changelog
 After every change, you must automatically add an entry 

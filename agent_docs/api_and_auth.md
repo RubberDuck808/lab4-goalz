@@ -5,7 +5,7 @@
 All routes use one of two prefixes:
 
 - `api/game/*` — player-facing (mobile/web). Auth via JWT Bearer.
-- `api/dashboard/*` — staff/admin. Separate session-based auth (no JWT).
+- `api/dashboard/*` — staff/admin. Also JWT Bearer (separate login endpoint/DTO, same token mechanism — see "Dashboard Auth" below).
 
 **Game controllers** hardcode their full route: `[Route("api/game/friends")]`
 
@@ -43,4 +43,6 @@ The policy name is `"auth"`. Apply it with `[EnableRateLimiting("auth")]`.
 
 ## Dashboard Auth
 
-Dashboard login (`POST /api/dashboard/auth/login`) takes `LoginRequest { Email, Password }` and returns the same DTO — it does **not** issue a JWT. The dashboard controllers currently have **no `[Authorize]` attribute** — enforcement is incomplete.
+Dashboard login (`POST /api/dashboard/auth/login`) takes `LoginRequest { Email, Password }` and, via `AuthService.CheckAuth`, **does issue a JWT** (`_jwtService.Generate(user.Email, user.Role.ToString())`, returned as `Token` on `DashboardLoginResponse`) — same JWT scheme as the game login, just a separate endpoint/DTO. The "Route Organization" note above about dashboard auth being "separate session-based auth (no JWT)" is aspirational/historical, not current behavior.
+
+Most dashboard controllers now carry `[Authorize]` (`OverviewController`, `ZoneController`, `BoundaryController`, `CheckpointController`, `ElementController`, `ImportDatasetController`, `PopUpController`, `GenerateReportsController`). Staff-management actions on `AuthController` (`create-user`, `users`, `users/{id}/role`, `users/{id}`) require `[Authorize(Roles = "Admin")]`. `SensorController` currently has no `[Authorize]` — worth flagging if you touch it.

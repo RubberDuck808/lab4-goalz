@@ -13,16 +13,16 @@ All endpoints are served by `backend/Goalz/Goalz.API`. See `api_and_auth.md` for
 
 ```
 Body:    { email: string, name: string, password: string }
-200 OK:  { email: string, name: string, password: string }   (LoginRequest echoed back)
+200 OK:  DashboardLoginResponse — includes { token: string, ... }
 404:     Not Found
 ```
 
-> Note: `name` field is present in `LoginRequest` but unused for login logic. Returns the DTO object, not a JWT.
+> Note: `name` field is present in `LoginRequest` but unused for login logic. Despite the doc historically claiming otherwise, this **does** issue a JWT (same mechanism as `/api/game/auth/login`) — see `agent_docs/api_and_auth.md`.
 
 ---
 
 ### GET `/api/dashboard/overview`
-**Auth:** — | **File:** `Controllers/Dashboard/OverviewController.cs`
+**Auth:** JWT | **File:** `Controllers/Dashboard/OverviewController.cs`
 
 ```
 200 OK:  { sensors: Sensor[], element: Element[] }
@@ -33,7 +33,7 @@ Sensors include PostGIS `geo` point. Elements include PostGIS `geom` point, `ima
 ---
 
 ### GET `/api/dashboard/zones`
-**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ZoneController.cs`
 
 ```
 200 OK:  [{ id: long, name: string, zoneType: string, color: string, boundary: GeoJSON geometry }]
@@ -42,7 +42,7 @@ Sensors include PostGIS `geo` point. Elements include PostGIS `geom` point, `ima
 ---
 
 ### POST `/api/dashboard/zones`
-**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ZoneController.cs`
 
 ```
 Body:    { name: string, zoneType: string, color: string, boundary: GeoJSON geometry }
@@ -53,7 +53,7 @@ Body:    { name: string, zoneType: string, color: string, boundary: GeoJSON geom
 ---
 
 ### PUT `/api/dashboard/zones/{id}`
-**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ZoneController.cs`
 
 ```
 Route:   id: long
@@ -68,7 +68,7 @@ Body:    { name: string, zoneType: string, color: string, boundary?: GeoJSON geo
 ---
 
 ### DELETE `/api/dashboard/zones/{id}`
-**Auth:** — | **File:** `Controllers/Dashboard/ZoneController.cs`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ZoneController.cs`
 
 ```
 Route:   id: long
@@ -79,12 +79,109 @@ Route:   id: long
 ---
 
 ### POST `/api/dashboard/importdataset`
-**Auth:** — | **File:** `Controllers/Dashboard/ImportDatasetController.cs`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ImportDatasetController.cs`
 
 ```
-Body:    multipart/form-data — List<IFormFile> files
-200 OK:  [{ columnNames: string[], values: string[][] }, ...]
-400:     Bad Request
+Body:    multipart/form-data — List<IFormFile> files (.csv only, 5 MB max each)
+200 OK:  [[string, ...], ...]   (parsed rows per file)
+400:     "No file uploaded." | "File size exceeds 5MB limit." | "Only CSV files are allowed."
+```
+
+---
+
+### POST `/api/dashboard/importdataset/store`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ImportDatasetController.cs`
+
+```
+Body:    string[]   (CSV records, semicolon-delimited, first row = headers)
+200 OK:  "Elements successfully stored!"
+400:     "Invalid dataset format: ..."
+```
+
+Persists previously-parsed rows as `Element` records.
+
+---
+
+### POST `/api/dashboard/auth/create-user`
+**Auth:** JWT (Admin role) | **File:** `Controllers/Dashboard/AuthController.cs`
+
+```
+Body:    { email: string, password: string (min 8 chars) }
+201:     Created — staff user object
+401:     "Only admins can create new users."
+409:     "An account with this email already exists."
+```
+
+---
+
+### GET `/api/dashboard/auth/users`
+**Auth:** JWT (Admin role) | **File:** `Controllers/Dashboard/AuthController.cs`
+
+```
+200 OK:  staff user[]
+401:     "Only admins can view users."
+```
+
+---
+
+### PUT `/api/dashboard/auth/users/{id}/role`
+**Auth:** JWT (Admin role) | **File:** `Controllers/Dashboard/AuthController.cs`
+
+```
+Route:   id: long
+Body:    { newRole: string }   ← "Staff" or "Admin"
+204:     No Content
+400:     "Role must be 'Staff' or 'Admin'."
+401:     "Only admins can change user roles."
+404:     "User not found."
+```
+
+---
+
+### DELETE `/api/dashboard/auth/users/{id}`
+**Auth:** JWT (Admin role) | **File:** `Controllers/Dashboard/AuthController.cs`
+
+```
+Route:   id: long
+204:     No Content
+401:     "Only admins can delete users."
+404:     "User not found."
+```
+
+---
+
+### POST `/api/dashboard/sensors/{sensorId}/popup`
+**Auth:** JWT | **File:** `Controllers/Dashboard/PopUpController.cs`
+
+```
+Route:   sensorId: long
+Body:    CreatePopUpRequest
+204:     No Content
+404:     "Sensor {id} not found."
+409:     "This sensor already has a pop-up message."
+```
+
+---
+
+### PUT `/api/dashboard/sensors/{sensorId}/popup`
+**Auth:** JWT | **File:** `Controllers/Dashboard/PopUpController.cs`
+
+```
+Route:   sensorId: long
+Body:    UpdatePopUpRequest
+204:     No Content
+404:     "No pop-up found for sensor {id}."
+```
+
+---
+
+### DELETE `/api/dashboard/sensors/{sensorId}/popup`
+**Auth:** JWT | **File:** `Controllers/Dashboard/PopUpController.cs`
+
+```
+Route:   sensorId: long
+204:     No Content
+404:     "Sensor {id} not found." | "No pop-up found for sensor {id}."
 ```
 
 ---
@@ -111,6 +208,70 @@ Body:    { email: string, password: string }
 Body:    { username: string, name: string, email: string, password: string }
 201 OK:  { token: string, username: string, name: string, email: string }
 409:     Conflict (email or username already taken)
+```
+
+---
+
+## Game — Users (`/api/game/users/`)
+
+Controller has `[Authorize]` — all endpoints require JWT (including `stats/{username}`, despite no per-method override).
+
+### PUT `/api/game/users/profile`
+**Auth:** JWT | **File:** `Controllers/Game/UsersController.cs`
+
+```
+Body:    { username?: string, email?: string, avatarId?: int }
+200 OK:  updated profile
+409:     "This username is already taken." | "An account with this email already exists."
+404:     Not Found
+```
+
+---
+
+### POST `/api/game/users/solo/complete`
+**Auth:** JWT | **File:** `Controllers/Game/UsersController.cs`
+
+```
+Body:    { checkpointCount: int, quizScore: int }
+200 OK:  (no body)
+```
+
+Records stats for a finished solo game (party games record stats via `/api/game/party/{id}/complete` instead).
+
+---
+
+### GET `/api/game/users/stats`
+**Auth:** JWT | **File:** `Controllers/Game/UsersController.cs`
+
+```
+200 OK:  { checkpointsVisited: int, picturesTaken: int, partiesJoined: int, gamesPlayed: int,
+           totalPoints: long, badges: [{ ... }] }
+```
+
+Stats for the calling user.
+
+---
+
+### GET `/api/game/users/stats/{username}`
+**Auth:** JWT | **File:** `Controllers/Game/UsersController.cs`
+
+```
+Route:   username: string
+200 OK:  same shape as /stats above
+```
+
+Stats for any user — used for viewing a friend's profile.
+
+---
+
+### POST `/api/game/users/change-password`
+**Auth:** JWT | **File:** `Controllers/Game/UsersController.cs`
+
+```
+Body:    { currentPassword: string, newPassword: string }
+204:     No Content
+400:     "Current password is incorrect."
+404:     Not Found
 ```
 
 ---
@@ -248,6 +409,19 @@ Returns all readings for a sensor, ordered newest-first.
 
 ---
 
+### GET `/api/game/sensors/{sensorId}/popup`
+**Auth:** — | **File:** `Controllers/Game/PopUpController.cs`
+
+```
+Route:   sensorId: long
+200 OK:  pop-up object (infoText, etc.)
+404:     Not Found
+```
+
+The informational pop-up shown after a player checks a sensor (created/edited via the dashboard endpoints above). Genuinely public — no `[Authorize]` on this controller.
+
+---
+
 ## Game — Quiz (`/api/game/quiz/`)
 
 Controller has `[Authorize]` — both endpoints require JWT.
@@ -260,7 +434,7 @@ Controller has `[Authorize]` — both endpoints require JWT.
 404:     No questions in DB
 ```
 
-Answers are shuffled randomly on each call. `isCorrect` is **not** included — use `POST /answer` to verify.
+Answers are shuffled randomly on each call. `isCorrect` is **not** included — use `POST /answer` to verify. Served at random from the **entire** question pool — not scoped per-party or per-quiz (nothing in the app ever assigns `Party.QuizId`, so the old party-gated design was unreachable; fixed in this session).
 
 ---
 
@@ -298,6 +472,18 @@ Body:    { name: string, groupSize?: int, boundaryId?: long, zoneCount?: int, ch
 Body:    { code: long }
 200 OK:  { id: long, name: string, code: long, members: [string, ...] }
 404:     Not Found
+```
+
+---
+
+### GET `/api/game/party/{id}`
+**Auth:** JWT | **File:** `Controllers/Game/PartyController.cs`
+
+```
+Route:   id: int
+200 OK:  party object
+403:     Forbidden — calling user is not a member of this party
+404:     "Party not found"
 ```
 
 ---
@@ -399,27 +585,292 @@ Body:    { elementName: string, elementType: string, latitude: float, longitude:
 
 ---
 
+## Dashboard — Elements (`/api/dashboard/elements/`)
+
+Controller has `[Authorize]`. This is the AI image-review workflow — see [agent_docs/ml_pipeline.md](ml_pipeline.md) for the classifier behind `/analyse`.
+
+### GET `/api/dashboard/elements/types`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+200 OK:  [{ id: int, name: string }, ...]
+```
+
+---
+
+### POST `/api/dashboard/elements`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+Body:    CreateElementRequest
+201:     Created — element object
+400:     Bad Request
+```
+
+Staff-created elements are auto-approved (`IsApproved = true`) — skips the AI review queue below.
+
+---
+
+### GET `/api/dashboard/elements/pending`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+200 OK:  element[]   (IsApproved = false, awaiting staff review)
+```
+
+---
+
+### POST `/api/dashboard/elements/{id}/analyse`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+Route:   id: long
+Query:   force?: bool = false
+202:     Accepted — analysis queued/dispatched to the ML service
+400:     Bad Request
+404:     Not Found
+```
+
+Triggers AI classification for one element; sets `AiClassification`/`AnalysedAt`. `force` re-runs analysis even if already analysed.
+
+---
+
+### PUT `/api/dashboard/elements/{id}/approve`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     Not Found
+```
+
+---
+
+### PUT `/api/dashboard/elements/{id}/reject`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     Not Found
+```
+
+---
+
+### PUT `/api/dashboard/elements/{id}`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+Route:   id: long
+Body:    UpdateElementRequest
+204:     No Content
+404:     "Element {id} not found."
+```
+
+---
+
+### DELETE `/api/dashboard/elements/{id}`
+**Auth:** JWT | **File:** `Controllers/Dashboard/ElementController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     "Element {id} not found."
+```
+
+---
+
+## Dashboard — Boundaries (`/api/dashboard/boundaries/`)
+
+Controller has `[Authorize]`.
+
+### GET `/api/dashboard/boundaries`
+**Auth:** JWT | **File:** `Controllers/Dashboard/BoundaryController.cs`
+
+```
+200 OK:  boundary[]
+```
+
+---
+
+### POST `/api/dashboard/boundaries`
+**Auth:** JWT | **File:** `Controllers/Dashboard/BoundaryController.cs`
+
+```
+Body:    { name: string, color: string, boundary: GeoJSON geometry }
+204:     No Content
+400:     "Boundary name is required." | "A valid GeoJSON geometry is required."
+```
+
+---
+
+### PUT `/api/dashboard/boundaries/{id}`
+**Auth:** JWT | **File:** `Controllers/Dashboard/BoundaryController.cs`
+
+```
+Route:   id: long
+204:     No Content
+400:     "Boundary name is required."
+404:     Not Found
+```
+
+---
+
+### DELETE `/api/dashboard/boundaries/{id}`
+**Auth:** JWT | **File:** `Controllers/Dashboard/BoundaryController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     Not Found
+```
+
+---
+
+### GET `/api/dashboard/boundaries/{id}/generate-preview`
+**Auth:** JWT | **File:** `Controllers/Dashboard/BoundaryController.cs`
+
+```
+Route:   id: long
+Query:   count: int = 4
+200 OK:  GeoJSON geometry[]   (auto-generated sub-zone previews within the boundary)
+```
+
+---
+
+## Dashboard — Checkpoints (`/api/dashboard/checkpoints/`)
+
+### GET `/api/dashboard/checkpoints`
+**Auth:** JWT | **File:** `Controllers/Dashboard/CheckpointController.cs`
+
+```
+200 OK:  checkpoint[]
+```
+
+Dashboard-side equivalent of `/api/game/map/checkpoints` — same data, staff-facing route.
+
+---
+
+## Dashboard — Sensors (`/api/dashboard/sensors/`)
+
+**No `[Authorize]` on this controller** — every endpoint below is public except none (only `data` is explicitly `[AllowAnonymous]`, which is redundant given the class has no auth at all). Worth flagging if you touch this controller — sensor CRUD from the dashboard is currently unauthenticated.
+
+### POST `/api/dashboard/sensors`
+**Auth:** — | **File:** `Controllers/Dashboard/SensorController.cs`
+
+```
+Body:    { sensorName: string, longitude: float (-180..180), latitude: float (-90..90) }
+201:     Created — sensor object
+```
+
+---
+
+### PUT `/api/dashboard/sensors/{id}`
+**Auth:** — | **File:** `Controllers/Dashboard/SensorController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     "Sensor {id} not found."
+```
+
+---
+
+### DELETE `/api/dashboard/sensors/{id}`
+**Auth:** — | **File:** `Controllers/Dashboard/SensorController.cs`
+
+```
+Route:   id: long
+204:     No Content
+404:     "Sensor {id} not found."
+```
+
+---
+
+### POST `/api/dashboard/sensors/data`
+**Auth:** — (`[AllowAnonymous]`) | **File:** `Controllers/Dashboard/SensorController.cs`
+
+```
+Body:    SensorDataDto
+200 OK:  "Data successfully stored!"
+400/404: validation errors
+```
+
+The IoT ingestion endpoint — ESP32 hardware posts readings here directly, hence no auth.
+
+---
+
+### GET `/api/dashboard/sensors/{id}/data`
+**Auth:** — | **File:** `Controllers/Dashboard/SensorController.cs`
+
+```
+Route:   id: long
+Query:   from?: datetime, to?: datetime, limit?: int   (defaults to last 7 days if neither from nor limit given)
+200 OK:  sensor reading[]
+```
+
+---
+
+### GET `/api/dashboard/sensors/dashboard/sensor-summary`
+**Auth:** — | **File:** `Controllers/Dashboard/SensorController.cs`
+
+```
+200 OK:  aggregated sensor summary data
+```
+
+---
+
+## Dashboard — Reports (`/api/dashboard/generate`)
+
+### POST `/api/dashboard/generate`
+**Auth:** JWT | **File:** `Controllers/Dashboard/GenerateReportsController.cs`
+
+```
+Body:    { dateTimeFrom: datetime, dateTimeTo: datetime, reportType: "CSV", reportContents: ReportSettingsDto }
+200 OK:  text/csv stream (Content-Disposition: attachment; filename=landscape-elements.csv)
+400:     "File type not supported!" (only CSV is implemented) | validation errors
+```
+
+Streams rows directly to the response — large reports don't buffer in memory.
+
+---
+
 ## Quick Reference
 
 | Method | Route | Auth | Purpose |
 |---|---|---|---|
-| POST | `/api/dashboard/auth/login` | — | Dashboard login |
-| GET | `/api/dashboard/overview` | — | Sensor + element map data |
-| POST | `/api/dashboard/importdataset` | — | Upload dataset files |
-| GET | `/api/dashboard/zones` | — | List all zones |
-| POST | `/api/dashboard/zones` | — | Create zone |
-| PUT | `/api/dashboard/zones/{id}` | — | Update zone name/type/color/boundary |
-| DELETE | `/api/dashboard/zones/{id}` | — | Delete zone |
+| POST | `/api/dashboard/auth/login` | — | Dashboard login → JWT |
+| POST | `/api/dashboard/auth/create-user` | JWT (Admin) | Create staff user |
+| GET | `/api/dashboard/auth/users` | JWT (Admin) | List staff users |
+| PUT | `/api/dashboard/auth/users/{id}/role` | JWT (Admin) | Change a user's role |
+| DELETE | `/api/dashboard/auth/users/{id}` | JWT (Admin) | Delete a user |
+| GET | `/api/dashboard/overview` | JWT | Sensor + element map data |
+| POST | `/api/dashboard/importdataset` | JWT | Upload + parse dataset CSVs |
+| POST | `/api/dashboard/importdataset/store` | JWT | Persist parsed rows as Elements |
+| GET | `/api/dashboard/zones` | JWT | List all zones |
+| POST | `/api/dashboard/zones` | JWT | Create zone |
+| PUT | `/api/dashboard/zones/{id}` | JWT | Update zone name/type/color/boundary |
+| DELETE | `/api/dashboard/zones/{id}` | JWT | Delete zone |
+| POST | `/api/dashboard/sensors/{sensorId}/popup` | JWT | Create sensor pop-up |
+| PUT | `/api/dashboard/sensors/{sensorId}/popup` | JWT | Update sensor pop-up |
+| DELETE | `/api/dashboard/sensors/{sensorId}/popup` | JWT | Delete sensor pop-up |
 | POST | `/api/game/auth/login` | — RL | Player login → JWT |
 | POST | `/api/game/auth/signup` | — RL | Player registration → JWT |
 | GET | `/api/game/map/zones` | — | All zones with GeoJSON boundary |
 | GET | `/api/game/map/boundaries` | — | All boundaries with GeoJSON boundary |
 | GET | `/api/game/map/checkpoints` | — | All checkpoints (sensor + element) |
 | GET | `/api/game/sensors/{id}/data` | — | Sensor readings for a sensor |
+| GET | `/api/game/sensors/{sensorId}/popup` | — | Get sensor's info pop-up |
+| PUT | `/api/game/users/profile` | JWT | Update own profile |
+| POST | `/api/game/users/solo/complete` | JWT | Record solo-game stats |
+| GET | `/api/game/users/stats` | JWT | Own stats |
+| GET | `/api/game/users/stats/{username}` | JWT | Any user's stats |
+| POST | `/api/game/users/change-password` | JWT | Change own password |
 | GET | `/api/game/quiz/question` | JWT | Random quiz question (no isCorrect) |
 | POST | `/api/game/quiz/answer` | JWT | Submit answer → server returns correct + points |
 | POST | `/api/game/party/create` | JWT | Create party |
 | POST | `/api/game/party/join` | JWT | Join party by code |
+| GET | `/api/game/party/{id}` | JWT | Get party (must be a member) |
 | GET | `/api/game/party/{id}/lobby` | JWT | Lobby state |
 | POST | `/api/game/party/{id}/start` | JWT | Start game, assign roles |
 | GET | `/api/game/party/{id}/state` | JWT | Polled game state |
@@ -435,5 +886,26 @@ Body:    { elementName: string, elementType: string, latitude: float, longitude:
 | DELETE | `/api/game/friends/connection` | JWT | Remove friend |
 | GET | `/api/game/elements/types` | — | List element types |
 | POST | `/api/game/elements` | JWT | Submit a new element |
+| GET | `/api/dashboard/elements/types` | JWT | List element types (dashboard) |
+| POST | `/api/dashboard/elements` | JWT | Create element (auto-approved) |
+| GET | `/api/dashboard/elements/pending` | JWT | List elements awaiting review |
+| POST | `/api/dashboard/elements/{id}/analyse` | JWT | Trigger AI classification |
+| PUT | `/api/dashboard/elements/{id}/approve` | JWT | Approve pending element |
+| PUT | `/api/dashboard/elements/{id}/reject` | JWT | Reject pending element |
+| PUT | `/api/dashboard/elements/{id}` | JWT | Update element |
+| DELETE | `/api/dashboard/elements/{id}` | JWT | Delete element |
+| GET | `/api/dashboard/boundaries` | JWT | List boundaries |
+| POST | `/api/dashboard/boundaries` | JWT | Create boundary |
+| PUT | `/api/dashboard/boundaries/{id}` | JWT | Update boundary |
+| DELETE | `/api/dashboard/boundaries/{id}` | JWT | Delete boundary |
+| GET | `/api/dashboard/boundaries/{id}/generate-preview` | JWT | Auto-generate sub-zone previews |
+| GET | `/api/dashboard/checkpoints` | JWT | List all checkpoints |
+| POST | `/api/dashboard/sensors` | — | Create sensor |
+| PUT | `/api/dashboard/sensors/{id}` | — | Update sensor |
+| DELETE | `/api/dashboard/sensors/{id}` | — | Delete sensor |
+| POST | `/api/dashboard/sensors/data` | — | IoT ingestion endpoint |
+| GET | `/api/dashboard/sensors/{id}/data` | — | Sensor readings (dashboard) |
+| GET | `/api/dashboard/sensors/dashboard/sensor-summary` | — | Aggregated sensor summary |
+| POST | `/api/dashboard/generate` | JWT | Generate CSV report |
 
 `—` = public, `RL` = rate limited (10/min), `JWT` = Bearer token required
