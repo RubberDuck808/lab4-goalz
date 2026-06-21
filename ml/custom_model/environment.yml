@@ -1,0 +1,26 @@
+name: goalz-custom-ml
+channels:
+  - pytorch
+  - nvidia        # REQUIRED for GPU PyTorch. Without this, conda resolves
+                  # to the CPU-only build and the T4 GPU sits idle.
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pytorch>=2.4
+  - pytorch-cuda=12.1   # REQUIRED. Selects the CUDA-enabled PyTorch variant.
+                        # Without this line, pytorch>=2.4 installs CPU-only.
+  - torchvision>=0.19
+  - torchaudio          # prevents conda solver conflicts even if unused
+  - onnx>=1.16
+  - onnxruntime>=1.18
+  - pillow>=10.0        # 10.0+ uses Image.Resampling.BILINEAR not Image.BILINEAR
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - tqdm
+  - tensorboard
+  - jupyter
+  - notebook

@@ -1,0 +1,22 @@
+{
+  "id": "rubberduck808/goalz-cv-complete-pipeline",
+  "id_no": 122451226,
+  "title": "Goalz CV Complete Pipeline",
+  "code_file": "goalz-cv-complete-pipeline.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [],
+  "dataset_sources": [
+    "benjaminkz/places365",
+    "noahbadoa/plantnet-300k-images"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-images/python@sha256:e5452ce6268c2e8345cfe5141f31ca7ff47032aca46a7ea532bbb87481281d0c",
+  "machine_shape": "Gpu"
+}
