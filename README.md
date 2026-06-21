@@ -8,7 +8,8 @@ Goalz is a location-based sustainability game built around the Humber Arboretum.
 |---|---|---|
 | **Loggin** (mobile) | Players (primary UI) | Expo React Native 0.81 + NativeWind |
 | **Dashboard** (web) | Staff / admins | React 19 + Vite + Tailwind v4 + Leaflet |
-| **API** | Both clients + IoT | ASP.NET Core 9 + EF Core + PostgreSQL / PostGIS |
+| **API** | Both clients + IoT | ASP.NET Core 9 + EF Core + PostgreSQL / PostGIS + Supabase Storage |
+| **ML service** | API (image classification) | FastAPI + ONNX, trained on Kaggle |
 
 For the deep reference (every entity, every endpoint, every service, every config key) see **[PROJECT_DETAILS.md](PROJECT_DETAILS.md)**.
 
@@ -50,12 +51,11 @@ Edit `.env` and set, at minimum:
 
 - `POSTGRES_PASSWORD` — any local password
 - `JWT_SECRET` — **32+ character random string** (the API refuses to start otherwise)
-- `MINIO_ROOT_PASSWORD` — any local password
 
 ### 2 — Run the backend stack
 
 ```bash
-docker compose up postgres minio backend
+docker compose up postgres backend
 ```
 
 Swagger is live at <http://localhost:8080/swagger>. The dev override mounts source and runs `dotnet watch`, so edits hot-reload.
@@ -95,6 +95,9 @@ lab4-goalz/
 ├── frontend/
 │   ├── mobile/                    # Loggin — Expo React Native (primary UI)
 │   └── dashboard/                 # Staff admin — React + Vite + Leaflet
+├── ml/                             # Nature-element image classifier
+│   ├── custom_model/                # Training code + Kaggle notebooks (trained on Kaggle, pulled/pushed via kaggle_pull/_kaggle_push)
+│   └── serve/                       # FastAPI + ONNX inference service (deployed to Google Cloud Run)
 ├── database/
 │   ├── README.md                  # Migration and secrets guide
 │   └── schema/                    # Reference SQL dumps
@@ -121,15 +124,16 @@ lab4-goalz/
 
 | Layer | Technology |
 |---|---|
-| Mobile | Expo 54 · React Native 0.81 · React 19 · NativeWind · React Navigation 7 · `react-native-ble-plx` for sensor scanning |
+| Mobile | Expo 54 · React Native 0.81 · React 19 · NativeWind · React Navigation 7 · `react-native-ble-plx` for sensor scanning · shipped to devices via Expo |
 | Dashboard | React 19 · Vite 8 · Tailwind CSS v4 · React Router 7 · Leaflet 1.9 + Leaflet-Draw (loaded via CDN) |
 | Backend | ASP.NET Core 9 · EF Core 9 · Npgsql + NetTopologySuite (PostGIS) · JWT Bearer · BCrypt · Swashbuckle |
+| ML service | FastAPI + ONNX nature-element classifier, model trained on Kaggle (see [ml/](ml/) and [agent_docs/ml_pipeline.md](agent_docs/ml_pipeline.md)) |
 | Database | PostgreSQL 16 (Docker locally, Supabase in prod) with PostGIS |
-| Object storage | MinIO (S3-compatible) |
+| Object storage | Supabase Storage (photo uploads from mobile) |
 | CI/CD | GitLab CI — `install` → `build` stages |
-| Hosting | Microsoft Azure (see [ADR 007](docs/adr/0007_host_on_azure.md)) |
+| Hosting | Google Cloud Run — backend, dashboard, and ML service (see [docs/deployment-guide.md](docs/deployment-guide.md)) |
 
-The rationale for each choice is captured in [docs/adr/](docs/adr/).
+The rationale for each choice is captured in [docs/adr/](docs/adr/) — note that [ADR 006](docs/adr/0006_use_minio_object_storage.md) (MinIO) and [ADR 007](docs/adr/0007_host_on_azure.md) (Azure) are superseded by the Supabase Storage and Google Cloud Run setup above; the ADRs are kept as historical record but no longer reflect what's deployed.
 
 ---
 
@@ -142,9 +146,9 @@ When `docker compose up` is running:
 | Backend API | <http://localhost:8080> | ASP.NET Core |
 | Swagger UI | <http://localhost:8080/swagger> | API docs (dev only) |
 | PostgreSQL | `localhost:5432` | Database |
-| MinIO API | <http://localhost:9000> | S3-compatible object store |
-| MinIO Console | <http://localhost:9001> | Web UI for MinIO |
 | Dashboard (dev) | <http://localhost:5173> | Vite dev server |
+| Dashboard (Docker) | <http://localhost:3001> | Built dashboard served via Docker |
+| ML service | <http://localhost:8001> | FastAPI + ONNX classifier (container port 8000) |
 | Mobile (Expo) | <http://localhost:8081> | Metro bundler |
 
 ---
@@ -159,8 +163,6 @@ Copy `.env.example` → `.env` and fill in values. All listed below:
 | `POSTGRES_USER` | Postgres container, backend conn string | Default: `goalz` |
 | `POSTGRES_PASSWORD` | Postgres container, backend conn string | **Set this** |
 | `ConnectionStrings__DefaultConnection` | Backend (Supabase override) | Only if connecting to Supabase |
-| `MINIO_ROOT_USER` | MinIO + backend | Default: `minioadmin` |
-| `MINIO_ROOT_PASSWORD` | MinIO + backend | **Set this** |
 | `ASPNETCORE_ENVIRONMENT` | Backend | `Development` / `Production` |
 | `JWT_SECRET` | Backend | **Must be ≥ 32 chars** or startup fails |
 
@@ -298,6 +300,8 @@ All eight ADRs live in [docs/adr/](docs/adr/):
 | [api_endpoints.md](agent_docs/api_endpoints.md) | Looking up any existing endpoint |
 | [gitlab_workflow.md](agent_docs/gitlab_workflow.md) | Starting a task — check the board first |
 | [arboretum_map.md](agent_docs/arboretum_map.md) | Working on the zone map page |
+| [realtime_signalr.md](agent_docs/realtime_signalr.md) | Working on party real-time updates (SignalR) |
+| [ml_pipeline.md](agent_docs/ml_pipeline.md) | Working on the AI image analysis pipeline |
 
 ### Diagrams
 
@@ -328,7 +332,7 @@ This repo is the team project for **Global Acting in IT**, a semester-long inter
 
 **Built by:** 3 students from Fontys ICT Eindhoven + 1 student from FH Technikum Wien, supervised (teaching only, no code contributions) by lecturers from all four institutes.
 
-**Real-world stakeholders** the project serves (per the minor's official brief — a "Healthy Landscape & Biodiversity Plan" tool for Humber Polytechnic):
+**Real-world stakeholders** the project serves (per the minor's official brief, a "Healthy Landscape & Biodiversity Plan" tool for Humber Polytechnic):
 - Humber Office of Sustainability
 - Humber Arboretum
 - Municipal and conservation authorities (e.g. Toronto and Region Conservation Authority)
